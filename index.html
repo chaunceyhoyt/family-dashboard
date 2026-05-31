@@ -139,10 +139,15 @@
     }
     .section-card.open .section-body { display: block; }
 
+    .weather-card {
+      background: linear-gradient(135deg, #1a3a5c 0%, #1e293b 100%);
+    }
+
     .weather-summary {
       padding: 14px 16px 6px;
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 700;
+      letter-spacing: -0.5px;
     }
 
     .item {
@@ -300,8 +305,9 @@ function renderItem(item) {
 
 function renderSection(section, i) {
   const open = section.collapsed === false || section.collapsed === undefined ? 'open' : '';
+  const extra = section.id === 'weather' ? ' weather-card' : '';
   return `
-    <div class="section-card ${open}" id="sec-${i}">
+    <div class="section-card ${open}${extra}" id="sec-${i}">
       <div class="section-header" onclick="toggle(${i})">
         <div class="section-title"><span>${section.emoji || '•'}</span><span>${section.title}</span></div>
         <span class="chevron">▼</span>
