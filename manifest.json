@@ -1,0 +1,17 @@
+{
+  "name": "Hoyt Family Dashboard",
+  "short_name": "Hoyt Family",
+  "start_url": "/family-dashboard/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "Daily family briefing dashboard",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/icons/svg?seed=house&backgroundColor=3b82f6",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
