@@ -986,10 +986,8 @@ async function loadDashboard() {
 }
 
 // ── ORIENTATION CHANGE ────────────────────────────────────────────────────────
-let resizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { if (currentType==='weekly') { const b=allBriefings.find(b=>b.type==='weekly'); if (b) renderWeeklyView(b); else renderWeeklyView(null); } }, 300);
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => { if (currentType==='weekly') { const b=allBriefings.find(b=>b.type==='weekly'); if (b) renderWeeklyView(b); else renderWeeklyView(null); } }, 400);
 });
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
