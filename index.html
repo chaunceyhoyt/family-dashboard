@@ -1162,13 +1162,23 @@ async function krogerWhoAmI() {
   out.style.display = 'block';
   out.textContent = 'Fetching identity…';
   try {
+    // Decode JWT payload locally (no verification needed for debug)
+    let jwtClaims = null;
+    try {
+      const parts = krogerToken.split('.');
+      if (parts.length === 3) {
+        const payload = parts[1].replace(/-/g,'+').replace(/_/g,'/');
+        jwtClaims = JSON.parse(atob(payload));
+      }
+    } catch(e) { jwtClaims = 'Not a JWT or decode failed'; }
+
     const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=whoami`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: krogerToken })
     });
     const data = await r.json();
-    out.textContent = JSON.stringify(data, null, 2);
+    out.textContent = JSON.stringify({ jwt_claims: jwtClaims, ...data }, null, 2);
   } catch(e) {
     out.textContent = 'Error: ' + e.message;
   }
