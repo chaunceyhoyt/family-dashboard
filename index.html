@@ -382,6 +382,11 @@
     <div style="font-size:12px;color:var(--text2);margin-top:6px" id="kroger-progress-label"></div>
   </div>
   <div class="kroger-item-list" id="kroger-item-list"></div>
+  <div style="margin-bottom:10px;display:flex;gap:6px;justify-content:center" id="kroger-modality-row">
+    <button onclick="setKrogerModality('PICKUP',this)" style="padding:6px 14px;border-radius:8px;border:2px solid #2055b7;background:#2055b7;color:#fff;font-size:12px;font-weight:700;cursor:pointer">🏪 Pickup</button>
+    <button onclick="setKrogerModality('DELIVERY',this)" style="padding:6px 14px;border-radius:8px;border:2px solid var(--surface2);background:var(--surface2);color:var(--text);font-size:12px;font-weight:700;cursor:pointer">🚚 Delivery</button>
+    <button onclick="setKrogerModality('SHIP',this)" style="padding:6px 14px;border-radius:8px;border:2px solid var(--surface2);background:var(--surface2);color:var(--text);font-size:12px;font-weight:700;cursor:pointer">📦 Ship</button>
+  </div>
   <div style="display:flex;flex-wrap:wrap;justify-content:center">
     <button class="kroger-btn kroger-btn-primary" id="kroger-action-btn" onclick="krogerConnect()">Sign in to Kroger</button>
     <button class="kroger-btn kroger-btn-close" onclick="closeKrogerOverlay()">Cancel</button>
@@ -413,7 +418,7 @@ const PEOPLE = {
 const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','#3b0764','#164e63'];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, allDayMode = false, currentPage = 'home';
+let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, krogerModality = 'PICKUP', allDayMode = false, currentPage = 'home';
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = [];
@@ -1065,6 +1070,14 @@ async function init() {
 }
 
 // ── KROGER ───────────────────────────────────────────────────────────────────
+function setKrogerModality(mode, btn) {
+  krogerModality = mode;
+  document.querySelectorAll('#kroger-modality-row button').forEach(b => {
+    b.style.background = 'var(--surface2)'; b.style.borderColor = 'var(--surface2)'; b.style.color = 'var(--text)';
+  });
+  btn.style.background = '#2055b7'; btn.style.borderColor = '#2055b7'; btn.style.color = '#fff';
+}
+
 function krogerConnect() {
   const params = new URLSearchParams({
     response_type: 'code',
@@ -1220,7 +1233,7 @@ async function krogerAddToCart(upc, qty = 1) {
   const doAdd = async (tok) => fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=cart`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: tok, upc, quantity: qty })
+    body: JSON.stringify({ token: tok, upc, quantity: qty, modality: krogerModality })
   });
   let r = await doAdd(krogerToken);
   const data = await r.json().catch(() => ({}));
