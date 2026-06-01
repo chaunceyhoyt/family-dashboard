@@ -1335,6 +1335,15 @@ async function sendAllToKroger(items) {
   btn.onclick = closeKrogerOverlay;
   label.textContent = `${succeeded} item${succeeded !== 1 ? 's' : ''} added to your Kroger cart!`;
 
+  if (succeeded > 0) {
+    const checkoutBtn = document.createElement('button');
+    checkoutBtn.className = 'kroger-btn kroger-btn-primary';
+    checkoutBtn.textContent = '🛒 Checkout on Kroger →';
+    checkoutBtn.style.cssText = 'margin-top:10px;width:100%;max-width:340px;font-size:16px';
+    checkoutBtn.onclick = () => window.open('https://www.kroger.com/cart', '_blank');
+    btn.parentNode.insertBefore(checkoutBtn, btn.nextSibling);
+  }
+
   // Remove successfully added items from grocery list
   if (addedIds.length) {
     grocery = grocery.filter(g => !addedIds.includes(g.id));
