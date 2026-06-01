@@ -1155,7 +1155,7 @@ async function krogerResolveLocation() {
     const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=location`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: krogerToken, lat: LAT, lon: LON })
+      body: JSON.stringify({ lat: LAT, lon: LON })
     });
     const data = await r.json();
     const loc = data.data?.[0];
@@ -1184,10 +1184,14 @@ async function krogerSearchProduct(token, term) {
   const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, term, locationId: krogerLocationId, history })
+    body: JSON.stringify({ term, locationId: krogerLocationId || undefined, history })
   });
-  if (!r.ok) return null;
+  if (!r.ok) {
+    const txt = await r.text().catch(() => r.status);
+    throw new Error(`Search HTTP ${r.status}: ${txt}`);
+  }
   const data = await r.json();
+  console.log('Kroger search', term, '→', data);
   const product = data.data?.[0] || null;
   if (product) product._source = data.source;
   return product;
