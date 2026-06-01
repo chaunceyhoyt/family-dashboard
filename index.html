@@ -290,6 +290,86 @@
     .submit-btn:disabled { background: #334155; color: var(--text-muted); }
     .modal-status { font-size: 13px; text-align: center; min-height: 18px; color: var(--success); }
     .modal-status.error { color: var(--urgent); }
+
+    /* ── VOICE OVERLAY ── */
+    #voice-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(10,15,30,0.97);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px; text-align: center;
+    }
+    #voice-overlay.open { display: flex; }
+
+    .voice-date-label { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; letter-spacing: 0.3px; }
+
+    /* Pulse ring */
+    .voice-pulse-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto 28px; }
+    .voice-ring {
+      position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid rgba(59,130,246,0.4);
+      animation: vring 1.6s ease-out infinite;
+    }
+    .voice-ring:nth-child(2) { animation-delay: 0.5s; }
+    .voice-ring:nth-child(3) { animation-delay: 1s; }
+    @keyframes vring { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+    .voice-mic-btn {
+      position: absolute; inset: 0; margin: auto;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--accent); border: none;
+      font-size: 32px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      box-shadow: 0 0 32px rgba(59,130,246,0.5);
+    }
+    .voice-mic-btn.idle { background: var(--surface2); box-shadow: none; }
+    .voice-mic-btn.idle .voice-rings { display: none; }
+
+    .voice-status { font-size: 16px; font-weight: 600; margin-bottom: 8px; min-height: 24px; }
+    .voice-transcript-box {
+      background: var(--surface); border-radius: 12px;
+      padding: 14px 18px; margin: 12px 0 24px;
+      font-size: 15px; line-height: 1.5; min-height: 52px;
+      max-width: 380px; width: 100%;
+      color: var(--text); border: 1px solid rgba(255,255,255,0.08);
+    }
+    .voice-transcript-box.empty { color: var(--text-muted); font-style: italic; }
+
+    /* Parsed confirm card */
+    .voice-confirm-card {
+      background: var(--surface); border-radius: 14px;
+      padding: 16px; margin: 0 0 20px;
+      max-width: 380px; width: 100%;
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+    }
+    .voice-confirm-card .vc-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .voice-confirm-card .vc-row:last-child { border-bottom: none; }
+    .vc-icon  { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .vc-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .vc-value { font-size: 14px; font-weight: 600; margin-top: 1px; }
+
+    .voice-btn-row { display: flex; gap: 12px; max-width: 380px; width: 100%; }
+    .voice-confirm-btn {
+      flex: 1; background: var(--accent); border: none; color: white;
+      padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .voice-confirm-btn:active { background: #2563eb; }
+    .voice-cancel-btn {
+      flex: 1; background: var(--surface2); border: none; color: var(--text-muted);
+      padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Mic + add button group */
+    .cal-actions { display: flex; gap: 8px; align-items: center; }
+    .mic-btn {
+      background: var(--accent); border: none; color: white;
+      width: 32px; height: 32px; border-radius: 50%; font-size: 15px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+    }
+    .mic-btn.small { width: 26px; height: 26px; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -322,6 +402,36 @@
   <div class="tabs" id="tabs"></div>
   <div class="content" id="content">
     <div class="loading"><div class="spinner"></div><div>Loading…</div></div>
+  </div>
+</div>
+
+<!-- VOICE OVERLAY -->
+<div id="voice-overlay">
+  <div class="voice-date-label" id="voice-date-label">Adding event for today</div>
+
+  <!-- LISTENING STATE -->
+  <div id="voice-listening-view">
+    <div class="voice-pulse-wrap">
+      <div class="voice-ring"></div>
+      <div class="voice-ring"></div>
+      <div class="voice-ring"></div>
+      <div class="voice-mic-btn" id="voice-mic-icon">🎤</div>
+    </div>
+    <div class="voice-status" id="voice-status">Listening…</div>
+    <div class="voice-transcript-box empty" id="voice-transcript">Say something like:<br>"Soccer practice Saturday at 10am at Centerville Park"</div>
+    <div class="voice-btn-row" style="margin-top:4px">
+      <button class="voice-cancel-btn" onclick="closeVoice()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CONFIRM STATE -->
+  <div id="voice-confirm-view" style="display:none">
+    <div class="voice-status" style="margin-bottom:16px">Does this look right?</div>
+    <div class="voice-confirm-card" id="voice-confirm-card"></div>
+    <div class="voice-btn-row">
+      <button class="voice-cancel-btn" onclick="retryVoice()">Try Again</button>
+      <button class="voice-confirm-btn" onclick="confirmVoiceEvent()">Add to Calendar ✓</button>
+    </div>
   </div>
 </div>
 
@@ -438,7 +548,7 @@ async function fetchCalEvents(start, end, token) {
 function renderDailyCalCard(token) {
   const card = document.createElement('div');
   card.className = 'cal-card'; card.id = 'cal-card';
-  card.innerHTML = `<div class="cal-header"><div class="cal-title"><span>📆</span><span>Today's Calendar</span></div><button class="add-event-btn" onclick="openModal()">+</button></div><div class="cal-body" id="cal-body"><div class="cal-empty">Loading…</div></div>`;
+  card.innerHTML = `<div class="cal-header"><div class="cal-title"><span>📆</span><span>Today's Calendar</span></div><div class="cal-actions"><button class="mic-btn" onclick="openVoice('${isoDate(new Date())}')" title="Voice add">🎤</button><button class="add-event-btn" onclick="openModal()" title="Manual add">+</button></div></div><div class="cal-body" id="cal-body"><div class="cal-empty">Loading…</div></div>`;
   if (!token) { card.querySelector('#cal-body').innerHTML = `<div class="cal-no-token"><span>Calendar needs re-sign in</span><button class="reauth-btn" onclick="signIn()">Re-sign in</button></div>`; return card; }
   const now = new Date(), start = new Date(now.getFullYear(),now.getMonth(),now.getDate()).toISOString(), end = new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59).toISOString();
   fetchCalEvents(start, end, token).then(evs => {
@@ -505,7 +615,7 @@ function buildWeekView() {
     const pill = document.createElement('div');
     pill.className = `day-pill${isToday(d)?' today':''}${i===weekState.selectedIdx?' selected':''}`;
     pill.id = `pill-${i}`;
-    pill.innerHTML = `<div class="day-pill-name">${DAY_NAMES[d.getDay()]}</div><div class="day-pill-date">${d.getDate()}</div><div class="day-pill-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</div><div class="day-pill-temp">${w ? `${w.high}°/${w.low}°` : ''}</div><div class="day-pill-dot-row">${Array.from({length:Math.min(evCount,3)},()=>`<div class="day-pill-dot"></div>`).join('')}</div>`;
+    pill.innerHTML = `<div class="day-pill-name">${DAY_NAMES[d.getDay()]}</div><div class="day-pill-date">${d.getDate()}</div><div class="day-pill-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</div><div class="day-pill-temp">${w ? `${w.high}°/${w.low}°` : ''}</div><div class="day-pill-dot-row">${Array.from({length:Math.min(evCount,3)},()=>'<div class="day-pill-dot"></div>').join('')}</div>`;
     pill.onclick = () => selectDay(i);
     strip.appendChild(pill);
   });
@@ -524,7 +634,7 @@ function buildWeekView() {
     const col = document.createElement('div');
     col.className = `wg-col${isToday(d)?' today':''}`;
     const evHtml = evs.map(ev => `<a class="wg-event" href="${ev.htmlLink||'#'}" target="_blank"><div class="wg-event-time">${ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day'}</div><div class="wg-event-name">${ev.summary||'Untitled'}</div></a>`).join('');
-    col.innerHTML = `<div class="wg-head"><div class="wg-day-name">${DAY_NAMES[d.getDay()]}</div><div class="wg-day-num">${d.getDate()}</div><div class="wg-weather"><span class="wg-weather-icon">${w?WMO_EMOJI[w.code]||'🌡️':'–'}</span><span>${w?`${w.high}°`:''}</span></div></div><div class="wg-events">${evHtml}</div><div class="wg-add"><button class="wg-add-btn" onclick="openModalForDate('${isoDate(d)}')">+ Add</button></div>`;
+    col.innerHTML = `<div class="wg-head"><div class="wg-day-name">${DAY_NAMES[d.getDay()]}</div><div class="wg-day-num">${d.getDate()}</div><div class="wg-weather"><span class="wg-weather-icon">${w?WMO_EMOJI[w.code]||'🌡️':'–'}</span><span>${w?`${w.high}°`:''}</span></div></div><div class="wg-events">${evHtml}</div><div class="wg-add" style="display:flex;gap:6px;padding:6px 4px"><button class="wg-add-btn" style="flex:0 0 28px;padding:0;font-size:13px" onclick="openVoice('${isoDate(d)}')">🎤</button><button class="wg-add-btn" onclick="openModalForDate('${isoDate(d)}')">+ Add</button></div>`;
     grid.appendChild(col);
   });
   gridWrap.appendChild(grid);
@@ -549,13 +659,225 @@ function renderSelectedDay(wrap) {
   const evs = weekState.eventsByDay[weekState.selectedIdx];
   const label = `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
 
-  header.innerHTML = `<div class="sel-day-title">${label}</div><button class="add-event-btn" style="width:32px;height:32px;font-size:20px" onclick="openModalForDate('${isoDate(d)}')">+</button>`;
+  header.innerHTML = `<div class="sel-day-title">${label}</div><div class="cal-actions"><button class="mic-btn" onclick="openVoice('${isoDate(d)}')" title="Voice add">🎤</button><button class="add-event-btn" onclick="openModalForDate('${isoDate(d)}')" title="Manual add">+</button></div>`;
 
   if (!evs.length) {
     evBox.innerHTML = `<div class="cal-empty" style="padding:14px 16px;font-size:13px;color:var(--text-muted)">No events${gcalToken ? '' : ' — sign in for calendar access'}</div>`;
     return;
   }
   evBox.innerHTML = evs.map(ev => `<a class="cal-event" href="${ev.htmlLink||'#'}" target="_blank"><div class="cal-time">${ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day'}</div><div><div class="cal-event-text">${ev.summary||'Untitled'}</div>${ev.location?`<div class="cal-event-loc">📍 ${ev.location}</div>`:''}</div></a>`).join('');
+}
+
+// ── VOICE RECOGNITION ────────────────────────────────────────────────────────
+let recognition = null;
+let voiceTargetDate = null;
+let parsedVoiceEvent = null;
+
+function openVoice(dateStr) {
+  voiceTargetDate = dateStr || isoDate(new Date());
+  const d = new Date(voiceTargetDate + 'T12:00:00');
+  const label = isToday(d) ? 'Adding event for today'
+    : `Adding event for ${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  document.getElementById('voice-date-label').textContent = label;
+  document.getElementById('voice-listening-view').style.display = 'block';
+  document.getElementById('voice-confirm-view').style.display = 'none';
+  document.getElementById('voice-transcript').textContent = 'Say something like:\n"Soccer practice Saturday at 10am at Centerville Park"';
+  document.getElementById('voice-transcript').classList.add('empty');
+  document.getElementById('voice-status').textContent = 'Listening…';
+  document.getElementById('voice-overlay').classList.add('open');
+  startRecognition();
+}
+
+function closeVoice() {
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  document.getElementById('voice-overlay').classList.remove('open');
+}
+
+function retryVoice() {
+  document.getElementById('voice-listening-view').style.display = 'block';
+  document.getElementById('voice-confirm-view').style.display = 'none';
+  document.getElementById('voice-transcript').textContent = 'Say something like:\n"Soccer practice Saturday at 10am"';
+  document.getElementById('voice-transcript').classList.add('empty');
+  document.getElementById('voice-status').textContent = 'Listening…';
+  startRecognition();
+}
+
+function startRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('voice-status').textContent = 'Speech recognition not supported in this browser';
+    return;
+  }
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    const box = document.getElementById('voice-transcript');
+    box.textContent = transcript;
+    box.classList.remove('empty');
+    if (e.results[e.results.length - 1].isFinal) {
+      recognition = null;
+      processVoiceInput(transcript);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    document.getElementById('voice-status').textContent =
+      e.error === 'no-speech' ? 'No speech detected — tap Try Again' :
+      e.error === 'not-allowed' ? 'Microphone access denied — check browser settings' :
+      `Error: ${e.error}`;
+  };
+
+  recognition.onend = () => {
+    if (recognition) recognition = null;
+  };
+
+  recognition.start();
+}
+
+function processVoiceInput(text) {
+  document.getElementById('voice-status').textContent = 'Got it — reviewing…';
+  const parsed = parseVoiceText(text, voiceTargetDate);
+  parsedVoiceEvent = parsed;
+  showVoiceConfirm(parsed);
+}
+
+// ── VOICE PARSER ─────────────────────────────────────────────────────────────
+function parseVoiceText(text, defaultDate) {
+  const lower = text.toLowerCase();
+
+  // DATE
+  let date = defaultDate;
+  const today = new Date();
+  const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const monthNames = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+
+  if (/\btoday\b/.test(lower)) {
+    date = isoDate(today);
+  } else if (/\btomorrow\b/.test(lower)) {
+    const d = new Date(today); d.setDate(d.getDate()+1); date = isoDate(d);
+  } else {
+    const nextDay = lower.match(/next\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/);
+    if (nextDay) {
+      const target = dayNames.indexOf(nextDay[1]);
+      const d = new Date(today);
+      const diff = (target - today.getDay() + 7) % 7 || 7;
+      d.setDate(today.getDate() + diff + 7); date = isoDate(d);
+    } else {
+      const dayMatch = lower.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+      if (dayMatch) {
+        const target = dayNames.indexOf(dayMatch[1]);
+        const d = new Date(today);
+        let diff = (target - today.getDay() + 7) % 7;
+        if (diff === 0) diff = 7;
+        d.setDate(today.getDate() + diff); date = isoDate(d);
+      } else {
+        const monthMatch = lower.match(new RegExp(`(${monthNames.join('|')})\\s+(\\d{1,2})`));
+        if (monthMatch) {
+          const month = monthNames.indexOf(monthMatch[1]);
+          const day = parseInt(monthMatch[2]);
+          const d = new Date(today.getFullYear(), month, day);
+          if (d < today) d.setFullYear(d.getFullYear()+1);
+          date = isoDate(d);
+        }
+      }
+    }
+  }
+
+  // TIME
+  let startTime = '09:00', endTime = '10:00', allDay = false;
+  const timeMatch = lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m|p\.m)?/);
+  if (timeMatch) {
+    let h = parseInt(timeMatch[1]);
+    const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+    const ampm = (timeMatch[3]||'').replace('.','').toLowerCase();
+    if (ampm === 'pm' && h < 12) h += 12;
+    else if (ampm === 'am' && h === 12) h = 0;
+    else if (!ampm && h >= 1 && h <= 6) h += 12; // assume pm for 1-6
+    startTime = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    const eh = h + 1 < 24 ? h + 1 : h;
+    endTime = `${String(eh).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  } else if (/\ball.?day\b/.test(lower)) {
+    allDay = true;
+  }
+
+  // LOCATION — "at [place]" where place doesn't start with a digit
+  let location = '';
+  const locMatches = [...lower.matchAll(/\bat\s+(?![\d])([\w\s]+?)(?=\s+(?:on|at|from|$)|\s*$)/g)];
+  for (const m of locMatches) {
+    const candidate = m[1].trim();
+    if (!/^(the\s+)?\d/.test(candidate) && candidate.length > 2) {
+      // Capitalise each word
+      location = candidate.replace(/\b\w/g, c => c.toUpperCase());
+      break;
+    }
+  }
+
+  // TITLE — strip date/time/location keywords
+  let title = text
+    .replace(/\b(add|create|schedule|set up|put|new event|event)\b/gi, '')
+    .replace(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi, '')
+    .replace(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi, '')
+    .replace(/\b(today|tomorrow)\b/gi, '')
+    .replace(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m|p\.m)?\b/gi, '')
+    .replace(/\ball.?day\b/gi, '')
+    .replace(/\bat\s+(?!\d)[\w\s]+$/gi, '')
+    .replace(/\s+/g, ' ').trim();
+  if (!title) title = 'New Event';
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+
+  return { title, date, startTime, endTime, location, allDay, raw: text };
+}
+
+function showVoiceConfirm(p) {
+  const d = new Date(p.date + 'T12:00:00');
+  const dateLabel = `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  const timeLabel = p.allDay ? 'All day' : `${fmt12(p.startTime)} – ${fmt12(p.endTime)}`;
+
+  document.getElementById('voice-confirm-card').innerHTML = `
+    <div class="vc-row"><span class="vc-icon">📌</span><div><div class="vc-label">Event</div><div class="vc-value">${p.title}</div></div></div>
+    <div class="vc-row"><span class="vc-icon">📅</span><div><div class="vc-label">Date</div><div class="vc-value">${dateLabel}</div></div></div>
+    <div class="vc-row"><span class="vc-icon">🕐</span><div><div class="vc-label">Time</div><div class="vc-value">${timeLabel}</div></div></div>
+    ${p.location ? `<div class="vc-row"><span class="vc-icon">📍</span><div><div class="vc-label">Location</div><div class="vc-value">${p.location}</div></div></div>` : ''}
+  `;
+  document.getElementById('voice-listening-view').style.display = 'none';
+  document.getElementById('voice-confirm-view').style.display = 'block';
+}
+
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+async function confirmVoiceEvent() {
+  if (!gcalToken) { alert('No calendar access — please re-sign in.'); return; }
+  const p = parsedVoiceEvent;
+  const ev = { summary: p.title };
+  if (p.location) ev.location = p.location;
+  if (p.allDay) {
+    const next = new Date(p.date + 'T12:00:00'); next.setDate(next.getDate()+1);
+    ev.start = { date: p.date }; ev.end = { date: isoDate(next) };
+  } else {
+    ev.start = { dateTime: `${p.date}T${p.startTime}:00`, timeZone: TZ };
+    ev.end   = { dateTime: `${p.date}T${p.endTime}:00`,   timeZone: TZ };
+  }
+  try {
+    const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${gcalToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(ev)
+    });
+    if (!r.ok) throw new Error();
+    closeVoice();
+    loadDashboard();
+  } catch {
+    document.getElementById('voice-status').textContent = 'Failed to add — try again';
+  }
 }
 
 // ── ADD EVENT ─────────────────────────────────────────────────────────────────
