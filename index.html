@@ -413,7 +413,7 @@ const PEOPLE = {
 const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','#3b0764','#164e63'];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-let gcalToken = null, krogerToken = null, allDayMode = false, currentPage = 'home';
+let gcalToken = null, krogerToken = null, krogerLocationId = null, allDayMode = false, currentPage = 'home';
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = [];
@@ -1034,6 +1034,7 @@ async function confirmVoiceEvent() {
     return; // stop the rest of the page from initializing in the popup
   }
   krogerToken = sessionStorage.getItem('kroger_token');
+  krogerLocationId = sessionStorage.getItem('kroger_location') || null;
 })();
 
 async function init() {
@@ -1084,6 +1085,7 @@ function krogerConnect() {
     try {
       krogerToken = await krogerExchangeCode(e.data.code);
       sessionStorage.setItem('kroger_token', krogerToken);
+      await krogerResolveLocation();
       showKrogerSendUI();
     } catch(err) {
       alert('Kroger sign-in failed: ' + err.message);
@@ -1147,6 +1149,23 @@ function closeKrogerOverlay() {
   document.getElementById('kroger-overlay').classList.remove('open');
 }
 
+async function krogerResolveLocation() {
+  if (krogerLocationId) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=location`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: krogerToken, lat: LAT, lon: LON })
+    });
+    const data = await r.json();
+    const loc = data.data?.[0];
+    if (loc) {
+      krogerLocationId = loc.locationId;
+      sessionStorage.setItem('kroger_location', krogerLocationId);
+    }
+  } catch(e) { console.warn('Kroger location lookup failed', e); }
+}
+
 async function loadKrogerHistory() {
   const { data } = await sb.from('family_data').select('value').eq('key', 'kroger_history').maybeSingle();
   return data?.value || [];
@@ -1160,11 +1179,12 @@ async function saveKrogerHistory(term, upc, name) {
 }
 
 async function krogerSearchProduct(token, term) {
+  await krogerResolveLocation();
   const history = await loadKrogerHistory();
   const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, term, history })
+    body: JSON.stringify({ token, term, locationId: krogerLocationId, history })
   });
   if (!r.ok) return null;
   const data = await r.json();
