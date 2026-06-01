@@ -395,7 +395,7 @@
   <div style="display:flex;flex-wrap:wrap;justify-content:center">
     <button class="kroger-btn kroger-btn-primary" id="kroger-action-btn" onclick="krogerConnect()">Sign in to Kroger</button>
     <button class="kroger-btn kroger-btn-close" onclick="closeKrogerOverlay()">Cancel</button>
-    <button class="kroger-btn kroger-btn-close" id="kroger-viewcart-btn" onclick="krogerViewCart()" style="display:none">🛒 View Cart</button>
+    <button class="kroger-btn kroger-btn-primary" id="kroger-viewcart-btn" onclick="window.open('https://www.kroger.com/cart','_blank')" style="display:none">🛒 View Cart on Kroger</button>
     <button class="kroger-btn kroger-btn-close" id="kroger-whoami-btn" onclick="krogerWhoAmI()" style="display:none;font-size:12px">🔍 Debug: Who am I?</button>
   </div>
   <div id="kroger-debug-out" style="width:100%;max-width:340px;margin-top:10px;font-size:11px;color:var(--text2);word-break:break-all;text-align:left;display:none"></div>
@@ -1164,62 +1164,6 @@ function openKrogerOverlay() {
   }
 }
 
-async function krogerViewCart() {
-  document.getElementById('kroger-title').textContent = '🛒 Your Kroger Cart';
-  document.getElementById('kroger-sub').textContent = 'Loading cart…';
-  document.getElementById('kroger-item-list').innerHTML = '';
-  document.getElementById('kroger-progress-wrap').style.display = 'none';
-  document.getElementById('kroger-action-btn').style.display = 'none';
-  document.getElementById('kroger-viewcart-btn').style.display = 'none';
-  document.getElementById('kroger-debug-out').style.display = 'none';
-
-  try {
-    const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=cart-view`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: krogerToken })
-    });
-    const res = await r.json();
-    const items = res.data?.data?.items || res.data?.items || [];
-
-    if (!items.length) {
-      document.getElementById('kroger-sub').textContent = 'Your cart is empty.';
-      document.getElementById('kroger-item-list').innerHTML =
-        `<div style="text-align:center;padding:16px;color:var(--text2)">No items found.<br><small>Status: ${res.status}</small></div>`;
-    } else {
-      let total = 0;
-      document.getElementById('kroger-sub').textContent = `${items.length} item${items.length !== 1 ? 's' : ''} in your cart`;
-      document.getElementById('kroger-item-list').innerHTML = items.map(item => {
-        const name = item.description || item.name || item.upc || 'Unknown item';
-        const qty = item.quantity ?? 1;
-        const price = item.price?.total ?? item.itemTotal ?? null;
-        if (price) total += price;
-        return `<div class="kroger-cart-item">
-          <span style="font-size:18px">🛒</span>
-          <span class="kroger-cart-item-name">${name}</span>
-          <span class="kroger-cart-item-qty">×${qty}</span>
-          ${price ? `<span class="kroger-cart-item-price">$${price.toFixed(2)}</span>` : ''}
-        </div>`;
-      }).join('') + (total > 0 ? `<div class="kroger-cart-total"><span>Estimated Total</span><span>$${total.toFixed(2)}</span></div>` : '');
-    }
-  } catch(e) {
-    document.getElementById('kroger-sub').textContent = 'Failed to load cart.';
-    document.getElementById('kroger-item-list').innerHTML = `<div style="color:var(--urgent);padding:8px">${e.message}</div>`;
-  }
-
-  const btn = document.getElementById('kroger-action-btn');
-  btn.textContent = '← Back';
-  btn.onclick = showKrogerSendUI;
-  btn.style.display = '';
-  document.getElementById('kroger-viewcart-btn').style.display = '';
-
-  const checkoutBtn = document.createElement('button');
-  checkoutBtn.className = 'kroger-btn kroger-btn-primary';
-  checkoutBtn.textContent = 'Checkout on Kroger →';
-  checkoutBtn.style.cssText = 'margin-top:6px';
-  checkoutBtn.onclick = () => window.open('https://www.kroger.com/cart', '_blank');
-  document.getElementById('kroger-action-btn').parentNode.insertBefore(checkoutBtn, document.getElementById('kroger-action-btn').nextSibling);
-}
 
 async function krogerWhoAmI() {
   const out = document.getElementById('kroger-debug-out');
@@ -1401,12 +1345,7 @@ async function sendAllToKroger(items) {
   label.textContent = `${succeeded} item${succeeded !== 1 ? 's' : ''} added to your Kroger cart!`;
 
   if (succeeded > 0) {
-    const checkoutBtn = document.createElement('button');
-    checkoutBtn.className = 'kroger-btn kroger-btn-primary';
-    checkoutBtn.textContent = '🛒 Checkout on Kroger →';
-    checkoutBtn.style.cssText = 'margin-top:10px;width:100%;max-width:340px;font-size:16px';
-    checkoutBtn.onclick = () => window.open('https://www.kroger.com/cart', '_blank');
-    btn.parentNode.insertBefore(checkoutBtn, btn.nextSibling);
+    document.getElementById('kroger-viewcart-btn').style.display = '';
   }
 
   // Remove successfully added items from grocery list
