@@ -1024,20 +1024,16 @@ async function confirmVoiceEvent() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-// Handle Kroger OAuth callback — runs once on page load before auth state settles
-(async () => {
+// If this page loaded inside the Kroger OAuth popup, hand the code back and close
+(function() {
   const params = new URLSearchParams(location.search);
   const code = params.get('code'), state = params.get('state');
-  if (code && state === 'kroger_auth' && sessionStorage.getItem('kroger_pending')) {
-    sessionStorage.removeItem('kroger_pending');
-    history.replaceState({}, '', location.pathname);
-    try {
-      krogerToken = await krogerExchangeCode(code);
-      sessionStorage.setItem('kroger_token', krogerToken);
-    } catch(e) { console.error('Kroger auth failed', e); }
-  } else {
-    krogerToken = sessionStorage.getItem('kroger_token');
+  if (code && state === 'kroger_auth' && window.opener) {
+    window.opener.postMessage({ type: 'kroger_code', code }, location.origin);
+    window.close();
+    return; // stop the rest of the page from initializing in the popup
   }
+  krogerToken = sessionStorage.getItem('kroger_token');
 })();
 
 async function init() {
@@ -1075,8 +1071,24 @@ function krogerConnect() {
     scope: 'cart.basic:write profile.compact',
     state: 'kroger_auth'
   });
-  sessionStorage.setItem('kroger_pending', '1');
-  location.href = 'https://api.kroger.com/v1/connect/oauth2/authorize?' + params;
+  const popup = window.open(
+    'https://api.kroger.com/v1/connect/oauth2/authorize?' + params,
+    'kroger_login',
+    'width=500,height=650,left=' + Math.round((screen.width-500)/2) + ',top=' + Math.round((screen.height-650)/2)
+  );
+  const timer = setInterval(() => { if (popup.closed) clearInterval(timer); }, 500);
+  window.addEventListener('message', async function onMsg(e) {
+    if (e.data?.type !== 'kroger_code') return;
+    window.removeEventListener('message', onMsg);
+    clearInterval(timer);
+    try {
+      krogerToken = await krogerExchangeCode(e.data.code);
+      sessionStorage.setItem('kroger_token', krogerToken);
+      showKrogerSendUI();
+    } catch(err) {
+      alert('Kroger sign-in failed: ' + err.message);
+    }
+  });
 }
 
 async function krogerExchangeCode(code) {
