@@ -20,24 +20,22 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg); color: var(--text); min-height: 100vh;
-      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+      padding-bottom: calc(40px + env(safe-area-inset-bottom));
     }
 
     /* ── LOGIN ── */
     #login-screen {
       position: fixed; inset: 0;
       background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 999; padding: 32px; text-align: center;
     }
     .login-icon  { font-size: 56px; margin-bottom: 20px; }
     .login-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
     .login-sub   { font-size: 14px; color: var(--text-muted); margin-bottom: 48px; }
     .google-btn {
-      display: flex; align-items: center; gap: 12px;
-      background: white; color: #1f2937; border: none; border-radius: 12px;
-      padding: 14px 28px; font-size: 16px; font-weight: 600;
+      display: flex; align-items: center; gap: 12px; background: white; color: #1f2937;
+      border: none; border-radius: 12px; padding: 14px 28px; font-size: 16px; font-weight: 600;
       cursor: pointer; width: 100%; max-width: 300px; justify-content: center;
       box-shadow: 0 4px 24px rgba(0,0,0,0.3); transition: transform 0.1s;
       -webkit-tap-highlight-color: transparent;
@@ -50,26 +48,26 @@
     #dashboard { display: none; }
     .header {
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-      padding: 20px 16px 18px;
-      padding-top: calc(20px + env(safe-area-inset-top));
+      padding: 16px 16px 14px;
+      padding-top: calc(16px + env(safe-area-inset-top));
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .header h1  { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+    .header h1  { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
     .header-actions { display: flex; gap: 8px; }
     .icon-btn {
       background: rgba(255,255,255,0.1); border: none; color: var(--text);
-      width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 17px;
+      width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 16px;
       display: flex; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent; transition: background 0.15s;
     }
     .icon-btn:active { background: rgba(255,255,255,0.2); }
-    .header-user   { font-size: 11px; color: var(--text-muted); }
-    .header-subtitle { font-size: 13px; color: var(--text-muted); }
+    .header-user     { font-size: 11px; color: var(--text-muted); }
+    .header-subtitle { font-size: 12px; color: var(--text-muted); }
 
     /* ── TABS ── */
     .tabs {
-      display: flex; gap: 8px; padding: 12px 16px;
+      display: flex; gap: 8px; padding: 10px 16px;
       overflow-x: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: none; background: var(--bg);
       border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -77,104 +75,171 @@
     .tabs::-webkit-scrollbar { display: none; }
     .tab {
       background: var(--surface); border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text-muted); padding: 7px 16px; border-radius: 20px;
+      color: var(--text-muted); padding: 6px 14px; border-radius: 20px;
       font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 500;
       transition: all 0.15s; -webkit-tap-highlight-color: transparent;
     }
     .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
 
     /* ── CONTENT ── */
-    .content { padding: 14px 16px 24px; max-width: 600px; margin: 0 auto; }
+    .content { padding: 12px 16px 24px; max-width: 700px; margin: 0 auto; }
 
-    /* ── WEATHER ── */
+    /* ── WEATHER (daily) ── */
     .weather-hero {
       background: linear-gradient(135deg, #1a3a5c 0%, #1e293b 100%);
-      border-radius: var(--radius); padding: 18px 16px 14px; margin-bottom: 10px;
+      border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
       border: 1px solid rgba(255,255,255,0.08);
     }
     .weather-main { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
-    .weather-temp { font-size: 48px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
-    .weather-temp sup { font-size: 22px; font-weight: 400; vertical-align: super; }
+    .weather-temp { font-size: 46px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+    .weather-temp sup { font-size: 20px; font-weight: 400; vertical-align: super; }
     .weather-right { text-align: right; }
-    .weather-desc  { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .weather-desc  { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
     .weather-feels { font-size: 12px; color: var(--text-muted); }
-    .weather-row {
-      display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted);
-      border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;
-    }
+    .weather-row   { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; }
     .weather-stat strong { color: var(--text); }
-    .weather-alert {
-      background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
-      border-radius: 8px; padding: 8px 12px; margin-top: 10px;
-      font-size: 13px; color: #fca5a5;
-    }
+    .weather-alert { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 13px; color: #fca5a5; }
 
-    /* ── CALENDAR CARD ── */
-    .cal-card {
-      background: var(--surface); border-radius: var(--radius); margin-bottom: 10px;
-      border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
-    }
-    .cal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px;
-    }
-    .cal-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+    /* ── DAILY CALENDAR CARD ── */
+    .cal-card { background: var(--surface); border-radius: var(--radius); margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; }
+    .cal-title  { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
     .add-event-btn {
       background: var(--accent); border: none; color: white;
-      width: 28px; height: 28px; border-radius: 50%; font-size: 18px; line-height: 1;
+      width: 28px; height: 28px; border-radius: 50%; font-size: 18px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cal-body  { border-top: 1px solid rgba(255,255,255,0.06); }
+    .cal-event { display: flex; align-items: flex-start; gap: 12px; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; text-decoration: none; color: inherit; }
+    .cal-event:last-child { border-bottom: none; }
+    .cal-event:active { background: rgba(255,255,255,0.04); }
+    .cal-time      { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; padding-top: 2px; min-width: 54px; }
+    .cal-event-text{ font-size: 14px; line-height: 1.4; }
+    .cal-event-loc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .cal-empty     { padding: 14px 16px; font-size: 13px; color: var(--text-muted); }
+    .cal-no-token  { padding: 12px 16px; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+    .reauth-btn    { background: var(--accent); border: none; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+    /* ════════════════════════════════════
+       WEEKLY VIEW
+    ════════════════════════════════════ */
+
+    .week-view { margin-bottom: 12px; }
+
+    /* ── PORTRAIT: day strip ── */
+    .day-strip {
+      display: flex; gap: 8px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding: 4px 0 10px;
+    }
+    .day-strip::-webkit-scrollbar { display: none; }
+
+    .day-pill {
+      flex: 0 0 auto; width: 64px;
+      background: var(--surface); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 10px 6px 8px;
+      text-align: center; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; transition: all 0.15s;
+    }
+    .day-pill.today   { border-color: rgba(59,130,246,0.5); }
+    .day-pill.selected{ background: var(--accent); border-color: var(--accent); }
+    .day-pill-name { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .day-pill.selected .day-pill-name { color: rgba(255,255,255,0.8); }
+    .day-pill-date { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .day-pill-icon { font-size: 18px; margin-bottom: 2px; }
+    .day-pill-temp { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .day-pill.selected .day-pill-temp { color: rgba(255,255,255,0.8); }
+    .day-pill-dot-row { display: flex; justify-content: center; gap: 3px; margin-top: 5px; min-height: 6px; }
+    .day-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.5); }
+    .day-pill.selected .day-pill-dot { background: rgba(255,255,255,0.8); }
+
+    /* Selected day events (portrait) */
+    .sel-day-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0 10px;
+    }
+    .sel-day-title { font-size: 16px; font-weight: 700; }
+    .sel-day-events { background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; }
+
+    /* ── LANDSCAPE: 7-column grid ── */
+    .week-grid-wrap {
+      display: none;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      margin: 0 -16px;
+      padding: 0 16px;
+    }
+    .week-grid-wrap::-webkit-scrollbar { display: none; }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(110px, 1fr));
+      gap: 6px;
+      min-width: 100%;
+    }
+
+    .wg-col {
+      background: var(--surface); border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .wg-col.today { border-color: rgba(59,130,246,0.5); }
+
+    .wg-head {
+      padding: 8px 8px 6px; text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .wg-day-name { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .wg-day-num  { font-size: 20px; font-weight: 700; margin: 2px 0; }
+    .wg-col.today .wg-day-num { color: var(--accent); }
+    .wg-weather  { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .wg-weather-icon { font-size: 14px; }
+
+    .wg-events { padding: 4px; min-height: 40px; }
+
+    .wg-event {
+      display: block; padding: 4px 6px; border-radius: 6px;
+      background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.25);
+      margin-bottom: 4px; text-decoration: none; color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .wg-event:active { background: rgba(59,130,246,0.3); }
+    .wg-event-time { font-size: 10px; font-weight: 700; color: var(--accent); }
+    .wg-event-name { font-size: 11px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .wg-add { display: flex; align-items: center; justify-content: center; padding: 6px 4px; }
+    .wg-add-btn {
+      background: rgba(255,255,255,0.06); border: 1px dashed rgba(255,255,255,0.15);
+      color: var(--text-muted); border-radius: 6px; font-size: 11px;
+      padding: 4px 8px; cursor: pointer; width: 100%;
       -webkit-tap-highlight-color: transparent; transition: background 0.15s;
     }
-    .add-event-btn:active { background: #2563eb; }
-    .cal-body { border-top: 1px solid rgba(255,255,255,0.06); }
-    .cal-event {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    .wg-add-btn:active { background: rgba(255,255,255,0.12); }
+
+    /* Orientation switching */
+    @media (orientation: landscape) and (max-height: 540px) {
+      .day-strip, .sel-day-header, .sel-day-events { display: none; }
+      .week-grid-wrap { display: block; }
+      .content { padding: 8px 16px 16px; }
     }
-    .cal-event:last-child { border-bottom: none; }
-    .cal-time {
-      font-size: 11px; font-weight: 700; color: var(--accent);
-      text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; padding-top: 2px;
-      min-width: 54px;
-    }
-    .cal-event-text { font-size: 14px; line-height: 1.4; }
-    .cal-event-loc  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-    .cal-empty { padding: 14px 16px; font-size: 13px; color: var(--text-muted); }
-    .cal-no-token {
-      padding: 12px 16px; font-size: 13px; color: var(--text-muted);
-      display: flex; align-items: center; gap: 8px;
-    }
-    .reauth-btn {
-      background: var(--accent); border: none; color: white;
-      padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    @media (orientation: portrait) {
+      .week-grid-wrap { display: none !important; }
     }
 
     /* ── SECTION CARDS ── */
-    .section-card {
-      background: var(--surface); border-radius: var(--radius); margin-bottom: 10px;
-      overflow: hidden; border: 1px solid rgba(255,255,255,0.06);
-    }
-    .section-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px; cursor: pointer;
-      user-select: none; -webkit-tap-highlight-color: transparent;
-    }
+    .week-recap-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 10px; }
+    .section-card { background: var(--surface); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+    .section-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
     .section-header:active { background: rgba(255,255,255,0.03); }
     .section-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
     .chevron { color: var(--text-muted); font-size: 11px; transition: transform 0.2s; }
     .section-card.open .chevron { transform: rotate(180deg); }
     .section-body { display: none; border-top: 1px solid rgba(255,255,255,0.06); }
     .section-card.open .section-body { display: block; }
-    .item {
-      padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
-      display: flex; align-items: flex-start; gap: 10px;
-    }
+    .item { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 10px; }
     .item:last-child { border-bottom: none; }
-    .item-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--accent); margin-top: 6px; flex-shrink: 0;
-    }
+    .item-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex-shrink: 0; }
     .item-dot.urgent  { background: var(--urgent); }
     .item-dot.warning { background: var(--warning); }
     .item-dot.success { background: var(--success); }
@@ -185,79 +250,43 @@
     .item-detail { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
     .item-link   { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
 
-    .last-updated { text-align: center; font-size: 12px; color: var(--text-muted); padding: 4px 0 12px; }
+    .last-updated { text-align: center; font-size: 12px; color: var(--text-muted); padding: 4px 0 10px; }
     .loading { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-    .spinner {
-      width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: var(--accent); border-radius: 50%;
-      animation: spin 0.8s linear infinite; margin: 0 auto 14px;
-    }
+    .spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; }
     .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
 
     /* ── ADD EVENT MODAL ── */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      z-index: 900; display: none; align-items: flex-end;
-    }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 900; display: none; align-items: flex-end; }
     .modal-overlay.open { display: flex; }
     .modal {
       background: #1e293b; border-radius: 20px 20px 0 0;
-      padding: 0 0 env(safe-area-inset-bottom);
-      width: 100%; max-width: 600px; margin: 0 auto;
+      padding: 0 0 env(safe-area-inset-bottom); width: 100%; max-width: 600px; margin: 0 auto;
       transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+      max-height: 90vh; overflow-y: auto;
     }
     .modal-overlay.open .modal { transform: translateY(0); }
-    .modal-handle {
-      width: 36px; height: 4px; background: rgba(255,255,255,0.2);
-      border-radius: 2px; margin: 12px auto 0;
-    }
-    .modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 12px;
-    }
-    .modal-title { font-size: 18px; font-weight: 700; }
-    .modal-close {
-      background: rgba(255,255,255,0.1); border: none; color: var(--text);
-      width: 32px; height: 32px; border-radius: 50%; font-size: 16px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-    }
-    .modal-body { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; }
-    .field-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .field-input {
-      width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px; padding: 12px 14px; color: var(--text);
-      font-size: 15px; font-family: inherit; outline: none;
-      transition: border-color 0.15s;
-    }
+    .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 12px auto 0; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; }
+    .modal-title  { font-size: 18px; font-weight: 700; }
+    .modal-close  { background: rgba(255,255,255,0.1); border: none; color: var(--text); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .modal-body   { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .field-label  { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field-input  { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.15s; }
     .field-input:focus { border-color: var(--accent); }
-    .field-row { display: flex; gap: 10px; }
+    .field-row    { display: flex; gap: 10px; }
     .field-row > div { flex: 1; }
-    .allday-row { display: flex; align-items: center; gap: 10px; }
+    .allday-row   { display: flex; align-items: center; gap: 10px; }
     .allday-row label { font-size: 14px; color: var(--text-muted); cursor: pointer; }
-    .toggle {
-      width: 44px; height: 26px; background: rgba(255,255,255,0.1);
-      border-radius: 13px; position: relative; cursor: pointer;
-      transition: background 0.2s; flex-shrink: 0; border: none;
-    }
-    .toggle.on { background: var(--accent); }
-    .toggle::after {
-      content: ''; position: absolute; top: 3px; left: 3px;
-      width: 20px; height: 20px; background: white; border-radius: 50%;
-      transition: left 0.2s;
-    }
+    .toggle       { width: 44px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; border: none; }
+    .toggle.on    { background: var(--accent); }
+    .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: left 0.2s; }
     .toggle.on::after { left: 21px; }
-    .time-fields { transition: opacity 0.2s; }
+    .time-fields  { transition: opacity 0.2s; }
     .time-fields.hidden { opacity: 0.3; pointer-events: none; }
-    .submit-btn {
-      background: var(--accent); border: none; color: white;
-      width: 100%; padding: 14px; border-radius: 12px;
-      font-size: 16px; font-weight: 600; cursor: pointer;
-      -webkit-tap-highlight-color: transparent; transition: background 0.15s;
-      margin-top: 4px;
-    }
-    .submit-btn:active { background: #2563eb; }
+    .submit-btn   { background: var(--accent); border: none; color: white; width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.15s; margin-top: 4px; }
+    .submit-btn:active   { background: #2563eb; }
     .submit-btn:disabled { background: #334155; color: var(--text-muted); }
     .modal-status { font-size: 13px; text-align: center; min-height: 18px; color: var(--success); }
     .modal-status.error { color: var(--urgent); }
@@ -283,8 +312,8 @@
     <div class="header-top">
       <h1>🏠 Browning Family</h1>
       <div class="header-actions">
-        <button class="icon-btn" onclick="loadDashboard()" title="Refresh">↻</button>
-        <button class="icon-btn" onclick="signOut()" title="Sign out">⎋</button>
+        <button class="icon-btn" onclick="loadDashboard()">↻</button>
+        <button class="icon-btn" onclick="signOut()">⎋</button>
       </div>
     </div>
     <div class="header-user" id="header-user"></div>
@@ -298,7 +327,7 @@
 
 <!-- ADD EVENT MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
-  <div class="modal" id="modal">
+  <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div class="modal-title">Add Event</div>
@@ -307,7 +336,7 @@
     <div class="modal-body">
       <div>
         <div class="field-label">Event Title</div>
-        <input class="field-input" id="ev-title" type="text" placeholder="e.g. Soccer practice" autocomplete="off">
+        <input class="field-input" id="ev-title" type="text" placeholder="e.g. Soccer practice">
       </div>
       <div>
         <div class="field-label">Date</div>
@@ -318,14 +347,10 @@
         <label onclick="toggleAllDay()">All day</label>
       </div>
       <div class="time-fields" id="time-fields">
-        <div class="field-label">Time</div>
+        <div class="field-label">Start → End</div>
         <div class="field-row">
-          <div>
-            <input class="field-input" id="ev-start" type="time" value="09:00">
-          </div>
-          <div>
-            <input class="field-input" id="ev-end" type="time" value="10:00">
-          </div>
+          <div><input class="field-input" id="ev-start" type="time" value="09:00"></div>
+          <div><input class="field-input" id="ev-end"   type="time" value="10:00"></div>
         </div>
       </div>
       <div>
@@ -342,348 +367,322 @@
 const SUPABASE_URL = 'https://qhvzfgsfkqrnykgryvej.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodnpmZ3Nma3FybnlrZ3J5dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzk1NjIsImV4cCI6MjA5NTgxNTU2Mn0.WbXMQaEfaewGarq7W4-hgp74OQuQtwpDNpxSzc-jNA4';
 const TYPE_LABELS  = { daily:'☀️ Daily', weekly:'📅 Weekly', weekend:'🎉 Weekend', monthly:'📆 Monthly' };
-const LAT = 36.7682, LON = -76.2875;
-const TZ  = 'America/New_York';
+const LAT = 36.7682, LON = -76.2875, TZ = 'America/New_York';
+const sb  = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let gcalToken = null;
-let allDayMode = false;
+let gcalToken = null, allDayMode = false;
 let allBriefings = [], currentType = 'daily';
+let weekState = { days: [], selectedIdx: 0, weatherDays: [], eventsByDay: [], briefing: null };
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const DAY_NAMES  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_NAMES= ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WMO_EMOJI  = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈' };
+const WMO_TEXT   = { 0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm' };
+const STORM_CODES= new Set([51,53,55,61,63,65,80,81,82,95,96,99]);
+
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+function isToday(d) { return isoDate(d) === isoDate(new Date()); }
+
+function getWeekDays() {
+  const now = new Date(), dow = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  mon.setHours(0,0,0,0);
+  return Array.from({length:7}, (_,i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function formatTime(dtStr) {
+  if (!dtStr) return 'All day';
+  const d = new Date(dtStr);
+  return d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+}
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
 async function signIn() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: window.location.href.split('?')[0].split('#')[0],
-      scopes: 'https://www.googleapis.com/auth/calendar'
-    }
+    options: { redirectTo: window.location.href.split('?')[0].split('#')[0], scopes: 'https://www.googleapis.com/auth/calendar' }
   });
 }
-
-async function signOut() {
-  sessionStorage.removeItem('gcal_token');
-  await sb.auth.signOut();
-}
+async function signOut() { sessionStorage.removeItem('gcal_token'); await sb.auth.signOut(); }
 
 // ── WEATHER ──────────────────────────────────────────────────────────────────
-const WMO = {
-  0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
-  45:'Fog',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
-  61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
-  80:'Rain showers',81:'Rain showers',82:'Heavy showers',
-  95:'Thunderstorm',96:'Thunderstorm & hail',99:'Heavy thunderstorm & hail'
-};
-const STORM_CODES = new Set([51,53,55,61,63,65,80,81,82,95,96,99]);
-
-async function fetchWeather() {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
-    `&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m` +
-    `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code` +
-    `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=${encodeURIComponent(TZ)}&forecast_days=2`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error();
-  return res.json();
+async function fetchDailyWeather() {
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=${encodeURIComponent(TZ)}&forecast_days=2`);
+  if (!r.ok) throw new Error(); return r.json();
 }
 
-function renderWeather(w) {
+async function fetchWeekWeather(days) {
+  const start = isoDate(days[0]), end = isoDate(days[6]);
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max&temperature_unit=fahrenheit&timezone=${encodeURIComponent(TZ)}&start_date=${start}&end_date=${end}`);
+  if (!r.ok) throw new Error(); return r.json();
+}
+
+function renderWeatherHero(w) {
   const c = w.current, d = w.daily;
-  const temp = Math.round(c.temperature_2m), feels = Math.round(c.apparent_temperature);
-  const desc = WMO[c.weather_code] || 'Unknown';
-  const high = Math.round(d.temperature_2m_max[0]), low = Math.round(d.temperature_2m_min[0]);
-  const rainPct = d.precipitation_probability_max[0];
-  const stormy = STORM_CODES.has(c.weather_code) || rainPct >= 50;
-  return `
-    <div class="weather-hero">
-      <div class="weather-main">
-        <div class="weather-temp">${temp}<sup>°F</sup></div>
-        <div class="weather-right">
-          <div class="weather-desc">${desc}</div>
-          <div class="weather-feels">Feels like ${feels}°F</div>
-        </div>
-      </div>
-      <div class="weather-row">
-        <span class="weather-stat">H <strong>${high}°</strong></span>
-        <span class="weather-stat">L <strong>${low}°</strong></span>
-        <span class="weather-stat">Rain <strong>${rainPct}%</strong></span>
-        <span class="weather-stat">Humidity <strong>${c.relative_humidity_2m}%</strong></span>
-        <span class="weather-stat">Wind <strong>${Math.round(c.wind_speed_10m)} mph</strong></span>
-      </div>
-      ${stormy ? `<div class="weather-alert">⚠️ Rain or storms likely — plan outdoor activities accordingly.</div>` : ''}
-    </div>`;
+  const temp=Math.round(c.temperature_2m), feels=Math.round(c.apparent_temperature);
+  const desc=WMO_TEXT[c.weather_code]||'Unknown', high=Math.round(d.temperature_2m_max[0]), low=Math.round(d.temperature_2m_min[0]);
+  const rainPct=d.precipitation_probability_max[0], stormy=STORM_CODES.has(c.weather_code)||rainPct>=50;
+  return `<div class="weather-hero"><div class="weather-main"><div class="weather-temp">${temp}<sup>°F</sup></div><div class="weather-right"><div class="weather-desc">${desc}</div><div class="weather-feels">Feels like ${feels}°F</div></div></div><div class="weather-row"><span class="weather-stat">H <strong>${high}°</strong></span><span class="weather-stat">L <strong>${low}°</strong></span><span class="weather-stat">Rain <strong>${rainPct}%</strong></span><span class="weather-stat">Humidity <strong>${c.relative_humidity_2m}%</strong></span><span class="weather-stat">Wind <strong>${Math.round(c.wind_speed_10m)} mph</strong></span></div>${stormy?`<div class="weather-alert">⚠️ Rain or storms likely today.</div>`:''}</div>`;
 }
 
 // ── GOOGLE CALENDAR ───────────────────────────────────────────────────────────
-async function fetchCalendarEvents(token) {
-  const now  = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const end   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
-  const url   = `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
-    `timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}&orderBy=startTime&singleEvents=true`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error('cal_fetch_failed');
-  return res.json();
+async function fetchCalEvents(start, end, token) {
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}&orderBy=startTime&singleEvents=true`;
+  const r = await fetch(url, { headers: { Authorization:`Bearer ${token}` } });
+  if (!r.ok) throw new Error('cal');
+  return (await r.json()).items || [];
 }
 
-function formatCalTime(dateTimeStr) {
-  if (!dateTimeStr) return 'All day';
-  const d = new Date(dateTimeStr);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-
-function renderCalendarSection(token) {
+function renderDailyCalCard(token) {
   const card = document.createElement('div');
-  card.className = 'cal-card';
-  card.id = 'cal-card';
-  card.innerHTML = `
-    <div class="cal-header">
-      <div class="cal-title"><span>📆</span><span>Today's Calendar</span></div>
-      <button class="add-event-btn" onclick="openModal()" title="Add event">+</button>
-    </div>
-    <div class="cal-body" id="cal-body">
-      <div class="cal-empty" style="padding:12px 16px;font-size:13px;color:var(--text-muted)">Loading events…</div>
-    </div>`;
-
-  if (!token) {
-    card.querySelector('#cal-body').innerHTML = `
-      <div class="cal-no-token">
-        <span>Calendar needs a fresh sign-in</span>
-        <button class="reauth-btn" onclick="signIn()">Re-sign in</button>
-      </div>`;
-    return card;
-  }
-
-  fetchCalendarEvents(token).then(data => {
-    const events = data.items || [];
+  card.className = 'cal-card'; card.id = 'cal-card';
+  card.innerHTML = `<div class="cal-header"><div class="cal-title"><span>📆</span><span>Today's Calendar</span></div><button class="add-event-btn" onclick="openModal()">+</button></div><div class="cal-body" id="cal-body"><div class="cal-empty">Loading…</div></div>`;
+  if (!token) { card.querySelector('#cal-body').innerHTML = `<div class="cal-no-token"><span>Calendar needs re-sign in</span><button class="reauth-btn" onclick="signIn()">Re-sign in</button></div>`; return card; }
+  const now = new Date(), start = new Date(now.getFullYear(),now.getMonth(),now.getDate()).toISOString(), end = new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59).toISOString();
+  fetchCalEvents(start, end, token).then(evs => {
     const body = card.querySelector('#cal-body');
-    if (!events.length) {
-      body.innerHTML = `<div class="cal-empty">No events today</div>`;
-      return;
-    }
-    body.innerHTML = events.map(ev => {
-      const start = ev.start?.dateTime || ev.start?.date;
-      const timeStr = ev.start?.dateTime ? formatCalTime(ev.start.dateTime) : 'All day';
-      const loc = ev.location ? `<div class="cal-event-loc">📍 ${ev.location}</div>` : '';
-      return `
-        <div class="cal-event">
-          <div class="cal-time">${timeStr}</div>
-          <div>
-            <div class="cal-event-text">${ev.summary || 'Untitled'}</div>
-            ${loc}
-          </div>
-        </div>`;
-    }).join('');
-  }).catch(() => {
-    card.querySelector('#cal-body').innerHTML = `
-      <div class="cal-no-token">
-        <span>Could not load calendar</span>
-        <button class="reauth-btn" onclick="signIn()">Re-sign in</button>
-      </div>`;
-  });
-
+    if (!evs.length) { body.innerHTML = `<div class="cal-empty">No events today</div>`; return; }
+    body.innerHTML = evs.map(ev => `<a class="cal-event" href="${ev.htmlLink||'#'}" target="_blank"><div class="cal-time">${ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day'}</div><div><div class="cal-event-text">${ev.summary||'Untitled'}</div>${ev.location?`<div class="cal-event-loc">📍 ${ev.location}</div>`:''}</div></a>`).join('');
+  }).catch(() => { card.querySelector('#cal-body').innerHTML = `<div class="cal-no-token"><span>Could not load</span><button class="reauth-btn" onclick="signIn()">Re-sign in</button></div>`; });
   return card;
 }
 
-// ── ADD EVENT MODAL ───────────────────────────────────────────────────────────
-function openModal() {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('ev-title').value    = '';
-  document.getElementById('ev-date').value     = today;
-  document.getElementById('ev-start').value    = '09:00';
-  document.getElementById('ev-end').value      = '10:00';
-  document.getElementById('ev-location').value = '';
-  document.getElementById('modal-status').textContent = '';
-  document.getElementById('submit-btn').disabled = false;
-  allDayMode = false;
-  document.getElementById('allday-toggle').classList.remove('on');
+// ── WEEKLY VIEW ───────────────────────────────────────────────────────────────
+async function renderWeeklyView(briefing) {
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="loading"><div class="spinner"></div><div>Loading week…</div></div>`;
+
+  const days = getWeekDays();
+  weekState.days = days; weekState.briefing = briefing;
+  weekState.selectedIdx = days.findIndex(d => isToday(d));
+  if (weekState.selectedIdx < 0) weekState.selectedIdx = 0;
+
+  // Fetch weather + calendar in parallel
+  const [wRes, evRes] = await Promise.allSettled([
+    fetchWeekWeather(days),
+    gcalToken ? fetchCalEvents(days[0].toISOString(), new Date(days[6].getTime()+86399999).toISOString(), gcalToken) : Promise.resolve([])
+  ]);
+
+  const wd = wRes.status === 'fulfilled' ? wRes.value.daily : null;
+  weekState.weatherDays = wd ? days.map((_,i) => ({
+    code: wd.weather_code[i], high: Math.round(wd.temperature_2m_max[i]),
+    low: Math.round(wd.temperature_2m_min[i]), rain: wd.precipitation_probability_max[i]
+  })) : days.map(() => null);
+
+  const allEvents = evRes.status === 'fulfilled' ? evRes.value : [];
+  weekState.eventsByDay = days.map(d => {
+    const ds = isoDate(d);
+    return allEvents.filter(ev => {
+      const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0,10);
+      return evDate === ds;
+    });
+  });
+
+  content.innerHTML = '';
+  if (briefing) content.innerHTML = `<div class="last-updated">Briefing updated ${new Date(briefing.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
+  content.appendChild(buildWeekView());
+
+  // Briefing recap sections below
+  if (briefing?.content?.sections?.length) {
+    const recapDiv = document.createElement('div');
+    recapDiv.innerHTML = `<div class="week-recap-title">Weekly Recap</div>` +
+      briefing.content.sections.filter(s => s.id !== 'weather').map((s,i) => renderSection(s, i+200)).join('');
+    content.appendChild(recapDiv);
+  }
+}
+
+function buildWeekView() {
+  const wrap = document.createElement('div');
+  wrap.className = 'week-view';
+
+  // ── PORTRAIT: day strip + selected day events ──
+  const strip = document.createElement('div'); strip.className = 'day-strip';
+  weekState.days.forEach((d, i) => {
+    const w = weekState.weatherDays[i];
+    const evCount = weekState.eventsByDay[i].length;
+    const pill = document.createElement('div');
+    pill.className = `day-pill${isToday(d)?' today':''}${i===weekState.selectedIdx?' selected':''}`;
+    pill.id = `pill-${i}`;
+    pill.innerHTML = `<div class="day-pill-name">${DAY_NAMES[d.getDay()]}</div><div class="day-pill-date">${d.getDate()}</div><div class="day-pill-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</div><div class="day-pill-temp">${w ? `${w.high}°/${w.low}°` : ''}</div><div class="day-pill-dot-row">${Array.from({length:Math.min(evCount,3)},()=>`<div class="day-pill-dot"></div>`).join('')}</div>`;
+    pill.onclick = () => selectDay(i);
+    strip.appendChild(pill);
+  });
+  wrap.appendChild(strip);
+
+  const selHeader = document.createElement('div'); selHeader.className = 'sel-day-header'; selHeader.id = 'sel-day-header';
+  wrap.appendChild(selHeader);
+  const selEvents = document.createElement('div'); selEvents.className = 'sel-day-events'; selEvents.id = 'sel-day-events';
+  wrap.appendChild(selEvents);
+
+  // ── LANDSCAPE: 7-column grid ──
+  const gridWrap = document.createElement('div'); gridWrap.className = 'week-grid-wrap';
+  const grid = document.createElement('div'); grid.className = 'week-grid';
+  weekState.days.forEach((d, i) => {
+    const w = weekState.weatherDays[i], evs = weekState.eventsByDay[i];
+    const col = document.createElement('div');
+    col.className = `wg-col${isToday(d)?' today':''}`;
+    const evHtml = evs.map(ev => `<a class="wg-event" href="${ev.htmlLink||'#'}" target="_blank"><div class="wg-event-time">${ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day'}</div><div class="wg-event-name">${ev.summary||'Untitled'}</div></a>`).join('');
+    col.innerHTML = `<div class="wg-head"><div class="wg-day-name">${DAY_NAMES[d.getDay()]}</div><div class="wg-day-num">${d.getDate()}</div><div class="wg-weather"><span class="wg-weather-icon">${w?WMO_EMOJI[w.code]||'🌡️':'–'}</span><span>${w?`${w.high}°`:''}</span></div></div><div class="wg-events">${evHtml}</div><div class="wg-add"><button class="wg-add-btn" onclick="openModalForDate('${isoDate(d)}')">+ Add</button></div>`;
+    grid.appendChild(col);
+  });
+  gridWrap.appendChild(grid);
+  wrap.appendChild(gridWrap);
+
+  renderSelectedDay(wrap);
+  return wrap;
+}
+
+function selectDay(idx) {
+  weekState.selectedIdx = idx;
+  document.querySelectorAll('.day-pill').forEach((p,i) => p.classList.toggle('selected', i===idx));
+  renderSelectedDay(null);
+}
+
+function renderSelectedDay(wrap) {
+  const header = document.getElementById('sel-day-header');
+  const evBox  = document.getElementById('sel-day-events');
+  if (!header || !evBox) return;
+
+  const d   = weekState.days[weekState.selectedIdx];
+  const evs = weekState.eventsByDay[weekState.selectedIdx];
+  const label = `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+
+  header.innerHTML = `<div class="sel-day-title">${label}</div><button class="add-event-btn" style="width:32px;height:32px;font-size:20px" onclick="openModalForDate('${isoDate(d)}')">+</button>`;
+
+  if (!evs.length) {
+    evBox.innerHTML = `<div class="cal-empty" style="padding:14px 16px;font-size:13px;color:var(--text-muted)">No events${gcalToken ? '' : ' — sign in for calendar access'}</div>`;
+    return;
+  }
+  evBox.innerHTML = evs.map(ev => `<a class="cal-event" href="${ev.htmlLink||'#'}" target="_blank"><div class="cal-time">${ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day'}</div><div><div class="cal-event-text">${ev.summary||'Untitled'}</div>${ev.location?`<div class="cal-event-loc">📍 ${ev.location}</div>`:''}</div></a>`).join('');
+}
+
+// ── ADD EVENT ─────────────────────────────────────────────────────────────────
+function openModal() { openModalForDate(isoDate(new Date())); }
+function openModalForDate(dateStr) {
+  document.getElementById('ev-title').value=''; document.getElementById('ev-date').value=dateStr;
+  document.getElementById('ev-start').value='09:00'; document.getElementById('ev-end').value='10:00';
+  document.getElementById('ev-location').value=''; document.getElementById('modal-status').textContent='';
+  document.getElementById('submit-btn').disabled=false;
+  allDayMode=false; document.getElementById('allday-toggle').classList.remove('on');
   document.getElementById('time-fields').classList.remove('hidden');
   document.getElementById('modal-overlay').classList.add('open');
   setTimeout(() => document.getElementById('ev-title').focus(), 300);
 }
-
-function closeModal(e) {
-  if (e.target === document.getElementById('modal-overlay')) closeModalDirect();
-}
-function closeModalDirect() {
-  document.getElementById('modal-overlay').classList.remove('open');
-}
-
-function toggleAllDay() {
-  allDayMode = !allDayMode;
-  document.getElementById('allday-toggle').classList.toggle('on', allDayMode);
-  document.getElementById('time-fields').classList.toggle('hidden', allDayMode);
-}
+function closeModal(e) { if (e.target===document.getElementById('modal-overlay')) closeModalDirect(); }
+function closeModalDirect() { document.getElementById('modal-overlay').classList.remove('open'); }
+function toggleAllDay() { allDayMode=!allDayMode; document.getElementById('allday-toggle').classList.toggle('on',allDayMode); document.getElementById('time-fields').classList.toggle('hidden',allDayMode); }
 
 async function submitEvent() {
-  const title    = document.getElementById('ev-title').value.trim();
-  const date     = document.getElementById('ev-date').value;
-  const startT   = document.getElementById('ev-start').value;
-  const endT     = document.getElementById('ev-end').value;
-  const location = document.getElementById('ev-location').value.trim();
-  const statusEl = document.getElementById('modal-status');
-  const btn      = document.getElementById('submit-btn');
-
-  if (!title) { statusEl.textContent = 'Please enter a title'; statusEl.className = 'modal-status error'; return; }
-  if (!date)  { statusEl.textContent = 'Please pick a date';   statusEl.className = 'modal-status error'; return; }
-  if (!gcalToken) { statusEl.textContent = 'No calendar access — please re-sign in'; statusEl.className = 'modal-status error'; return; }
-
-  btn.disabled = true;
-  btn.textContent = 'Adding…';
-  statusEl.textContent = '';
-
-  const event = { summary: title };
-  if (location) event.location = location;
-
-  if (allDayMode) {
-    event.start = { date };
-    const next = new Date(date); next.setDate(next.getDate() + 1);
-    event.end   = { date: next.toISOString().split('T')[0] };
-  } else {
-    event.start = { dateTime: `${date}T${startT}:00`, timeZone: TZ };
-    event.end   = { dateTime: `${date}T${endT}:00`,   timeZone: TZ };
-  }
-
+  const title=document.getElementById('ev-title').value.trim(), date=document.getElementById('ev-date').value;
+  const startT=document.getElementById('ev-start').value, endT=document.getElementById('ev-end').value;
+  const location=document.getElementById('ev-location').value.trim();
+  const statusEl=document.getElementById('modal-status'), btn=document.getElementById('submit-btn');
+  if (!title) { statusEl.textContent='Please enter a title'; statusEl.className='modal-status error'; return; }
+  if (!date)  { statusEl.textContent='Please pick a date';   statusEl.className='modal-status error'; return; }
+  if (!gcalToken) { statusEl.textContent='No calendar access — please re-sign in'; statusEl.className='modal-status error'; return; }
+  btn.disabled=true; btn.textContent='Adding…'; statusEl.textContent='';
+  const ev={summary:title}; if (location) ev.location=location;
+  if (allDayMode) { const next=new Date(date); next.setDate(next.getDate()+1); ev.start={date}; ev.end={date:isoDate(next)}; }
+  else { ev.start={dateTime:`${date}T${startT}:00`,timeZone:TZ}; ev.end={dateTime:`${date}T${endT}:00`,timeZone:TZ}; }
   try {
-    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${gcalToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(event)
-    });
-    if (!res.ok) throw new Error();
-    statusEl.textContent = '✓ Event added!';
-    statusEl.className = 'modal-status';
-    btn.textContent = 'Add to Google Calendar';
-    btn.disabled = false;
-    // Refresh calendar card after short delay
-    setTimeout(() => {
-      closeModalDirect();
-      const card = document.getElementById('cal-card');
-      if (card) { card.remove(); }
-      const content = document.getElementById('content');
-      const newCard = renderCalendarSection(gcalToken);
-      content.insertBefore(newCard, content.firstChild.nextSibling); // after last-updated
-    }, 800);
+    const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method:'POST', headers:{Authorization:`Bearer ${gcalToken}`,'Content-Type':'application/json'}, body:JSON.stringify(ev) });
+    if (!r.ok) throw new Error();
+    statusEl.textContent='✓ Event added!'; statusEl.className='modal-status';
+    btn.textContent='Add to Google Calendar'; btn.disabled=false;
+    setTimeout(() => { closeModalDirect(); loadDashboard(); }, 800);
   } catch {
-    statusEl.textContent = 'Failed to add event — try again';
-    statusEl.className = 'modal-status error';
-    btn.textContent = 'Add to Google Calendar';
-    btn.disabled = false;
+    statusEl.textContent='Failed — try again'; statusEl.className='modal-status error';
+    btn.textContent='Add to Google Calendar'; btn.disabled=false;
   }
 }
+
+// ── STANDARD SECTIONS ────────────────────────────────────────────────────────
+function dotClass(t) { return ({urgent:'urgent',action:'warning',success:'success',info:'info'})[t]||''; }
+function renderItem(item) {
+  return `<div class="item"><div class="item-dot ${dotClass(item.type)}"></div><div class="item-content">${item.time?`<div class="item-time">${item.time}</div>`:''}<div class="item-text">${item.text}</div>${item.detail?`<div class="item-detail">${item.detail}</div>`:''} ${item.link?`<a class="item-link" href="${item.link}" target="_blank">↗ ${item.link_label||'Open'}</a>`:''}</div></div>`;
+}
+function renderSection(s, i) {
+  if (s.id==='weather') return '';
+  const open = s.collapsed?'':'open';
+  return `<div class="section-card ${open}" id="sec-${i}"><div class="section-header" onclick="toggle(${i})"><div class="section-title"><span>${s.emoji||'•'}</span><span>${s.title}</span></div><span class="chevron">▼</span></div><div class="section-body">${(s.items||[]).map(renderItem).join('')}</div></div>`;
+}
+function toggle(i) { document.getElementById(`sec-${i}`)?.classList.toggle('open'); }
 
 // ── BRIEFINGS ────────────────────────────────────────────────────────────────
 async function fetchBriefings() {
-  const { data, error } = await sb.from('briefings').select('*')
-    .order('date', { ascending: false }).order('created_at', { ascending: false }).limit(20);
-  if (error) throw error;
-  return data;
+  const {data,error} = await sb.from('briefings').select('*').order('date',{ascending:false}).order('created_at',{ascending:false}).limit(20);
+  if (error) throw error; return data;
 }
 
 function renderTabs(briefings) {
-  const seen = new Set();
-  const types = briefings.map(b => b.type).filter(t => !seen.has(t) && seen.add(t));
-  document.getElementById('tabs').innerHTML = types.map(t =>
-    `<button class="tab ${t === currentType ? 'active' : ''}" onclick="switchType('${t}')">${TYPE_LABELS[t] || t}</button>`
-  ).join('');
+  const seen=new Set(), types=briefings.map(b=>b.type).filter(t=>!seen.has(t)&&seen.add(t));
+  document.getElementById('tabs').innerHTML=types.map(t=>`<button class="tab ${t===currentType?'active':''}" onclick="switchType('${t}')">${TYPE_LABELS[t]||t}</button>`).join('');
 }
 
-function switchType(type) {
-  currentType = type;
-  renderTabs(allBriefings);
-  const b = allBriefings.find(b => b.type === type);
-  if (b) renderBriefing(b);
-}
-
-function dotClass(t) { return ({urgent:'urgent',action:'warning',success:'success',info:'info'})[t]||''; }
-
-function renderItem(item) {
-  return `
-    <div class="item">
-      <div class="item-dot ${dotClass(item.type)}"></div>
-      <div class="item-content">
-        ${item.time   ? `<div class="item-time">${item.time}</div>` : ''}
-        <div class="item-text">${item.text}</div>
-        ${item.detail ? `<div class="item-detail">${item.detail}</div>` : ''}
-        ${item.link   ? `<a class="item-link" href="${item.link}" target="_blank">↗ ${item.link_label||'Open'}</a>` : ''}
-      </div>
-    </div>`;
-}
-
-function renderSection(s, i) {
-  if (s.id === 'weather') return '';
-  const open = s.collapsed ? '' : 'open';
-  return `
-    <div class="section-card ${open}" id="sec-${i}">
-      <div class="section-header" onclick="toggle(${i})">
-        <div class="section-title"><span>${s.emoji||'•'}</span><span>${s.title}</span></div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="section-body">${(s.items||[]).map(renderItem).join('')}</div>
-    </div>`;
-}
-
-function toggle(i) { document.getElementById(`sec-${i}`)?.classList.toggle('open'); }
+function switchType(type) { currentType=type; renderTabs(allBriefings); const b=allBriefings.find(b=>b.type===type); if (b) renderBriefing(b); else if (type==='weekly') renderWeeklyView(null); }
 
 async function renderBriefing(b) {
-  const c = b.content;
-  document.getElementById('header-subtitle').textContent = c.subtitle || b.date;
-  const content = document.getElementById('content');
-  content.innerHTML = `<div class="last-updated">Updated ${new Date(b.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
-
-  if (currentType === 'daily') {
-    // Weather
-    const wDiv = document.createElement('div');
-    wDiv.innerHTML = `<div class="weather-hero" style="opacity:.4;padding:18px 16px"><div style="font-size:13px;color:var(--text-muted)">Loading weather…</div></div>`;
+  if (currentType==='weekly') { renderWeeklyView(b); return; }
+  const c=b.content;
+  document.getElementById('header-subtitle').textContent=c.subtitle||b.date;
+  const content=document.getElementById('content');
+  content.innerHTML=`<div class="last-updated">Updated ${new Date(b.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
+  if (currentType==='daily') {
+    const wDiv=document.createElement('div');
+    wDiv.innerHTML=`<div class="weather-hero" style="opacity:.4;padding:16px"><div style="font-size:13px;color:var(--text-muted)">Loading weather…</div></div>`;
     content.appendChild(wDiv);
-    fetchWeather().then(w => { wDiv.innerHTML = renderWeather(w); }).catch(() => wDiv.remove());
-
-    // Live calendar
-    content.appendChild(renderCalendarSection(gcalToken));
+    fetchDailyWeather().then(w=>{wDiv.innerHTML=renderWeatherHero(w);}).catch(()=>wDiv.remove());
+    content.appendChild(renderDailyCalCard(gcalToken));
   }
-
-  const sections = document.createElement('div');
-  sections.innerHTML = (c.sections||[]).map((s,i) => renderSection(s,i)).join('');
+  const sections=document.createElement('div');
+  sections.innerHTML=(c.sections||[]).map((s,i)=>renderSection(s,i)).join('');
   content.appendChild(sections);
 }
 
 async function loadDashboard() {
-  document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div><div>Loading…</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="loading"><div class="spinner"></div><div>Loading…</div></div>`;
   try {
-    allBriefings = await fetchBriefings();
+    allBriefings=await fetchBriefings();
     if (!allBriefings.length) {
-      document.getElementById('header-subtitle').textContent = 'No briefings yet';
-      document.getElementById('content').innerHTML = `<div class="empty-state"><div class="icon">📭</div><div>No briefings yet.</div></div>`;
-      document.getElementById('tabs').innerHTML = '';
-      return;
+      // No briefings but still show weekly view
+      if (currentType==='weekly') { renderWeeklyView(null); return; }
+      document.getElementById('header-subtitle').textContent='No briefings yet';
+      document.getElementById('content').innerHTML=`<div class="empty-state"><div class="icon">📭</div><div>No briefings yet.</div></div>`;
+      document.getElementById('tabs').innerHTML=''; return;
     }
-    const daily = allBriefings.find(b => b.type === 'daily');
-    currentType = daily ? 'daily' : allBriefings[0].type;
+    const daily=allBriefings.find(b=>b.type==='daily');
+    currentType=daily?'daily':allBriefings[0].type;
     renderTabs(allBriefings);
-    renderBriefing(allBriefings.find(b => b.type === currentType));
+    const current=allBriefings.find(b=>b.type===currentType);
+    if (current) renderBriefing(current); else renderWeeklyView(null);
   } catch {
-    document.getElementById('header-subtitle').textContent = 'Error';
-    document.getElementById('content').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><div>Could not load.<br>Tap ↻ to retry.</div></div>`;
+    document.getElementById('header-subtitle').textContent='Error';
+    document.getElementById('content').innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><div>Could not load.<br>Tap ↻ to retry.</div></div>`;
   }
 }
+
+// ── ORIENTATION CHANGE ────────────────────────────────────────────────────────
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (currentType==='weekly') { const b=allBriefings.find(b=>b.type==='weekly'); if (b) renderWeeklyView(b); else renderWeeklyView(null); } }, 300);
+});
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {
-    // Store Google token when fresh (available right after redirect)
     if (session.provider_token) sessionStorage.setItem('gcal_token', session.provider_token);
-    gcalToken = sessionStorage.getItem('gcal_token');
-
-    // Show user email in header
-    const email = session.user?.email || '';
-    document.getElementById('header-user').textContent = email;
-
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') loadDashboard();
+    gcalToken=sessionStorage.getItem('gcal_token');
+    document.getElementById('header-user').textContent=session.user?.email||'';
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    if (event==='SIGNED_IN'||event==='INITIAL_SESSION') loadDashboard();
   } else {
-    gcalToken = null;
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
+    gcalToken=null;
+    document.getElementById('dashboard').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
   }
 });
 </script>
