@@ -206,6 +206,11 @@
     .voice-confirm-btn { flex: 1; background: var(--accent); border: none; color: white; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
     .voice-cancel-btn  { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
 
+    .kroger-cart-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--surface2); font-size:13px; }
+    .kroger-cart-item-name { flex:1; color:var(--text); font-weight:500; }
+    .kroger-cart-item-qty { color:var(--text2); font-size:12px; min-width:40px; text-align:right; }
+    .kroger-cart-item-price { color:var(--success); font-size:12px; min-width:48px; text-align:right; font-weight:600; }
+    .kroger-cart-total { display:flex; justify-content:space-between; padding:10px 0 0; font-weight:700; color:var(--text); font-size:14px; border-top:2px solid var(--surface2); margin-top:4px; }
     /* ── KROGER OVERLAY ── */
     #kroger-overlay { position: fixed; inset: 0; z-index: 950; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
     #kroger-overlay.open { display: flex; }
@@ -390,6 +395,7 @@
   <div style="display:flex;flex-wrap:wrap;justify-content:center">
     <button class="kroger-btn kroger-btn-primary" id="kroger-action-btn" onclick="krogerConnect()">Sign in to Kroger</button>
     <button class="kroger-btn kroger-btn-close" onclick="closeKrogerOverlay()">Cancel</button>
+    <button class="kroger-btn kroger-btn-close" id="kroger-viewcart-btn" onclick="krogerViewCart()" style="display:none">🛒 View Cart</button>
     <button class="kroger-btn kroger-btn-close" id="kroger-whoami-btn" onclick="krogerWhoAmI()" style="display:none;font-size:12px">🔍 Debug: Who am I?</button>
   </div>
   <div id="kroger-debug-out" style="width:100%;max-width:340px;margin-top:10px;font-size:11px;color:var(--text2);word-break:break-all;text-align:left;display:none"></div>
@@ -1150,11 +1156,69 @@ function openKrogerOverlay() {
     document.getElementById('kroger-action-btn').textContent = 'Sign in to Kroger';
     document.getElementById('kroger-action-btn').onclick = krogerConnect;
     document.getElementById('kroger-action-btn').style.display = '';
+    document.getElementById('kroger-viewcart-btn').style.display = 'none';
     document.getElementById('kroger-whoami-btn').style.display = 'none';
     document.getElementById('kroger-progress-wrap').style.display = 'none';
     document.getElementById('kroger-item-list').innerHTML = '';
     document.getElementById('kroger-debug-out').style.display = 'none';
   }
+}
+
+async function krogerViewCart() {
+  document.getElementById('kroger-title').textContent = '🛒 Your Kroger Cart';
+  document.getElementById('kroger-sub').textContent = 'Loading cart…';
+  document.getElementById('kroger-item-list').innerHTML = '';
+  document.getElementById('kroger-progress-wrap').style.display = 'none';
+  document.getElementById('kroger-action-btn').style.display = 'none';
+  document.getElementById('kroger-viewcart-btn').style.display = 'none';
+  document.getElementById('kroger-debug-out').style.display = 'none';
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=cart-view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: krogerToken })
+    });
+    const res = await r.json();
+    const items = res.data?.data?.items || res.data?.items || [];
+
+    if (!items.length) {
+      document.getElementById('kroger-sub').textContent = 'Your cart is empty.';
+      document.getElementById('kroger-item-list').innerHTML =
+        `<div style="text-align:center;padding:16px;color:var(--text2)">No items found.<br><small>Status: ${res.status}</small></div>`;
+    } else {
+      let total = 0;
+      document.getElementById('kroger-sub').textContent = `${items.length} item${items.length !== 1 ? 's' : ''} in your cart`;
+      document.getElementById('kroger-item-list').innerHTML = items.map(item => {
+        const name = item.description || item.name || item.upc || 'Unknown item';
+        const qty = item.quantity ?? 1;
+        const price = item.price?.total ?? item.itemTotal ?? null;
+        if (price) total += price;
+        return `<div class="kroger-cart-item">
+          <span style="font-size:18px">🛒</span>
+          <span class="kroger-cart-item-name">${name}</span>
+          <span class="kroger-cart-item-qty">×${qty}</span>
+          ${price ? `<span class="kroger-cart-item-price">$${price.toFixed(2)}</span>` : ''}
+        </div>`;
+      }).join('') + (total > 0 ? `<div class="kroger-cart-total"><span>Estimated Total</span><span>$${total.toFixed(2)}</span></div>` : '');
+    }
+  } catch(e) {
+    document.getElementById('kroger-sub').textContent = 'Failed to load cart.';
+    document.getElementById('kroger-item-list').innerHTML = `<div style="color:var(--urgent);padding:8px">${e.message}</div>`;
+  }
+
+  const btn = document.getElementById('kroger-action-btn');
+  btn.textContent = '← Back';
+  btn.onclick = showKrogerSendUI;
+  btn.style.display = '';
+  document.getElementById('kroger-viewcart-btn').style.display = '';
+
+  const checkoutBtn = document.createElement('button');
+  checkoutBtn.className = 'kroger-btn kroger-btn-primary';
+  checkoutBtn.textContent = 'Checkout on Kroger →';
+  checkoutBtn.style.cssText = 'margin-top:6px';
+  checkoutBtn.onclick = () => window.open('https://www.kroger.com/cart', '_blank');
+  document.getElementById('kroger-action-btn').parentNode.insertBefore(checkoutBtn, document.getElementById('kroger-action-btn').nextSibling);
 }
 
 async function krogerWhoAmI() {
@@ -1206,6 +1270,7 @@ function showKrogerSendUI() {
   } else {
     btn.style.display = 'none';
   }
+  document.getElementById('kroger-viewcart-btn').style.display = '';
   document.getElementById('kroger-whoami-btn').style.display = '';
   document.getElementById('kroger-debug-out').style.display = 'none';
   document.getElementById('kroger-debug-out').textContent = '';
