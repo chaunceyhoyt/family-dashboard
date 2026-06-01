@@ -1147,15 +1147,30 @@ function closeKrogerOverlay() {
   document.getElementById('kroger-overlay').classList.remove('open');
 }
 
+async function loadKrogerHistory() {
+  const { data } = await sb.from('family_data').select('value').eq('key', 'kroger_history').maybeSingle();
+  return data?.value || [];
+}
+
+async function saveKrogerHistory(term, upc, name) {
+  const history = await loadKrogerHistory();
+  const filtered = history.filter(h => h.term.toLowerCase() !== term.toLowerCase());
+  filtered.unshift({ term, upc, name, addedAt: new Date().toISOString() });
+  await sb.from('family_data').upsert({ key: 'kroger_history', value: filtered.slice(0, 100) });
+}
+
 async function krogerSearchProduct(token, term) {
+  const history = await loadKrogerHistory();
   const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, term })
+    body: JSON.stringify({ token, term, history })
   });
   if (!r.ok) return null;
   const data = await r.json();
-  return data.data?.[0] || null;
+  const product = data.data?.[0] || null;
+  if (product) product._source = data.source;
+  return product;
 }
 
 async function krogerAddToCart(token, upc, qty = 1) {
@@ -1187,10 +1202,14 @@ async function sendAllToKroger(items) {
       const product = await krogerSearchProduct(krogerToken, item.text);
       if (product) {
         const upc = product.upc;
+        const productName = product.description || item.text;
         const ok = await krogerAddToCart(krogerToken, upc);
         if (ok) {
-          if (statEl) statEl.textContent = '✓ Added';
+          const src = product._source;
+          const badge = src === 'history' ? '🕐 prev' : src === 'organic' ? '🌿 organic' : '';
+          if (statEl) statEl.textContent = '✓ Added' + (badge ? ` · ${badge}` : '');
           if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '✅';
+          await saveKrogerHistory(item.text, upc, productName);
           succeeded++;
         } else {
           if (statEl) statEl.textContent = 'Failed';
