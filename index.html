@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#0f172a">
   <title>Browning Family Dashboard</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -31,51 +32,34 @@
       padding-bottom: calc(24px + env(safe-area-inset-bottom));
     }
 
-    /* ── PIN SCREEN ── */
-    #pin-screen {
+    /* ── LOGIN SCREEN ── */
+    #login-screen {
       position: fixed; inset: 0;
-      background: var(--bg);
+      background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      z-index: 999;
-      padding: 32px;
+      z-index: 999; padding: 32px; text-align: center;
     }
-    #pin-screen h2 { font-size: 22px; margin-bottom: 6px; }
-    #pin-screen p  { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
 
-    .pin-dots {
-      display: flex; gap: 16px; margin-bottom: 32px;
-    }
-    .pin-dot {
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 2px solid var(--text-muted);
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+    .login-icon { font-size: 56px; margin-bottom: 20px; }
+    .login-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .login-sub   { font-size: 14px; color: var(--text-muted); margin-bottom: 48px; }
 
-    .pin-grid {
-      display: grid; grid-template-columns: repeat(3, 72px);
-      gap: 12px;
-    }
-    .pin-key {
-      height: 72px; border-radius: 50%;
-      background: var(--surface);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text);
-      font-size: 22px; font-weight: 500;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+    .google-btn {
+      display: flex; align-items: center; gap: 12px;
+      background: white; color: #1f2937;
+      border: none; border-radius: 12px;
+      padding: 14px 28px; font-size: 16px; font-weight: 600;
+      cursor: pointer; width: 100%; max-width: 300px;
+      justify-content: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      transition: transform 0.1s, box-shadow 0.1s;
       -webkit-tap-highlight-color: transparent;
-      transition: background 0.1s;
     }
-    .pin-key:active { background: #334155; }
-    .pin-key.del { font-size: 18px; color: var(--text-muted); }
-    .pin-key.empty { background: transparent; border-color: transparent; pointer-events: none; }
+    .google-btn:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    .google-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
 
-    .pin-error {
-      margin-top: 20px; font-size: 13px;
-      color: var(--urgent); min-height: 20px;
-    }
+    .login-note { margin-top: 20px; font-size: 12px; color: #475569; }
 
     /* ── MAIN DASHBOARD ── */
     #dashboard { display: none; }
@@ -117,25 +101,23 @@
 
     .content { padding: 14px 16px 24px; max-width: 600px; margin: 0 auto; }
 
-    /* ── WEATHER CARD ── */
+    /* ── WEATHER ── */
     .weather-hero {
       background: linear-gradient(135deg, #1a3a5c 0%, #1e293b 100%);
-      border-radius: var(--radius);
-      padding: 18px 16px 14px;
-      margin-bottom: 10px;
+      border-radius: var(--radius); padding: 18px 16px 14px; margin-bottom: 10px;
       border: 1px solid rgba(255,255,255,0.08);
     }
     .weather-main { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
     .weather-temp { font-size: 48px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
     .weather-temp sup { font-size: 22px; font-weight: 400; vertical-align: super; }
     .weather-right { text-align: right; }
-    .weather-desc { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .weather-desc  { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
     .weather-feels { font-size: 12px; color: var(--text-muted); }
     .weather-row {
-      display: flex; gap: 16px;
+      display: flex; gap: 16px; flex-wrap: wrap;
       font-size: 12px; color: var(--text-muted);
       border-top: 1px solid rgba(255,255,255,0.08);
-      padding-top: 10px; margin-top: 2px;
+      padding-top: 10px;
     }
     .weather-stat strong { color: var(--text); }
     .weather-alert {
@@ -176,10 +158,10 @@
     .item-dot.success { background: var(--success); }
     .item-dot.info    { background: var(--text-muted); }
     .item-content { flex: 1; min-width: 0; }
-    .item-time { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-    .item-text { font-size: 14px; line-height: 1.45; }
+    .item-time   { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .item-text   { font-size: 14px; line-height: 1.45; }
     .item-detail { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
-    .item-link { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .item-link   { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
 
     .last-updated { text-align: center; font-size: 12px; color: var(--text-muted); padding: 4px 0 12px; }
 
@@ -196,41 +178,31 @@
 </head>
 <body>
 
-<!-- PIN SCREEN -->
-<div id="pin-screen">
-  <h2>🏠 Browning Family</h2>
-  <p>Enter your PIN to continue</p>
-  <div class="pin-dots" id="pin-dots">
-    <div class="pin-dot" id="d0"></div>
-    <div class="pin-dot" id="d1"></div>
-    <div class="pin-dot" id="d2"></div>
-    <div class="pin-dot" id="d3"></div>
-  </div>
-  <div class="pin-grid">
-    <button class="pin-key" onclick="pinKey('1')">1</button>
-    <button class="pin-key" onclick="pinKey('2')">2</button>
-    <button class="pin-key" onclick="pinKey('3')">3</button>
-    <button class="pin-key" onclick="pinKey('4')">4</button>
-    <button class="pin-key" onclick="pinKey('5')">5</button>
-    <button class="pin-key" onclick="pinKey('6')">6</button>
-    <button class="pin-key" onclick="pinKey('7')">7</button>
-    <button class="pin-key" onclick="pinKey('8')">8</button>
-    <button class="pin-key" onclick="pinKey('9')">9</button>
-    <button class="pin-key empty"></button>
-    <button class="pin-key" onclick="pinKey('0')">0</button>
-    <button class="pin-key del" onclick="pinDel()">⌫</button>
-  </div>
-  <div class="pin-error" id="pin-error"></div>
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-icon">🏠</div>
+  <div class="login-title">Browning Family</div>
+  <div class="login-sub">Sign in to view your dashboard</div>
+  <button class="google-btn" onclick="signIn()">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Sign in with Google
+  </button>
+  <div class="login-note">Only approved family members can access this dashboard</div>
 </div>
 
-<!-- MAIN DASHBOARD -->
+<!-- DASHBOARD -->
 <div id="dashboard">
   <div class="header">
     <div class="header-top">
       <h1>🏠 Browning Family</h1>
       <div class="header-actions">
         <button class="icon-btn" onclick="loadDashboard()" title="Refresh">↻</button>
-        <button class="icon-btn" onclick="lockApp()" title="Lock">🔒</button>
+        <button class="icon-btn" onclick="signOut()" title="Sign out">⎋</button>
       </div>
     </div>
     <div class="header-subtitle" id="header-subtitle">Loading…</div>
@@ -242,74 +214,36 @@
 </div>
 
 <script>
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-const APP_PIN        = '1234';           // ← CHANGE THIS to your PIN
-const SESSION_MINS   = 480;             // auto-lock after 8 hours
-const SUPABASE_URL   = 'https://qhvzfgsfkqrnykgryvej.supabase.co';
-const SUPABASE_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodnpmZ3Nma3FybnlrZ3J5dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzk1NjIsImV4cCI6MjA5NTgxNTU2Mn0.WbXMQaEfaewGarq7W4-hgp74OQuQtwpDNpxSzc-jNA4';
-const APP_TOKEN      = 'fdb_browning_2026';
-const LAT            = 36.7682;         // Chesapeake, VA
-const LON            = -76.2875;
-const TYPE_LABELS    = { daily:'☀️ Daily', weekly:'📅 Weekly', weekend:'🎉 Weekend', monthly:'📆 Monthly' };
-// ─────────────────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://qhvzfgsfkqrnykgryvej.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodnpmZ3Nma3FybnlrZ3J5dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzk1NjIsImV4cCI6MjA5NTgxNTU2Mn0.WbXMQaEfaewGarq7W4-hgp74OQuQtwpDNpxSzc-jNA4';
+const TYPE_LABELS  = { daily:'☀️ Daily', weekly:'📅 Weekly', weekend:'🎉 Weekend', monthly:'📆 Monthly' };
+const LAT = 36.7682, LON = -76.2875;
 
-// ── PIN ──────────────────────────────────────────────────────────────────────
-let pinBuffer = '';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function pinKey(d) {
-  if (pinBuffer.length >= 4) return;
-  pinBuffer += d;
-  updateDots();
-  if (pinBuffer.length === 4) setTimeout(checkPin, 120);
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+async function signIn() {
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href.split('?')[0].split('#')[0] }
+  });
 }
 
-function pinDel() {
-  pinBuffer = pinBuffer.slice(0, -1);
-  updateDots();
-  document.getElementById('pin-error').textContent = '';
-}
-
-function updateDots() {
-  for (let i = 0; i < 4; i++)
-    document.getElementById(`d${i}`).classList.toggle('filled', i < pinBuffer.length);
-}
-
-function checkPin() {
-  if (pinBuffer === APP_PIN) {
-    localStorage.setItem('fdb_unlocked', Date.now().toString());
-    document.getElementById('pin-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    loadDashboard();
-  } else {
-    document.getElementById('pin-error').textContent = 'Incorrect PIN';
-    pinBuffer = '';
-    updateDots();
-  }
-}
-
-function lockApp() {
-  localStorage.removeItem('fdb_unlocked');
-  pinBuffer = '';
-  updateDots();
-  document.getElementById('pin-error').textContent = '';
+async function signOut() {
+  await sb.auth.signOut();
   document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('pin-screen').style.display = 'flex';
+  document.getElementById('login-screen').style.display = 'flex';
 }
 
-function isUnlocked() {
-  const t = parseInt(localStorage.getItem('fdb_unlocked') || '0');
-  return t && (Date.now() - t) < SESSION_MINS * 60 * 1000;
-}
-
-// ── WEATHER (Open-Meteo, no API key) ─────────────────────────────────────────
+// ── WEATHER ──────────────────────────────────────────────────────────────────
 const WMO = {
-  0:'Clear sky', 1:'Mainly clear', 2:'Partly cloudy', 3:'Overcast',
-  45:'Fog', 48:'Icy fog', 51:'Light drizzle', 53:'Drizzle', 55:'Heavy drizzle',
-  61:'Light rain', 63:'Rain', 65:'Heavy rain', 71:'Light snow', 73:'Snow', 75:'Heavy snow',
-  80:'Rain showers', 81:'Rain showers', 82:'Heavy showers',
-  95:'Thunderstorm', 96:'Thunderstorm & hail', 99:'Heavy thunderstorm & hail'
+  0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+  45:'Fog',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
+  61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
+  80:'Rain showers',81:'Rain showers',82:'Heavy showers',
+  95:'Thunderstorm',96:'Thunderstorm & hail',99:'Heavy thunderstorm & hail'
 };
-const STORM_CODES = new Set([80,81,82,95,96,99,61,63,65,51,53,55]);
+const STORM_CODES = new Set([51,53,55,61,63,65,80,81,82,95,96,99]);
 
 async function fetchWeather() {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
@@ -317,23 +251,16 @@ async function fetchWeather() {
     `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code` +
     `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York&forecast_days=2`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('weather fetch failed');
+  if (!res.ok) throw new Error();
   return res.json();
 }
 
 function renderWeather(w) {
-  const c = w.current;
-  const d = w.daily;
-  const temp     = Math.round(c.temperature_2m);
-  const feels    = Math.round(c.apparent_temperature);
-  const humidity = c.relative_humidity_2m;
-  const wind     = Math.round(c.wind_speed_10m);
-  const desc     = WMO[c.weather_code] || 'Conditions unknown';
-  const high     = Math.round(d.temperature_2m_max[0]);
-  const low      = Math.round(d.temperature_2m_min[0]);
-  const rainPct  = d.precipitation_probability_max[0];
-  const isStormy = STORM_CODES.has(c.weather_code) || rainPct >= 50;
-
+  const c = w.current, d = w.daily;
+  const temp = Math.round(c.temperature_2m), feels = Math.round(c.apparent_temperature);
+  const desc = WMO[c.weather_code] || 'Unknown', high = Math.round(d.temperature_2m_max[0]);
+  const low  = Math.round(d.temperature_2m_min[0]), rainPct = d.precipitation_probability_max[0];
+  const stormy = STORM_CODES.has(c.weather_code) || rainPct >= 50;
   return `
     <div class="weather-hero">
       <div class="weather-main">
@@ -347,24 +274,25 @@ function renderWeather(w) {
         <span class="weather-stat">H <strong>${high}°</strong></span>
         <span class="weather-stat">L <strong>${low}°</strong></span>
         <span class="weather-stat">Rain <strong>${rainPct}%</strong></span>
-        <span class="weather-stat">Humidity <strong>${humidity}%</strong></span>
-        <span class="weather-stat">Wind <strong>${wind} mph</strong></span>
+        <span class="weather-stat">Humidity <strong>${c.relative_humidity_2m}%</strong></span>
+        <span class="weather-stat">Wind <strong>${Math.round(c.wind_speed_10m)} mph</strong></span>
       </div>
-      ${isStormy ? `<div class="weather-alert">⚠️ Rain or storms likely today — plan outdoor activities accordingly.</div>` : ''}
+      ${stormy ? `<div class="weather-alert">⚠️ Rain or storms likely — plan outdoor activities accordingly.</div>` : ''}
     </div>`;
 }
 
-// ── BRIEFING ─────────────────────────────────────────────────────────────────
-let allBriefings = [];
-let currentType  = 'daily';
+// ── BRIEFINGS ────────────────────────────────────────────────────────────────
+let allBriefings = [], currentType = 'daily';
 
 async function fetchBriefings() {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/briefings?app_token=eq.${APP_TOKEN}&order=date.desc,created_at.desc&limit=20&select=*`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
-  if (!res.ok) throw new Error('Fetch failed');
-  return res.json();
+  const { data, error } = await sb
+    .from('briefings')
+    .select('*')
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return data;
 }
 
 function renderTabs(briefings) {
@@ -397,16 +325,16 @@ function renderItem(item) {
     </div>`;
 }
 
-function renderSection(section, i) {
-  const open = section.collapsed ? '' : 'open';
-  if (section.id === 'weather') return ''; // weather rendered separately
+function renderSection(s, i) {
+  if (s.id === 'weather') return '';
+  const open = s.collapsed ? '' : 'open';
   return `
     <div class="section-card ${open}" id="sec-${i}">
       <div class="section-header" onclick="toggle(${i})">
-        <div class="section-title"><span>${section.emoji || '•'}</span><span>${section.title}</span></div>
+        <div class="section-title"><span>${s.emoji || '•'}</span><span>${s.title}</span></div>
         <span class="chevron">▼</span>
       </div>
-      <div class="section-body">${(section.items || []).map(renderItem).join('')}</div>
+      <div class="section-body">${(s.items || []).map(renderItem).join('')}</div>
     </div>`;
 }
 
@@ -416,22 +344,15 @@ async function renderBriefing(b) {
   const c = b.content;
   document.getElementById('header-subtitle').textContent = c.subtitle || b.date;
   const content = document.getElementById('content');
-  content.innerHTML = `<div class="last-updated">Briefing updated ${new Date(b.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
+  content.innerHTML = `<div class="last-updated">Updated ${new Date(b.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
 
-  // Weather card (live fetch, only on daily tab)
   if (currentType === 'daily') {
     const wDiv = document.createElement('div');
-    wDiv.innerHTML = `<div class="weather-hero" style="opacity:.5"><div class="weather-temp" style="font-size:20px;padding:8px 0">Loading weather…</div></div>`;
+    wDiv.innerHTML = `<div class="weather-hero" style="opacity:.4;padding:20px 16px"><div style="font-size:13px;color:#94a3b8">Loading weather…</div></div>`;
     content.appendChild(wDiv);
-    try {
-      const w = await fetchWeather();
-      wDiv.innerHTML = renderWeather(w);
-    } catch {
-      wDiv.innerHTML = '';
-    }
+    try { wDiv.innerHTML = renderWeather(await fetchWeather()); } catch { wDiv.remove(); }
   }
 
-  // Other sections
   const sections = document.createElement('div');
   sections.innerHTML = (c.sections || []).map((s, i) => renderSection(s, i)).join('');
   content.appendChild(sections);
@@ -458,11 +379,16 @@ async function loadDashboard() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-if (isUnlocked()) {
-  document.getElementById('pin-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  loadDashboard();
-}
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') loadDashboard();
+  } else {
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+});
 </script>
 </body>
 </html>
