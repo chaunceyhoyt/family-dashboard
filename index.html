@@ -413,7 +413,7 @@ const PEOPLE = {
 const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','#3b0764','#164e63'];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-let gcalToken = null, krogerToken = null, krogerLocationId = null, allDayMode = false, currentPage = 'home';
+let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, allDayMode = false, currentPage = 'home';
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = [];
@@ -1034,6 +1034,7 @@ async function confirmVoiceEvent() {
     return; // stop the rest of the page from initializing in the popup
   }
   krogerToken = sessionStorage.getItem('kroger_token');
+  krogerRefreshToken = sessionStorage.getItem('kroger_refresh_token') || null;
   krogerLocationId = sessionStorage.getItem('kroger_location') || null;
 })();
 
@@ -1083,8 +1084,11 @@ function krogerConnect() {
     window.removeEventListener('message', onMsg);
     clearInterval(timer);
     try {
-      krogerToken = await krogerExchangeCode(e.data.code);
+      const tokenData = await krogerExchangeCode(e.data.code);
+      krogerToken = tokenData.access_token;
+      krogerRefreshToken = tokenData.refresh_token || null;
       sessionStorage.setItem('kroger_token', krogerToken);
+      if (krogerRefreshToken) sessionStorage.setItem('kroger_refresh_token', krogerRefreshToken);
       await krogerResolveLocation();
       showKrogerSendUI();
     } catch(err) {
@@ -1101,7 +1105,22 @@ async function krogerExchangeCode(code) {
   });
   const data = await r.json();
   if (!data.access_token) throw new Error(data.error_description || data.error || 'No access token returned');
-  return data.access_token;
+  return data; // return full object including refresh_token
+}
+
+async function krogerRefreshAccessToken() {
+  if (!krogerRefreshToken) throw new Error('No refresh token — please reconnect Kroger');
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: krogerRefreshToken })
+  });
+  const data = await r.json();
+  if (!data.access_token) throw new Error('Token refresh failed — please reconnect Kroger');
+  krogerToken = data.access_token;
+  if (data.refresh_token) krogerRefreshToken = data.refresh_token;
+  sessionStorage.setItem('kroger_token', krogerToken);
+  if (krogerRefreshToken) sessionStorage.setItem('kroger_refresh_token', krogerRefreshToken);
 }
 
 function openKrogerOverlay() {
@@ -1197,12 +1216,17 @@ async function krogerSearchProduct(token, term) {
   return product;
 }
 
-async function krogerAddToCart(token, upc, qty = 1) {
-  const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=cart`, {
+async function krogerAddToCart(upc, qty = 1) {
+  const doAdd = async (tok) => fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=cart`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, upc, quantity: qty })
+    body: JSON.stringify({ token: tok, upc, quantity: qty })
   });
+  let r = await doAdd(krogerToken);
+  if (r.status === 401) {
+    await krogerRefreshAccessToken();
+    r = await doAdd(krogerToken);
+  }
   return r.status === 204 || r.ok;
 }
 
@@ -1227,7 +1251,7 @@ async function sendAllToKroger(items) {
       if (product) {
         const upc = product.upc;
         const productName = product.description || item.text;
-        const ok = await krogerAddToCart(krogerToken, upc);
+        const ok = await krogerAddToCart(upc);
         if (ok) {
           const src = product._source;
           const badge = src === 'history' ? '🕐 prev' : src === 'organic' ? '🌿 organic' : '';
