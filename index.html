@@ -1223,11 +1223,14 @@ async function krogerAddToCart(upc, qty = 1) {
     body: JSON.stringify({ token: tok, upc, quantity: qty })
   });
   let r = await doAdd(krogerToken);
-  if (r.status === 401) {
+  const data = await r.json().catch(() => ({}));
+  if (data.kroger_status === 401) {
     await krogerRefreshAccessToken();
     r = await doAdd(krogerToken);
+    const data2 = await r.json().catch(() => ({}));
+    return { ok: data2.kroger_ok, detail: data2.kroger_body };
   }
-  return r.status === 204 || r.ok;
+  return { ok: data.kroger_ok, detail: data.kroger_body };
 }
 
 async function sendAllToKroger(items) {
@@ -1251,8 +1254,8 @@ async function sendAllToKroger(items) {
       if (product) {
         const upc = product.upc;
         const productName = product.description || item.text;
-        const ok = await krogerAddToCart(upc);
-        if (ok) {
+        const result = await krogerAddToCart(upc);
+        if (result.ok) {
           const src = product._source;
           const badge = src === 'history' ? '🕐 prev' : src === 'organic' ? '🌿 organic' : '';
           if (statEl) statEl.textContent = '✓ Added' + (badge ? ` · ${badge}` : '');
@@ -1260,7 +1263,8 @@ async function sendAllToKroger(items) {
           await saveKrogerHistory(item.text, upc, productName);
           succeeded++;
         } else {
-          if (statEl) statEl.textContent = 'Failed';
+          const errMsg = result.detail ? result.detail.slice(0, 80) : 'Failed';
+          if (statEl) statEl.textContent = errMsg;
           if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '❌';
         }
       } else {
