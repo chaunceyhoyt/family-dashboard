@@ -49,6 +49,43 @@
     /* ── DASHBOARD SHELL ── */
     #dashboard { display: none; flex-direction: column; height: 100%; }
 
+    /* ── WEEK NAV BAR ── */
+    #week-nav {
+      flex-shrink: 0;
+      background: #0c1525;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+    }
+    .week-nav-arrow {
+      background: var(--surface2); border: none; color: var(--text);
+      width: 30px; height: 30px; border-radius: 8px; font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .week-nav-arrow:active { background: var(--surface3); }
+    #week-label {
+      flex: 1; font-size: 13px; font-weight: 700; text-align: center;
+      color: var(--text); letter-spacing: -0.2px;
+    }
+    .week-today-btn {
+      background: var(--surface2); border: none; color: var(--text-muted);
+      padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s; letter-spacing: 0.3px;
+    }
+    .week-today-btn:active { background: var(--surface3); }
+    .week-cal-btn {
+      background: var(--surface2); border: none; color: var(--text-muted);
+      width: 30px; height: 30px; border-radius: 8px; font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+      transition: background 0.15s; position: relative;
+    }
+    .week-cal-btn:active { background: var(--surface3); }
+    #week-picker { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; }
+
     /* ── WEEKLY STRIP ── */
     #weekly-strip {
       flex-shrink: 0;
@@ -230,6 +267,26 @@
     .person-name     { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     .person-progress { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
 
+    /* ── HOME TWO-COLUMN GRID ── */
+    .home-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .home-col { display: flex; flex-direction: column; gap: 0; }
+    @media (max-width: 560px) {
+      .home-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Upcoming events in home */
+    .week-event-day { padding: 8px 14px 2px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .week-event-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .week-event-item:last-child { border-bottom: none; }
+    .week-event-time { font-size: 10px; font-weight: 700; color: var(--accent); min-width: 52px; padding-top: 2px; }
+    .week-event-name { font-size: 13px; line-height: 1.35; }
+    .week-event-loc  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
     /* ── EMPTY / LOADING ── */
     .empty-state { padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 14px; }
     .empty-icon  { font-size: 36px; margin-bottom: 10px; }
@@ -331,6 +388,16 @@
 
 <!-- DASHBOARD -->
 <div id="dashboard">
+  <div id="week-nav">
+    <button class="week-nav-arrow" onclick="changeWeek(-1)">‹</button>
+    <span id="week-label">Loading…</span>
+    <button class="week-nav-arrow" onclick="changeWeek(1)">›</button>
+    <button class="week-today-btn" onclick="jumpToToday()">Today</button>
+    <button class="week-cal-btn" title="Jump to date">
+      📅
+      <input type="date" id="week-picker" onchange="jumpToDate(this.value)">
+    </button>
+  </div>
   <div id="weekly-strip"></div>
   <div id="content-area"><div class="spinner"></div></div>
   <div id="bottom-nav">
@@ -457,6 +524,7 @@ const PEOPLE = {
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 let gcalToken = null, allDayMode = false, currentPage = 'home';
+let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let dinners = {}, grocery = [], chores = {}, briefingData = null;
 let activeDinnerDate = null;
@@ -471,9 +539,35 @@ function uid() { return Math.random().toString(36).slice(2,10); }
 function getWeekDays() {
   const now = new Date(), dow = now.getDay();
   const mon = new Date(now);
-  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1) + weekOffset * 7);
   mon.setHours(0,0,0,0);
   return Array.from({length:7}, (_,i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function weekLabel() {
+  const f = weekDays[0], l = weekDays[6];
+  if (f.getMonth() === l.getMonth())
+    return `${MONTH_NAMES[f.getMonth()]} ${f.getDate()}–${l.getDate()}, ${f.getFullYear()}`;
+  return `${MONTH_NAMES[f.getMonth()]} ${f.getDate()} – ${MONTH_NAMES[l.getMonth()]} ${l.getDate()}`;
+}
+
+function changeWeek(delta) { weekOffset += delta; init(); }
+
+function jumpToToday() { weekOffset = 0; init(); }
+
+function jumpToDate(val) {
+  if (!val) return;
+  const picked = new Date(val + 'T12:00:00');
+  const now = new Date(), dow = now.getDay();
+  const curMon = new Date(now);
+  curMon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  curMon.setHours(0,0,0,0);
+  const pdow = picked.getDay();
+  const pickedMon = new Date(picked);
+  pickedMon.setDate(picked.getDate() - (pdow === 0 ? 6 : pdow - 1));
+  pickedMon.setHours(0,0,0,0);
+  weekOffset = Math.round((pickedMon - curMon) / (7 * 864e5));
+  init();
 }
 
 function formatTime(dtStr) {
@@ -684,16 +778,16 @@ function showPage(page) {
 
 // ── HOME PAGE ─────────────────────────────────────────────────────────────────
 function renderHome() {
-  let html = '';
-
+  // Column 1 top: Today's Briefing
+  let briefingHtml = '';
   if (briefingData?.content?.sections?.length) {
     const sections = briefingData.content.sections.filter(s => s.id !== 'weather' && s.items?.length);
     if (sections.length) {
-      html += `<div class="section-title">📋 Today's Briefing</div><div class="card">`;
+      briefingHtml = `<div class="card">`;
       sections.forEach(s => {
         s.items.forEach(item => {
           const dot = ({urgent:'urgent',action:'warning',success:'success',info:'info'})[item.type] || '';
-          html += `<div class="brief-item">
+          briefingHtml += `<div class="brief-item">
             <div class="brief-dot ${dot}"></div>
             <div class="brief-content">
               ${item.time ? `<div class="brief-time">${item.time}</div>` : ''}
@@ -704,31 +798,69 @@ function renderHome() {
           </div>`;
         });
       });
-      html += `</div>`;
+      briefingHtml += `</div>`;
     }
-  } else {
-    html += `<div class="section-title">📋 Upcoming</div>
-      <div class="card"><div class="empty-state"><div class="empty-icon">📭</div>No briefing yet today</div></div>`;
+  }
+  if (!briefingHtml) {
+    briefingHtml = `<div class="card"><div class="empty-state" style="padding:20px 14px"><div class="empty-icon">📭</div>No briefing yet today</div></div>`;
   }
 
-  html += `<div class="section-title">🛒 Grocery List</div>
-    <div class="card">
-      ${grocery.length
-        ? grocery.map(g => `<div class="list-item">
-            <button class="check-btn ${g.done?'done':''}" onclick="toggleGrocery('${g.id}')">${g.done?'✓':''}</button>
-            <span class="list-label ${g.done?'done':''}">${g.text}</span>
-            <button class="del-btn" onclick="deleteGrocery('${g.id}')">×</button>
-          </div>`).join('')
-        : '<div class="empty-state" style="padding:16px 14px">Nothing on the list yet</div>'
-      }
-      <div class="list-add-row">
-        <input class="list-add-input" id="grocery-input" type="text" placeholder="Add item…"
-               onkeydown="if(event.key==='Enter')addGrocery()">
-        <button class="list-add-btn" onclick="addGrocery()">+</button>
+  // Column 1 bottom: Upcoming Events (calendar events for displayed week)
+  let eventsHtml = '';
+  const hasAnyEvents = calEventsByDay.some(d => d.length > 0);
+  if (!gcalToken) {
+    eventsHtml = `<div class="card"><div class="empty-state" style="padding:16px 14px">Sign in to see calendar events</div></div>`;
+  } else if (!hasAnyEvents) {
+    eventsHtml = `<div class="card"><div class="empty-state" style="padding:16px 14px">No events this week</div></div>`;
+  } else {
+    eventsHtml = `<div class="card">`;
+    weekDays.forEach((d, i) => {
+      const evs = calEventsByDay[i] || [];
+      if (!evs.length) return;
+      eventsHtml += `<div class="week-event-day">${DAY_NAMES[d.getDay()]} ${d.getDate()}</div>`;
+      evs.forEach(ev => {
+        const time = ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day';
+        eventsHtml += `<div class="week-event-item">
+          <div class="week-event-time">${time}</div>
+          <div>
+            <div class="week-event-name">${ev.summary||'Event'}</div>
+            ${ev.location ? `<div class="week-event-loc">📍 ${ev.location}</div>` : ''}
+          </div>
+        </div>`;
+      });
+    });
+    eventsHtml += `</div>`;
+  }
+
+  // Column 2: Grocery list
+  const groceryRows = grocery.length
+    ? grocery.map(g => `<div class="list-item">
+        <button class="check-btn ${g.done?'done':''}" onclick="toggleGrocery('${g.id}')">${g.done?'✓':''}</button>
+        <span class="list-label ${g.done?'done':''}">${g.text}</span>
+        <button class="del-btn" onclick="deleteGrocery('${g.id}')">×</button>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:16px 14px">Nothing on the list yet</div>';
+
+  document.getElementById('content-area').innerHTML = `
+    <div class="home-grid">
+      <div class="home-col">
+        <div class="section-title">📋 Today's Briefing</div>
+        ${briefingHtml}
+        <div class="section-title" style="margin-top:14px">📅 This Week's Events</div>
+        ${eventsHtml}
+      </div>
+      <div class="home-col">
+        <div class="section-title">🛒 Grocery List</div>
+        <div class="card">
+          ${groceryRows}
+          <div class="list-add-row">
+            <input class="list-add-input" id="grocery-input" type="text" placeholder="Add item…"
+                   onkeydown="if(event.key==='Enter')addGrocery()">
+            <button class="list-add-btn" onclick="addGrocery()">+</button>
+          </div>
+        </div>
       </div>
     </div>`;
-
-  document.getElementById('content-area').innerHTML = html;
 }
 
 function addGrocery() {
@@ -1030,6 +1162,7 @@ async function init() {
   weekDays = getWeekDays();
   weatherDays = Array(7).fill(null);
   calEventsByDay = Array(7).fill([]);
+  document.getElementById('week-label').textContent = weekLabel();
   renderStrip();
   showPage(currentPage);
 
