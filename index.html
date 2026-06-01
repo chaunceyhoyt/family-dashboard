@@ -429,7 +429,7 @@ const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','
 let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, krogerModality = 'PICKUP', allDayMode = false, currentPage = 'home';
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
-let upcomingFamilyEvents = [];
+let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
 let dinners = {}, grocery = [], chores = {}, briefingData = null;
 let activeDinnerDate = null;
 let drag = { active: false, sourceDate: null, mealText: '' };
@@ -693,6 +693,8 @@ function renderHome() {
   let col1 = '';
   if (!gcalToken) {
     col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">🔐</div>Sign in to see events</div></div>`;
+  } else if (upcomingFamilyEvents === null) {
+    col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">⚠️</div>Couldn't load events — try signing out and back in</div></div>`;
   } else if (!upcomingFamilyEvents.length) {
     col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">📅</div>No upcoming events</div></div>`;
   } else {
@@ -755,7 +757,7 @@ function renderHome() {
   document.getElementById('content-area').innerHTML = `
     <div class="home-grid">
       <div class="home-col">
-        <div class="col-header">📅 Upcoming Family Events</div>
+        <div class="col-header">📅 Upcoming Events</div>
         ${col1}
       </div>
       <div class="home-col">
@@ -1071,7 +1073,8 @@ async function init() {
       return evRes.value.filter(ev=>(ev.start?.dateTime||ev.start?.date||'').slice(0,10)===ds);
     });
   }
-  if(upRes.status==='fulfilled') upcomingFamilyEvents=upRes.value;
+  if(upRes.status==='fulfilled') { upcomingFamilyEvents=upRes.value; }
+  else { upcomingFamilyEvents=null; } // null = fetch failed (vs [] = genuinely empty)
   if(brRes.status==='fulfilled') briefingData=brRes.value;
 
   renderStrip(); showPage(currentPage); renderNavBadges();
