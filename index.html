@@ -14,7 +14,6 @@
     :root {
       --bg: #0f172a;
       --surface: #1e293b;
-      --surface2: #273548;
       --accent: #3b82f6;
       --text: #f1f5f9;
       --text-muted: #94a3b8;
@@ -32,237 +31,336 @@
       padding-bottom: calc(24px + env(safe-area-inset-bottom));
     }
 
+    /* ── PIN SCREEN ── */
+    #pin-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999;
+      padding: 32px;
+    }
+    #pin-screen h2 { font-size: 22px; margin-bottom: 6px; }
+    #pin-screen p  { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+
+    .pin-dots {
+      display: flex; gap: 16px; margin-bottom: 32px;
+    }
+    .pin-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+
+    .pin-grid {
+      display: grid; grid-template-columns: repeat(3, 72px);
+      gap: 12px;
+    }
+    .pin-key {
+      height: 72px; border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      font-size: 22px; font-weight: 500;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .pin-key:active { background: #334155; }
+    .pin-key.del { font-size: 18px; color: var(--text-muted); }
+    .pin-key.empty { background: transparent; border-color: transparent; pointer-events: none; }
+
+    .pin-error {
+      margin-top: 20px; font-size: 13px;
+      color: var(--urgent); min-height: 20px;
+    }
+
+    /* ── MAIN DASHBOARD ── */
+    #dashboard { display: none; }
+
     .header {
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
       padding: 20px 16px 18px;
       padding-top: calc(20px + env(safe-area-inset-top));
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .header h1  { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-actions { display: flex; gap: 8px; }
 
-    .header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
+    .icon-btn {
+      background: rgba(255,255,255,0.1); border: none; color: var(--text);
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      font-size: 17px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; -webkit-tap-highlight-color: transparent;
     }
-
-    .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-
-    .refresh-btn {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      color: var(--text);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s;
-    }
-    .refresh-btn:active { background: rgba(255,255,255,0.2); }
+    .icon-btn:active { background: rgba(255,255,255,0.2); }
 
     .header-subtitle { font-size: 13px; color: var(--text-muted); }
 
     .tabs {
-      display: flex;
-      gap: 8px;
-      padding: 12px 16px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      background: var(--bg);
+      display: flex; gap: 8px; padding: 12px 16px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; background: var(--bg);
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .tabs::-webkit-scrollbar { display: none; }
-
     .tab {
-      background: var(--surface);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text-muted);
-      padding: 7px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      white-space: nowrap;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.15s;
-      -webkit-tap-highlight-color: transparent;
+      background: var(--surface); border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-muted); padding: 7px 16px; border-radius: 20px;
+      font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 500;
+      transition: all 0.15s; -webkit-tap-highlight-color: transparent;
     }
     .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
 
-    .content {
-      padding: 14px 16px 24px;
-      max-width: 600px;
-      margin: 0 auto;
+    .content { padding: 14px 16px 24px; max-width: 600px; margin: 0 auto; }
+
+    /* ── WEATHER CARD ── */
+    .weather-hero {
+      background: linear-gradient(135deg, #1a3a5c 0%, #1e293b 100%);
+      border-radius: var(--radius);
+      padding: 18px 16px 14px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .weather-main { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+    .weather-temp { font-size: 48px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+    .weather-temp sup { font-size: 22px; font-weight: 400; vertical-align: super; }
+    .weather-right { text-align: right; }
+    .weather-desc { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .weather-feels { font-size: 12px; color: var(--text-muted); }
+    .weather-row {
+      display: flex; gap: 16px;
+      font-size: 12px; color: var(--text-muted);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px; margin-top: 2px;
+    }
+    .weather-stat strong { color: var(--text); }
+    .weather-alert {
+      background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px; padding: 8px 12px; margin-top: 10px;
+      font-size: 13px; color: #fca5a5;
     }
 
+    /* ── SECTION CARDS ── */
     .section-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      margin-bottom: 10px;
-      overflow: hidden;
+      background: var(--surface); border-radius: var(--radius);
+      margin-bottom: 10px; overflow: hidden;
       border: 1px solid rgba(255,255,255,0.06);
     }
-
     .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; cursor: pointer;
+      user-select: none; -webkit-tap-highlight-color: transparent;
     }
     .section-header:active { background: rgba(255,255,255,0.03); }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .chevron {
-      color: var(--text-muted);
-      font-size: 11px;
-      transition: transform 0.2s;
-    }
+    .section-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+    .chevron { color: var(--text-muted); font-size: 11px; transition: transform 0.2s; }
     .section-card.open .chevron { transform: rotate(180deg); }
-
-    .section-body {
-      display: none;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
+    .section-body { display: none; border-top: 1px solid rgba(255,255,255,0.06); }
     .section-card.open .section-body { display: block; }
 
-    .weather-card {
-      background: linear-gradient(135deg, #1a3a5c 0%, #1e293b 100%);
-    }
-
-    .weather-summary {
-      padding: 14px 16px 6px;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-
     .item {
-      padding: 11px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
+      padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      display: flex; align-items: flex-start; gap: 10px;
     }
     .item:last-child { border-bottom: none; }
-
     .item-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-      margin-top: 6px;
-      flex-shrink: 0;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent); margin-top: 6px; flex-shrink: 0;
     }
     .item-dot.urgent  { background: var(--urgent); }
     .item-dot.warning { background: var(--warning); }
     .item-dot.success { background: var(--success); }
     .item-dot.info    { background: var(--text-muted); }
-
     .item-content { flex: 1; min-width: 0; }
-
-    .item-time {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
-    }
-
+    .item-time { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
     .item-text { font-size: 14px; line-height: 1.45; }
+    .item-detail { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
+    .item-link { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
 
-    .item-detail {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 3px;
-      line-height: 1.35;
-    }
+    .last-updated { text-align: center; font-size: 12px; color: var(--text-muted); padding: 4px 0 12px; }
 
-    .item-link {
-      display: inline-block;
-      margin-top: 6px;
-      font-size: 12px;
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .last-updated {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-muted);
-      padding: 4px 0 12px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-muted);
-    }
-
+    .loading { text-align: center; padding: 60px 20px; color: var(--text-muted); }
     .spinner {
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 14px;
+      width: 30px; height: 30px;
+      border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-muted);
-      font-size: 14px;
-    }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; }
     .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-top">
-    <h1>🏠 Browning Family</h1>
-    <button class="refresh-btn" onclick="loadDashboard()">↻</button>
+<!-- PIN SCREEN -->
+<div id="pin-screen">
+  <h2>🏠 Browning Family</h2>
+  <p>Enter your PIN to continue</p>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
   </div>
-  <div class="header-subtitle" id="header-subtitle">Loading…</div>
+  <div class="pin-grid">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key empty"></button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
 </div>
 
-<div class="tabs" id="tabs"></div>
-
-<div class="content" id="content">
-  <div class="loading"><div class="spinner"></div><div>Loading your briefing…</div></div>
+<!-- MAIN DASHBOARD -->
+<div id="dashboard">
+  <div class="header">
+    <div class="header-top">
+      <h1>🏠 Browning Family</h1>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="loadDashboard()" title="Refresh">↻</button>
+        <button class="icon-btn" onclick="lockApp()" title="Lock">🔒</button>
+      </div>
+    </div>
+    <div class="header-subtitle" id="header-subtitle">Loading…</div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="content" id="content">
+    <div class="loading"><div class="spinner"></div><div>Loading…</div></div>
+  </div>
 </div>
 
 <script>
-const SUPABASE_URL = 'https://qhvzfgsfkqrnykgryvej.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodnpmZ3Nma3FybnlrZ3J5dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzk1NjIsImV4cCI6MjA5NTgxNTU2Mn0.WbXMQaEfaewGarq7W4-hgp74OQuQtwpDNpxSzc-jNA4';
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const APP_PIN        = '1234';           // ← CHANGE THIS to your PIN
+const SESSION_MINS   = 480;             // auto-lock after 8 hours
+const SUPABASE_URL   = 'https://qhvzfgsfkqrnykgryvej.supabase.co';
+const SUPABASE_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodnpmZ3Nma3FybnlrZ3J5dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzk1NjIsImV4cCI6MjA5NTgxNTU2Mn0.WbXMQaEfaewGarq7W4-hgp74OQuQtwpDNpxSzc-jNA4';
+const APP_TOKEN      = 'fdb_browning_2026';
+const LAT            = 36.7682;         // Chesapeake, VA
+const LON            = -76.2875;
+const TYPE_LABELS    = { daily:'☀️ Daily', weekly:'📅 Weekly', weekend:'🎉 Weekend', monthly:'📆 Monthly' };
+// ─────────────────────────────────────────────────────────────────────────────
 
-const TYPE_LABELS = { daily: '☀️ Daily', weekly: '📅 Weekly', weekend: '🎉 Weekend', monthly: '📆 Monthly' };
+// ── PIN ──────────────────────────────────────────────────────────────────────
+let pinBuffer = '';
 
+function pinKey(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updateDots();
+  if (pinBuffer.length === 4) setTimeout(checkPin, 120);
+}
+
+function pinDel() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updateDots();
+  document.getElementById('pin-error').textContent = '';
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++)
+    document.getElementById(`d${i}`).classList.toggle('filled', i < pinBuffer.length);
+}
+
+function checkPin() {
+  if (pinBuffer === APP_PIN) {
+    localStorage.setItem('fdb_unlocked', Date.now().toString());
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadDashboard();
+  } else {
+    document.getElementById('pin-error').textContent = 'Incorrect PIN';
+    pinBuffer = '';
+    updateDots();
+  }
+}
+
+function lockApp() {
+  localStorage.removeItem('fdb_unlocked');
+  pinBuffer = '';
+  updateDots();
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('pin-screen').style.display = 'flex';
+}
+
+function isUnlocked() {
+  const t = parseInt(localStorage.getItem('fdb_unlocked') || '0');
+  return t && (Date.now() - t) < SESSION_MINS * 60 * 1000;
+}
+
+// ── WEATHER (Open-Meteo, no API key) ─────────────────────────────────────────
+const WMO = {
+  0:'Clear sky', 1:'Mainly clear', 2:'Partly cloudy', 3:'Overcast',
+  45:'Fog', 48:'Icy fog', 51:'Light drizzle', 53:'Drizzle', 55:'Heavy drizzle',
+  61:'Light rain', 63:'Rain', 65:'Heavy rain', 71:'Light snow', 73:'Snow', 75:'Heavy snow',
+  80:'Rain showers', 81:'Rain showers', 82:'Heavy showers',
+  95:'Thunderstorm', 96:'Thunderstorm & hail', 99:'Heavy thunderstorm & hail'
+};
+const STORM_CODES = new Set([80,81,82,95,96,99,61,63,65,51,53,55]);
+
+async function fetchWeather() {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
+    `&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m` +
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code` +
+    `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York&forecast_days=2`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('weather fetch failed');
+  return res.json();
+}
+
+function renderWeather(w) {
+  const c = w.current;
+  const d = w.daily;
+  const temp     = Math.round(c.temperature_2m);
+  const feels    = Math.round(c.apparent_temperature);
+  const humidity = c.relative_humidity_2m;
+  const wind     = Math.round(c.wind_speed_10m);
+  const desc     = WMO[c.weather_code] || 'Conditions unknown';
+  const high     = Math.round(d.temperature_2m_max[0]);
+  const low      = Math.round(d.temperature_2m_min[0]);
+  const rainPct  = d.precipitation_probability_max[0];
+  const isStormy = STORM_CODES.has(c.weather_code) || rainPct >= 50;
+
+  return `
+    <div class="weather-hero">
+      <div class="weather-main">
+        <div class="weather-temp">${temp}<sup>°F</sup></div>
+        <div class="weather-right">
+          <div class="weather-desc">${desc}</div>
+          <div class="weather-feels">Feels like ${feels}°F</div>
+        </div>
+      </div>
+      <div class="weather-row">
+        <span class="weather-stat">H <strong>${high}°</strong></span>
+        <span class="weather-stat">L <strong>${low}°</strong></span>
+        <span class="weather-stat">Rain <strong>${rainPct}%</strong></span>
+        <span class="weather-stat">Humidity <strong>${humidity}%</strong></span>
+        <span class="weather-stat">Wind <strong>${wind} mph</strong></span>
+      </div>
+      ${isStormy ? `<div class="weather-alert">⚠️ Rain or storms likely today — plan outdoor activities accordingly.</div>` : ''}
+    </div>`;
+}
+
+// ── BRIEFING ─────────────────────────────────────────────────────────────────
 let allBriefings = [];
-let currentType = 'daily';
+let currentType  = 'daily';
 
 async function fetchBriefings() {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/briefings?order=date.desc,created_at.desc&limit=20&select=*`,
+    `${SUPABASE_URL}/rest/v1/briefings?app_token=eq.${APP_TOKEN}&order=date.desc,created_at.desc&limit=20&select=*`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
   if (!res.ok) throw new Error('Fetch failed');
@@ -271,24 +369,20 @@ async function fetchBriefings() {
 
 function renderTabs(briefings) {
   const seen = new Set();
-  const types = briefings.map(b => b.type).filter(t => { if (seen.has(t)) return false; seen.add(t); return true; });
-  document.getElementById('tabs').innerHTML = types.map(t => `
-    <button class="tab ${t === currentType ? 'active' : ''}" onclick="switchType('${t}')">
-      ${TYPE_LABELS[t] || t}
-    </button>
-  `).join('');
+  const types = briefings.map(b => b.type).filter(t => !seen.has(t) && seen.add(t));
+  document.getElementById('tabs').innerHTML = types.map(t =>
+    `<button class="tab ${t === currentType ? 'active' : ''}" onclick="switchType('${t}')">${TYPE_LABELS[t] || t}</button>`
+  ).join('');
 }
 
 function switchType(type) {
   currentType = type;
   renderTabs(allBriefings);
-  const briefing = allBriefings.find(b => b.type === type);
-  if (briefing) renderBriefing(briefing);
+  const b = allBriefings.find(b => b.type === type);
+  if (b) renderBriefing(b);
 }
 
-function dotClass(type) {
-  return { urgent: 'urgent', action: 'warning', success: 'success', info: 'info' }[type] || '';
-}
+function dotClass(t) { return ({urgent:'urgent',action:'warning',success:'success',info:'info'})[t] || ''; }
 
 function renderItem(item) {
   return `
@@ -298,37 +392,49 @@ function renderItem(item) {
         ${item.time   ? `<div class="item-time">${item.time}</div>` : ''}
         <div class="item-text">${item.text}</div>
         ${item.detail ? `<div class="item-detail">${item.detail}</div>` : ''}
-        ${item.link   ? `<a class="item-link" href="${item.link}" target="_blank">↗ ${item.link_label || 'Open link'}</a>` : ''}
+        ${item.link   ? `<a class="item-link" href="${item.link}" target="_blank">↗ ${item.link_label || 'Open'}</a>` : ''}
       </div>
     </div>`;
 }
 
 function renderSection(section, i) {
-  const open = section.collapsed === false || section.collapsed === undefined ? 'open' : '';
-  const extra = section.id === 'weather' ? ' weather-card' : '';
+  const open = section.collapsed ? '' : 'open';
+  if (section.id === 'weather') return ''; // weather rendered separately
   return `
-    <div class="section-card ${open}${extra}" id="sec-${i}">
+    <div class="section-card ${open}" id="sec-${i}">
       <div class="section-header" onclick="toggle(${i})">
         <div class="section-title"><span>${section.emoji || '•'}</span><span>${section.title}</span></div>
         <span class="chevron">▼</span>
       </div>
-      <div class="section-body">
-        ${section.weather_summary ? `<div class="weather-summary">${section.weather_summary}</div>` : ''}
-        ${(section.items || []).map(renderItem).join('')}
-      </div>
+      <div class="section-body">${(section.items || []).map(renderItem).join('')}</div>
     </div>`;
 }
 
-function toggle(i) {
-  document.getElementById(`sec-${i}`).classList.toggle('open');
-}
+function toggle(i) { document.getElementById(`sec-${i}`)?.classList.toggle('open'); }
 
-function renderBriefing(b) {
+async function renderBriefing(b) {
   const c = b.content;
   document.getElementById('header-subtitle').textContent = c.subtitle || b.date;
-  document.getElementById('content').innerHTML =
-    `<div class="last-updated">Updated ${new Date(b.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })}</div>` +
-    (c.sections || []).map((s, i) => renderSection(s, i)).join('');
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="last-updated">Briefing updated ${new Date(b.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
+
+  // Weather card (live fetch, only on daily tab)
+  if (currentType === 'daily') {
+    const wDiv = document.createElement('div');
+    wDiv.innerHTML = `<div class="weather-hero" style="opacity:.5"><div class="weather-temp" style="font-size:20px;padding:8px 0">Loading weather…</div></div>`;
+    content.appendChild(wDiv);
+    try {
+      const w = await fetchWeather();
+      wDiv.innerHTML = renderWeather(w);
+    } catch {
+      wDiv.innerHTML = '';
+    }
+  }
+
+  // Other sections
+  const sections = document.createElement('div');
+  sections.innerHTML = (c.sections || []).map((s, i) => renderSection(s, i)).join('');
+  content.appendChild(sections);
 }
 
 async function loadDashboard() {
@@ -337,7 +443,7 @@ async function loadDashboard() {
     allBriefings = await fetchBriefings();
     if (!allBriefings.length) {
       document.getElementById('header-subtitle').textContent = 'No briefings yet';
-      document.getElementById('content').innerHTML = `<div class="empty-state"><div class="icon">📭</div><div>No briefings yet.<br>Your first one will appear here.</div></div>`;
+      document.getElementById('content').innerHTML = `<div class="empty-state"><div class="icon">📭</div><div>No briefings yet.</div></div>`;
       document.getElementById('tabs').innerHTML = '';
       return;
     }
@@ -345,13 +451,18 @@ async function loadDashboard() {
     currentType = daily ? 'daily' : allBriefings[0].type;
     renderTabs(allBriefings);
     renderBriefing(allBriefings.find(b => b.type === currentType));
-  } catch (e) {
-    document.getElementById('header-subtitle').textContent = 'Error loading data';
-    document.getElementById('content').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><div>Could not load briefing.<br>Tap ↻ to retry.</div></div>`;
+  } catch {
+    document.getElementById('header-subtitle').textContent = 'Error';
+    document.getElementById('content').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><div>Could not load.<br>Tap ↻ to retry.</div></div>`;
   }
 }
 
-loadDashboard();
+// ── INIT ──────────────────────────────────────────────────────────────────────
+if (isUnlocked()) {
+  document.getElementById('pin-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadDashboard();
+}
 </script>
 </body>
 </html>
