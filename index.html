@@ -206,6 +206,22 @@
     .voice-confirm-btn { flex: 1; background: var(--accent); border: none; color: white; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
     .voice-cancel-btn  { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
 
+    /* ── KROGER OVERLAY ── */
+    #kroger-overlay { position: fixed; inset: 0; z-index: 950; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
+    #kroger-overlay.open { display: flex; }
+    .kroger-logo { font-size: 48px; margin-bottom: 12px; }
+    .kroger-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .kroger-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; max-width: 320px; }
+    .kroger-progress { width: 100%; max-width: 340px; background: var(--surface2); border-radius: 8px; overflow: hidden; height: 6px; margin: 16px 0; }
+    .kroger-progress-bar { height: 100%; background: #2055b7; border-radius: 8px; transition: width 0.3s; }
+    .kroger-item-list { width: 100%; max-width: 340px; max-height: 220px; overflow-y: auto; margin-bottom: 16px; }
+    .kroger-item-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface2); font-size: 13px; text-align: left; }
+    .kroger-item-icon { font-size: 16px; min-width: 22px; }
+    .kroger-item-name { flex: 1; color: var(--text); }
+    .kroger-item-status { font-size: 12px; color: var(--text2); }
+    .kroger-btn { padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; margin: 6px; }
+    .kroger-btn-primary { background: #2055b7; color: #fff; }
+    .kroger-btn-close { background: var(--surface2); color: var(--text); }
     /* ── GROCERY VOICE OVERLAY ── */
     #grocery-voice { position: fixed; inset: 0; z-index: 900; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
     #grocery-voice.open { display: flex; }
@@ -356,6 +372,22 @@
   </div>
 </div>
 
+<!-- KROGER OVERLAY -->
+<div id="kroger-overlay">
+  <div class="kroger-logo">🛒</div>
+  <div class="kroger-title" id="kroger-title">Connect to Kroger</div>
+  <div class="kroger-sub" id="kroger-sub">Sign in with your Kroger account to add grocery items directly to your cart.</div>
+  <div id="kroger-progress-wrap" style="width:100%;max-width:340px;display:none">
+    <div class="kroger-progress"><div class="kroger-progress-bar" id="kroger-progress-bar" style="width:0%"></div></div>
+    <div style="font-size:12px;color:var(--text2);margin-top:6px" id="kroger-progress-label"></div>
+  </div>
+  <div class="kroger-item-list" id="kroger-item-list"></div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center">
+    <button class="kroger-btn kroger-btn-primary" id="kroger-action-btn" onclick="krogerConnect()">Sign in to Kroger</button>
+    <button class="kroger-btn kroger-btn-close" onclick="closeKrogerOverlay()">Cancel</button>
+  </div>
+</div>
+
 <!-- TOUCH DRAG GHOST -->
 <div id="drag-ghost"></div>
 
@@ -364,6 +396,9 @@
 const SUPABASE_URL = 'https://qhvzfgsfkqrnykgryvej.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodnpmZ3Nma3FybnlrZ3J5dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzk1NjIsImV4cCI6MjA5NTgxNTU2Mn0.WbXMQaEfaewGarq7W4-hgp74OQuQtwpDNpxSzc-jNA4';
 const LAT = 36.7682, LON = -76.2875, TZ = 'America/New_York';
+const KROGER_CLIENT_ID = 'familydashboard-bbcfh5bm';
+const KROGER_CLIENT_SECRET = 'J19lW3UZfTwpfy3pvwETMjvUTTMEwSIUdabFTsQa';
+const KROGER_REDIRECT = location.origin + location.pathname;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -378,7 +413,7 @@ const PEOPLE = {
 const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','#3b0764','#164e63'];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-let gcalToken = null, allDayMode = false, currentPage = 'home';
+let gcalToken = null, krogerToken = null, allDayMode = false, currentPage = 'home';
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = [];
@@ -715,7 +750,10 @@ function renderHome() {
         ${col2}
       </div>
       <div class="home-col">
-        <div class="col-header">🛒 Grocery List</div>
+        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between">
+          <span>🛒 Grocery List</span>
+          <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
+        </div>
         <div class="card">
           ${groceryRows}
           <div class="list-add-row">
@@ -986,6 +1024,22 @@ async function confirmVoiceEvent() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+// Handle Kroger OAuth callback — runs once on page load before auth state settles
+(async () => {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code'), state = params.get('state');
+  if (code && state === 'kroger_auth' && sessionStorage.getItem('kroger_pending')) {
+    sessionStorage.removeItem('kroger_pending');
+    history.replaceState({}, '', location.pathname);
+    try {
+      krogerToken = await krogerExchangeCode(code);
+      sessionStorage.setItem('kroger_token', krogerToken);
+    } catch(e) { console.error('Kroger auth failed', e); }
+  } else {
+    krogerToken = sessionStorage.getItem('kroger_token');
+  }
+})();
+
 async function init() {
   weekDays=getWeekDays(); weatherDays=Array(7).fill(null); calEventsByDay=Array(7).fill([]);
   document.getElementById('week-label').textContent=weekLabel();
@@ -1010,6 +1064,143 @@ async function init() {
   if(brRes.status==='fulfilled') briefingData=brRes.value;
 
   renderStrip(); showPage(currentPage); renderNavBadges();
+}
+
+// ── KROGER ───────────────────────────────────────────────────────────────────
+function krogerConnect() {
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: KROGER_CLIENT_ID,
+    redirect_uri: KROGER_REDIRECT,
+    scope: 'cart.basic:write profile.compact',
+    state: 'kroger_auth'
+  });
+  sessionStorage.setItem('kroger_pending', '1');
+  location.href = 'https://api.kroger.com/v1/connect/oauth2/authorize?' + params;
+}
+
+async function krogerExchangeCode(code) {
+  const creds = btoa(KROGER_CLIENT_ID + ':' + KROGER_CLIENT_SECRET);
+  const r = await fetch('https://api.kroger.com/v1/connect/oauth2/token', {
+    method: 'POST',
+    headers: { Authorization: 'Basic ' + creds, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: KROGER_REDIRECT })
+  });
+  if (!r.ok) throw new Error('Token exchange failed: ' + r.status);
+  const data = await r.json();
+  return data.access_token;
+}
+
+function openKrogerOverlay() {
+  const overlay = document.getElementById('kroger-overlay');
+  overlay.classList.add('open');
+  if (krogerToken) {
+    // Already connected — show send UI
+    showKrogerSendUI();
+  } else {
+    document.getElementById('kroger-title').textContent = 'Connect to Kroger';
+    document.getElementById('kroger-sub').textContent = 'Sign in with your Kroger account to add grocery items directly to your cart.';
+    document.getElementById('kroger-action-btn').textContent = 'Sign in to Kroger';
+    document.getElementById('kroger-action-btn').onclick = krogerConnect;
+    document.getElementById('kroger-action-btn').style.display = '';
+    document.getElementById('kroger-progress-wrap').style.display = 'none';
+    document.getElementById('kroger-item-list').innerHTML = '';
+  }
+}
+
+function showKrogerSendUI() {
+  const pending = grocery.filter(g => !g.done);
+  document.getElementById('kroger-title').textContent = 'Send to Kroger Cart';
+  document.getElementById('kroger-sub').textContent = pending.length
+    ? `${pending.length} item${pending.length > 1 ? 's' : ''} will be searched and added to your Kroger cart.`
+    : 'No unchecked items on the grocery list.';
+  document.getElementById('kroger-progress-wrap').style.display = 'none';
+  document.getElementById('kroger-item-list').innerHTML = pending.map(g =>
+    `<div class="kroger-item-row" id="krow-${g.id}">
+      <span class="kroger-item-icon">⏳</span>
+      <span class="kroger-item-name">${g.text}</span>
+      <span class="kroger-item-status" id="kstat-${g.id}">Pending</span>
+    </div>`
+  ).join('');
+  const btn = document.getElementById('kroger-action-btn');
+  if (pending.length) {
+    btn.textContent = 'Add All to Kroger Cart';
+    btn.onclick = () => sendAllToKroger(pending);
+    btn.style.display = '';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function closeKrogerOverlay() {
+  document.getElementById('kroger-overlay').classList.remove('open');
+}
+
+async function krogerSearchProduct(token, term) {
+  const r = await fetch(`https://api.kroger.com/v1/products?filter.term=${encodeURIComponent(term)}&filter.limit=1`, {
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' }
+  });
+  if (!r.ok) return null;
+  const data = await r.json();
+  return data.data?.[0] || null;
+}
+
+async function krogerAddToCart(token, upc, qty = 1) {
+  const r = await fetch('https://api.kroger.com/v1/cart/add', {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: [{ upc, quantity: qty }] })
+  });
+  return r.ok;
+}
+
+async function sendAllToKroger(items) {
+  const btn = document.getElementById('kroger-action-btn');
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+  const wrap = document.getElementById('kroger-progress-wrap');
+  wrap.style.display = 'block';
+  const bar = document.getElementById('kroger-progress-bar');
+  const label = document.getElementById('kroger-progress-label');
+
+  let done = 0, succeeded = 0;
+  for (const item of items) {
+    const statEl = document.getElementById('kstat-' + item.id);
+    const rowEl = document.getElementById('krow-' + item.id);
+    if (statEl) statEl.textContent = 'Searching…';
+    if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '🔍';
+
+    try {
+      const product = await krogerSearchProduct(krogerToken, item.text);
+      if (product) {
+        const upc = product.upc;
+        const ok = await krogerAddToCart(krogerToken, upc);
+        if (ok) {
+          if (statEl) statEl.textContent = '✓ Added';
+          if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '✅';
+          succeeded++;
+        } else {
+          if (statEl) statEl.textContent = 'Failed';
+          if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '❌';
+        }
+      } else {
+        if (statEl) statEl.textContent = 'Not found';
+        if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '❓';
+      }
+    } catch (e) {
+      if (statEl) statEl.textContent = 'Error';
+      if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '❌';
+    }
+
+    done++;
+    bar.style.width = Math.round((done / items.length) * 100) + '%';
+    label.textContent = `${done} of ${items.length} processed`;
+  }
+
+  btn.textContent = `Done — ${succeeded} of ${items.length} added`;
+  btn.disabled = false;
+  btn.onclick = closeKrogerOverlay;
+  label.textContent = `${succeeded} item${succeeded !== 1 ? 's' : ''} added to your Kroger cart!`;
 }
 
 // ── AUTH STATE ────────────────────────────────────────────────────────────────
