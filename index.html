@@ -138,6 +138,14 @@
     .person-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 4px 0; }
     .person-avatar-lg { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; }
     .person-name     { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    .person-edit-btn { background: var(--surface2); border: none; color: var(--text-muted); font-size: 13px; padding: 4px 10px; border-radius: 8px; cursor: pointer; margin-top: 5px; display: inline-block; }
+    /* ── PERSON EDIT MODAL ── */
+    .icon-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0 16px; }
+    .icon-opt  { font-size: 24px; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, background 0.15s; background: var(--surface2); }
+    .icon-opt.selected { border-color: var(--accent); background: rgba(59,130,246,0.18); }
+    .color-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0 16px; }
+    .color-swatch { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s, transform 0.1s; }
+    .color-swatch.selected { border-color: white; transform: scale(1.15); }
     .person-progress { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
 
     /* ── EMPTY / LOADING ── */
@@ -299,6 +307,23 @@
   </div>
 </div>
 
+<!-- PERSON EDIT MODAL -->
+<div class="dim" id="person-edit-dim" onclick="closePersonEdit(event)">
+  <div class="modal-box" style="max-width:360px;max-height:85vh;overflow-y:auto">
+    <div class="modal-box-title">Edit Profile</div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Name</label>
+    <input class="modal-field" id="person-edit-name" type="text" style="margin-top:6px">
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Icon</label>
+    <div class="icon-grid" id="person-icon-grid"></div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Circle Color</label>
+    <div class="color-grid" id="person-color-grid"></div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closePersonEditDirect()">Cancel</button>
+      <button class="btn-primary" onclick="savePersonEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- DINNER MODAL -->
 <div class="dim" id="dinner-dim" onclick="closeDinnerModal(event)">
   <div class="modal-box">
@@ -444,6 +469,22 @@ const PEOPLE = {
 };
 const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','#3b0764','#164e63'];
 
+const PERSON_ICONS = [
+  '👩','👨','👦','👧','👶','🧒','👱','🧔','👩‍🦰','👨‍🦰','👩‍🦱','👨‍🦱','👩‍🦳','👨‍🦳','👸','🤴',
+  '🐶','🐱','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐙','🦄','🐲',
+  '🌟','⭐','🌈','🌸','🔥','💎','🎯','🚀','🎮','🎵','🏆','🎉',
+  '🍕','🌮','🍦','🎂','🍩','🍭','🌴','🏄','⚽','🎸','🦸','🧙',
+];
+
+const PERSON_COLORS = [
+  '#9d174d','#1e3a8a','#14532d','#3b0764',
+  '#7c2d12','#0c4a6e','#064e3b','#4a1d96',
+  '#be185d','#1d4ed8','#15803d','#7c3aed',
+  '#dc2626','#2563eb','#16a34a','#9333ea',
+  '#ea580c','#0891b2','#ca8a04','#db2777',
+  '#374151','#1e293b','#0f766e','#b45309',
+];
+
 // ── STATE ────────────────────────────────────────────────────────────────────
 let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, krogerModality = 'PICKUP', allDayMode = false, currentPage = 'home';
 let weekOffset = 0;
@@ -548,6 +589,10 @@ async function loadFamilyData() {
     for (const row of data) {
       if (row.key === 'grocery') grocery = row.value || [];
       else if (row.key === 'dinners') dinners = row.value || {};
+      else if (row.key === 'people_config') {
+        const cfg = row.value || {};
+        Object.keys(cfg).forEach(k => { if (PEOPLE[k]) Object.assign(PEOPLE[k], cfg[k]); });
+      }
       else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
     }
   } catch(e) { console.error('family_data error', e); }
@@ -566,8 +611,15 @@ function renderNavBadges() {
     const list = chores[person] || [];
     const done = list.filter(c => c.done).length;
     const todo = list.filter(c => !c.done).length;
-    const avatar = document.querySelector(`#nav-${person} .nav-avatar`);
+    const p = PEOPLE[person];
+    const navBtn = document.getElementById(`nav-${person}`);
+    const avatar = navBtn?.querySelector('.nav-avatar');
     if (!avatar) return;
+    // Sync avatar emoji/color from PEOPLE in case they were edited
+    avatar.textContent = p.emoji;
+    avatar.style.background = p.color;
+    const label = navBtn.querySelector('span');
+    if (label) label.textContent = p.label;
     avatar.querySelectorAll('.nav-badge').forEach(b => b.remove());
     if (todo > 0) {
       const b = document.createElement('div');
@@ -965,7 +1017,11 @@ function renderPerson(person) {
   document.getElementById('content-area').innerHTML=`
     <div class="person-header">
       <div class="person-avatar-lg" style="background:${p.color}">${p.emoji}</div>
-      <div><div class="person-name">${p.label}'s Chores</div><div class="person-progress">${done} of ${list.length} done</div></div>
+      <div>
+        <div class="person-name">${p.label}'s Chores</div>
+        <div class="person-progress">${done} of ${list.length} done</div>
+        <button class="person-edit-btn" onclick="openPersonEdit('${person}')">✏️ Edit</button>
+      </div>
     </div>
     <div class="card">
       ${rows}
@@ -993,6 +1049,64 @@ function deleteChore(person, id) {
   chores[person]=chores[person].filter(c=>c.id!==id);
   saveFamilyData(`chores_${person}`,chores[person]); renderPerson(person); renderNavBadges();
 }
+
+// ── PERSON EDIT ───────────────────────────────────────────────────────────────
+let editingPerson = null;
+let editSelectedIcon = '', editSelectedColor = '';
+
+function openPersonEdit(person) {
+  editingPerson = person;
+  const p = PEOPLE[person];
+  editSelectedIcon = p.emoji;
+  editSelectedColor = p.color;
+  document.getElementById('person-edit-name').value = p.label;
+
+  // Icon grid
+  const iconGrid = document.getElementById('person-icon-grid');
+  iconGrid.innerHTML = PERSON_ICONS.map(icon =>
+    `<div class="icon-opt${icon === editSelectedIcon ? ' selected' : ''}" onclick="selectPersonIcon('${icon}')">${icon}</div>`
+  ).join('');
+
+  // Color grid
+  const colorGrid = document.getElementById('person-color-grid');
+  colorGrid.innerHTML = PERSON_COLORS.map(color =>
+    `<div class="color-swatch${color === editSelectedColor ? ' selected' : ''}" style="background:${color}" onclick="selectPersonColor('${color}')"></div>`
+  ).join('');
+
+  document.getElementById('person-edit-dim').classList.add('open');
+}
+
+function selectPersonIcon(icon) {
+  editSelectedIcon = icon;
+  document.querySelectorAll('.icon-opt').forEach(el => el.classList.toggle('selected', el.textContent === icon));
+}
+
+function selectPersonColor(color) {
+  editSelectedColor = color;
+  document.querySelectorAll('.color-swatch').forEach(el => el.classList.toggle('selected', el.style.background === color || el.style.backgroundColor === color));
+}
+
+async function savePersonEdit() {
+  if (!editingPerson) return;
+  const name = document.getElementById('person-edit-name').value.trim();
+  if (!name) return;
+  PEOPLE[editingPerson].label = name;
+  PEOPLE[editingPerson].emoji = editSelectedIcon;
+  PEOPLE[editingPerson].color = editSelectedColor;
+
+  // Persist config
+  const { data } = await sb.from('family_data').select('value').eq('key','people_config').single();
+  const cfg = data?.value || {};
+  cfg[editingPerson] = { label: name, emoji: editSelectedIcon, color: editSelectedColor };
+  await saveFamilyData('people_config', cfg);
+
+  closePersonEditDirect();
+  renderPerson(editingPerson);
+  renderNavBadges();
+}
+
+function closePersonEdit(e) { if (e.target === document.getElementById('person-edit-dim')) closePersonEditDirect(); }
+function closePersonEditDirect() { document.getElementById('person-edit-dim').classList.remove('open'); editingPerson = null; }
 
 // ── BRIEFINGS ─────────────────────────────────────────────────────────────────
 async function fetchLatestBriefing() {
