@@ -1106,6 +1106,16 @@ function renderStrip() {
 
   dinnerRow.querySelectorAll('.dinner-chip').forEach(chip => {
     const date = chip.dataset.date, meal = chip.dataset.meal;
+    // Hold-to-delete
+    let holdTimer = null;
+    const startHold = () => { holdTimer = setTimeout(() => { if (confirm('Clear dinner for this day?')) { delete dinners[date]; saveFamilyData('dinners', dinners); renderStrip(); } }, 600); };
+    const cancelHold = () => { clearTimeout(holdTimer); holdTimer = null; };
+    chip.addEventListener('mousedown', startHold);
+    chip.addEventListener('mouseup', cancelHold);
+    chip.addEventListener('mouseleave', cancelHold);
+    chip.addEventListener('touchstart', startHold, { passive: true });
+    chip.addEventListener('touchend', cancelHold);
+    chip.addEventListener('touchcancel', cancelHold);
     // Tapping the chip label opens recipe modal
     chip.addEventListener('click', e => { if (!e.target.classList.contains('dinner-drag-handle')) openRecipeModal(date, meal); });
     // Drag handle wires up desktop drag and touch drag
@@ -1114,7 +1124,7 @@ function renderStrip() {
       handle.addEventListener('mousedown', () => { chip.draggable = true; });
       chip.addEventListener('dragstart', e => { drag.sourceDate=date; drag.mealText=meal; chip.classList.add('dragging'); e.dataTransfer.setData('text/plain',date); e.dataTransfer.effectAllowed='move'; });
       chip.addEventListener('dragend', () => { chip.classList.remove('dragging'); chip.draggable = false; });
-      handle.addEventListener('touchstart', e => touchDragStart(e, chip, date, meal), { passive: false });
+      handle.addEventListener('touchstart', e => { cancelHold(); touchDragStart(e, chip, date, meal); }, { passive: false });
     }
   });
   dinnerRow.querySelectorAll('.dinner-slot').forEach(slot => {
