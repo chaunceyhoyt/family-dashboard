@@ -59,7 +59,7 @@
     .day-weather-icon { font-size: 22px; }
     .day-events-wrap { flex-shrink: 0; height: 26px; overflow: hidden; }
     .day-events { display: flex; flex-direction: column; gap: 3px; }
-    .day-more-indicator { font-size: 14px; color: rgba(255,255,255,0.35); text-align: center; line-height: 1; margin-top: 2px; flex-shrink: 0; }
+    .day-more-indicator { font-size: 16px; color: rgba(255,255,255,0.55); text-align: center; line-height: 1; flex-shrink: 0; display: block; }
     /* Strip wrapper */
     #strip-wrapper { flex-shrink: 0; display: flex; flex-direction: column; }
     #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 32px); }
@@ -1090,7 +1090,7 @@ function renderStrip() {
       <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
       <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
       <div class="day-weather" style="cursor:${w?'pointer':'default'}" onclick="${w?`openWeatherModal('${isoDate(d)}',${i})`:''}"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
-      <div class="day-events-wrap"><div class="day-events">${chips}</div>${moreIndicator}</div>
+      <div class="day-events-wrap"><div class="day-events">${chips}</div></div>${moreIndicator}
     </div>`;
   }).join('');
 
