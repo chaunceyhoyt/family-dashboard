@@ -589,6 +589,7 @@
 
       <div class="modal-btns" style="gap:8px;margin-top:4px">
         <button class="btn-secondary" onclick="closeRecipeEditMode()">Cancel</button>
+        <button class="btn-secondary" style="color:#f87171;border-color:rgba(239,68,68,0.3)" onclick="clearDinnerFromRecipeModal()">🗑 Clear day</button>
         <button class="btn-primary" onclick="saveRecipeEdits()">Save</button>
       </div>
     </div>
@@ -1202,7 +1203,10 @@ function renderStrip() {
     const date = chip.dataset.date, meal = chip.dataset.meal;
     // Hold-to-delete
     let holdTimer = null;
-    const startHold = () => { holdTimer = setTimeout(() => { if (confirm('Clear dinner for this day?')) { delete dinners[date]; saveFamilyData('dinners', dinners); renderStrip(); } }, 600); };
+    const startHold = (e) => {
+      if (e.target.classList.contains('dinner-drag-handle')) return;
+      holdTimer = setTimeout(() => { if (confirm('Clear dinner for this day?')) { delete dinners[date]; saveFamilyData('dinners', dinners); renderStrip(); } }, 600);
+    };
     const cancelHold = () => { clearTimeout(holdTimer); holdTimer = null; };
     chip.addEventListener('mousedown', startHold);
     chip.addEventListener('mouseup', cancelHold);
@@ -1394,12 +1398,16 @@ function openSwapRecipeMode() {
     const r = recipesData[name] || {};
     const times = [r.prepTime ? `⏱ ${r.prepTime}` : '', r.cookTime ? `🍳 ${r.cookTime}` : ''].filter(Boolean).join('  ·  ');
     const desc = (r.description || '').length > 80 ? r.description.slice(0, 80) + '…' : (r.description || '');
-    return `<div class="recipe-swap-item" onclick="swapToRecipe('${name.replace(/'/g,"\\'")}')">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-        <span>${name}</span>
-        ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
+    const safeName = name.replace(/'/g,"\\'");
+    return `<div class="recipe-swap-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px">
+      <div style="flex:1" onclick="swapToRecipe('${safeName}')">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span>${name}</span>
+          ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
+        </div>
+        ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
       </div>
-      ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
+      <button onclick="deleteRecipeFromDB('${safeName}')" style="flex-shrink:0;background:none;border:none;color:rgba(248,113,113,0.5);font-size:16px;cursor:pointer;padding:4px;line-height:1;-webkit-tap-highlight-color:transparent" title="Delete recipe">🗑</button>
     </div>`;
   }).join('');
   setRecipeViewMode('swap');
@@ -1409,13 +1417,32 @@ function closeSwapRecipeMode() { setRecipeViewMode('view'); }
 
 function swapToRecipe(name) {
   recipeCurrentMeal = name;
-  // Update the dinner slot to show the swapped meal name
   dinners[recipeCurrentDate] = name;
   saveFamilyData('dinners', dinners);
   renderStrip();
   document.getElementById('recipe-title').textContent = '🍽️ ' + name;
   setRecipeViewMode('view');
   renderRecipeView(recipesData[name]);
+}
+
+function clearDinnerFromRecipeModal() {
+  if (!recipeCurrentDate) return;
+  if (!confirm('Clear this dinner from the day?')) return;
+  delete dinners[recipeCurrentDate];
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+  closeRecipeModalDirect();
+}
+
+async function deleteRecipeFromDB(name) {
+  if (!confirm('Delete "' + name + '" from the recipe database? This cannot be undone.')) return;
+  delete recipesData[name];
+  await saveFamilyData('recipes', recipesData);
+  // If this recipe is set as a dinner, clear those days
+  Object.keys(dinners).forEach(d => { if (dinners[d] === name) delete dinners[d]; });
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+  openSwapRecipeMode(); // refresh the swap list
 }
 
 function closeRecipeModal(e) { if (e.target === document.getElementById('recipe-dim')) closeRecipeModalDirect(); }
