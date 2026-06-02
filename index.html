@@ -814,6 +814,19 @@ async function signIn() {
   });
 }
 async function signOut() { localStorage.removeItem('gcal_token'); sessionStorage.removeItem('gcal_token'); await sb.auth.signOut(); }
+async function signOutCalendar() { localStorage.removeItem('gcal_token'); sessionStorage.removeItem('gcal_token'); gcalToken = null; upcomingFamilyEvents = []; renderHome(); renderStrip(); }
+async function reloadCalendar() {
+  if (!gcalToken) { signIn(); return; }
+  upcomingFamilyEvents = [];
+  renderHome();
+  try {
+    upcomingFamilyEvents = await fetchUpcomingFamilyEvents(gcalToken);
+  } catch(e) {
+    if (e.message === 'gcal_401') { gcalToken = null; renderHome(); return; }
+    upcomingFamilyEvents = null;
+  }
+  renderHome();
+}
 
 // ── SUPABASE FAMILY DATA ──────────────────────────────────────────────────────
 async function loadFamilyData() {
@@ -1233,7 +1246,15 @@ function renderHome() {
   document.getElementById('content-area').innerHTML = `
     <div class="home-grid">
       <div class="home-col">
-        <div class="col-header">📅 Upcoming Events</div>
+        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <span>📅 Upcoming Events</span>
+          <div style="display:flex;gap:5px">
+            ${gcalToken
+              ? `<button onclick="reloadCalendar()" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;cursor:pointer;text-transform:none;letter-spacing:0">↺ Reload</button>
+                 <button onclick="signOutCalendar()" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;cursor:pointer;text-transform:none;letter-spacing:0">Sign out</button>`
+              : `<button onclick="signIn()" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;cursor:pointer;text-transform:none;letter-spacing:0">Sign in</button>`}
+          </div>
+        </div>
         <div class="home-col-body">${col1}</div>
       </div>
       <div class="home-col">
