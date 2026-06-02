@@ -656,26 +656,34 @@ function renderStrip() {
 const ghost = document.getElementById('drag-ghost');
 
 function touchDragStart(e, date, meal) {
-  e.preventDefault(); drag.active=true; drag.sourceDate=date; drag.mealText=meal;
-  touchChip=e.currentTarget; touchChip.classList.add('dragging');
-  ghost.textContent=meal; ghost.style.display='block';
+  e.preventDefault(); drag.active=false; drag.sourceDate=date; drag.mealText=meal; drag.moved=false;
+  touchChip=e.currentTarget;
+  ghost.textContent=meal;
   const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
 }
 document.addEventListener('touchmove', e => {
-  if (!drag.active) return; e.preventDefault();
+  if (!drag.sourceDate) return; e.preventDefault();
+  if (!drag.moved) { drag.moved=true; drag.active=true; ghost.style.display='block'; if(touchChip) touchChip.classList.add('dragging'); }
   const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
   document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
   const el=document.elementFromPoint(t.clientX,t.clientY); const slot=el?.closest('.dinner-slot');
   if(slot&&slot.dataset.date!==drag.sourceDate) slot.classList.add('drag-over');
 }, { passive: false });
 document.addEventListener('touchend', e => {
-  if (!drag.active) return; ghost.style.display='none';
-  if (touchChip) { touchChip.classList.remove('dragging'); touchChip=null; }
+  if (!drag.sourceDate) return;
+  ghost.style.display='none';
+  if (touchChip) { touchChip.classList.remove('dragging'); }
   document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
-  const t=e.changedTouches[0]; const el=document.elementFromPoint(t.clientX,t.clientY);
-  const slot=el?.closest('.dinner-slot'); const target=slot?.dataset.date;
-  if(target&&target!==drag.sourceDate) swapDinners(drag.sourceDate,target);
-  drag.active=false;
+  if (drag.active) {
+    const t=e.changedTouches[0]; const el=document.elementFromPoint(t.clientX,t.clientY);
+    const slot=el?.closest('.dinner-slot'); const target=slot?.dataset.date;
+    if(target&&target!==drag.sourceDate) swapDinners(drag.sourceDate,target);
+  } else {
+    // tap — no movement, open recipe modal
+    const date=drag.sourceDate, meal=drag.mealText;
+    setTimeout(() => openRecipeModal(date, meal), 0);
+  }
+  drag.active=false; drag.sourceDate=null; drag.moved=false; touchChip=null;
 });
 
 // ── DINNER CRUD ───────────────────────────────────────────────────────────────
