@@ -140,14 +140,48 @@
     .nav-badge-todo { top: -4px; right: -4px; background: var(--urgent); color: white; }
     .nav-badge-done { top: -4px; left: -4px; background: #d97706; color: white; font-size: 10px; }
 
-    /* ── 3-COLUMN HOME GRID ── */
-    .home-grid { flex: 1; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 12px 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px); min-height: 0; }
+    /* ── 2-COLUMN HOME GRID ── */
+    .home-grid { flex: 1; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px); min-height: 0; }
     .home-col { display: flex; flex-direction: column; min-height: 0; }
     .home-col-body { overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex: 1; min-height: 0; }
     .home-col-body::-webkit-scrollbar { display: none; }
     .col-header { font-size: 12px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; padding: 6px 10px; flex-shrink: 0; background: var(--surface2); border-radius: 8px; border-bottom: 2px solid rgba(59,130,246,0.3); }
-    @media (max-width: 700px) { .home-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 440px) { .home-grid { grid-template-columns: 1fr; } }
+
+    /* Tasks page */
+    #tasks-page-wrap { display:flex; flex-direction:column; height:100%; }
+    .tasks-page-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:10px 14px 6px; gap:10px; }
+    .tasks-page-title { font-size:18px; font-weight:800; color:var(--text); }
+    .tasks-page-btns { display:flex; gap:8px; }
+    .tasks-cols-wrap { flex:1; display:flex; gap:10px; overflow-x:auto; overflow-y:hidden; padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px); align-items:flex-start; -webkit-overflow-scrolling:touch; scrollbar-width:none; min-height:0; }
+    .tasks-cols-wrap::-webkit-scrollbar { display:none; }
+    .task-col { flex:1 0 200px; min-width:200px; max-width:340px; display:flex; flex-direction:column; background:var(--surface); border-radius:14px; border:1px solid rgba(255,255,255,0.07); overflow:hidden; }
+    .task-col-header { padding:10px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+    .task-col-avatar { font-size:22px; line-height:1; }
+    .task-col-name { flex:1; font-size:14px; font-weight:700; color:var(--text); }
+    .task-col-pts { font-size:13px; font-weight:800; color:#fbbf24; background:rgba(251,191,36,0.12); border-radius:8px; padding:2px 8px; }
+    .task-col-body { flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:80px; -webkit-overflow-scrolling:touch; }
+    .task-col-body.drag-over { background:rgba(59,130,246,0.08); }
+    .task-card { background:var(--surface2); border-radius:10px; padding:10px; border:1px solid rgba(255,255,255,0.07); cursor:grab; user-select:none; }
+    .task-card.dragging { opacity:0.3; }
+    .task-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; margin-bottom:4px; }
+    .task-card-title { font-size:13px; font-weight:700; color:var(--text); flex:1; }
+    .task-card-pts { font-size:12px; font-weight:800; color:#4ade80; background:rgba(74,222,128,0.12); border-radius:6px; padding:1px 6px; flex-shrink:0; }
+    .task-card-desc { font-size:12px; color:var(--text-muted); margin-bottom:6px; line-height:1.4; }
+    .task-card-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .task-card-deadline { font-size:11px; font-weight:600; color:var(--text-muted); }
+    .task-card-deadline.overdue { color:#f87171; }
+    .task-done-btn { font-size:11px; font-weight:700; background:rgba(74,222,128,0.15); border:1px solid rgba(74,222,128,0.35); color:#4ade80; border-radius:6px; padding:2px 8px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .task-del-btn { font-size:13px; font-weight:700; background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; padding:2px 4px; margin-left:auto; -webkit-tap-highlight-color:transparent; }
+    .task-del-btn:active { color:#f87171; }
+    .task-empty { font-size:12px; color:var(--text-muted); text-align:center; padding:16px 8px; opacity:0.6; }
+    .task-add-btn { background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.35); color:var(--accent); font-size:13px; font-weight:700; border-radius:10px; padding:6px 14px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .task-mgr-btn { background:var(--surface2); border:1px solid rgba(255,255,255,0.12); color:var(--text-muted); font-size:13px; font-weight:700; border-radius:10px; padding:6px 14px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    /* Manage users modal */
+    .user-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .user-row-avatar { font-size:24px; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .user-row-name { flex:1; font-size:14px; font-weight:600; color:var(--text); }
+    .user-remove-btn { font-size:12px; font-weight:700; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:7px; padding:4px 10px; cursor:pointer; }
 
     /* ── EVENT CARDS ── */
     a.ev-card { display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.08); text-decoration: none; color: var(--text); transition: transform 0.1s, border-color 0.15s; -webkit-tap-highlight-color: transparent; background: var(--surface); }
@@ -445,17 +479,11 @@
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
       <div class="nav-home-icon">🏠</div><span>Home</span>
     </button>
-    <button class="nav-btn" id="nav-mom" onclick="showPage('mom')">
-      <div class="nav-avatar" style="background:#9d174d">👩</div><span>Mom</span>
+    <button class="nav-btn" id="nav-tasks" onclick="showPage('tasks')">
+      <div class="nav-home-icon">✅</div><span>Tasks</span>
     </button>
-    <button class="nav-btn" id="nav-dad" onclick="showPage('dad')">
-      <div class="nav-avatar" style="background:#1e3a8a">👨</div><span>Dad</span>
-    </button>
-    <button class="nav-btn" id="nav-son" onclick="showPage('son')">
-      <div class="nav-avatar" style="background:#14532d">👦</div><span>Son</span>
-    </button>
-    <button class="nav-btn" id="nav-daughter" onclick="showPage('daughter')">
-      <div class="nav-avatar" style="background:#3b0764">👧</div><span>Daughter</span>
+    <button class="nav-btn" id="nav-grocery" onclick="showPage('grocery')">
+      <div class="nav-home-icon">🛒</div><span>Grocery</span>
     </button>
   </div>
 </div>
@@ -659,6 +687,57 @@
   </div>
 </div>
 
+<!-- ADD TASK MODAL -->
+<div class="dim" id="task-add-dim" onclick="if(event.target===this)closeTaskAddModal()">
+  <div class="modal-box" style="max-width:380px;max-height:90vh;overflow-y:auto">
+    <div class="modal-box-title">Add Task</div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Title *</label>
+    <input class="modal-field" id="task-add-title" type="text" placeholder="Task name" style="margin-top:6px" onkeydown="if(event.key==='Enter')confirmAddTask()">
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Description</label>
+    <input class="modal-field" id="task-add-desc" type="text" placeholder="Optional details" style="margin-top:6px">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Points</label>
+        <input class="modal-field" id="task-add-pts" type="number" value="10" min="0" style="margin-top:6px">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Assign To</label>
+        <select class="modal-field" id="task-add-assignee" style="margin-top:6px"></select>
+      </div>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Deadline (optional)</label>
+    <input class="modal-field" id="task-add-deadline" type="datetime-local" style="margin-top:6px">
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeTaskAddModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmAddTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE USERS MODAL -->
+<div class="dim" id="manage-users-dim" onclick="if(event.target===this)closeManageUsersModal()">
+  <div class="modal-box" style="max-width:380px;max-height:90vh;overflow-y:auto">
+    <div class="modal-box-title">Manage Users</div>
+    <div id="manage-users-list"></div>
+    <div id="manage-users-add-form" style="display:none;margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">Add New User</div>
+      <input class="modal-field" id="new-user-name" type="text" placeholder="Name" style="margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Icon</div>
+      <div class="icon-grid" id="new-user-icon-grid"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Color</div>
+      <div class="color-grid" id="new-user-color-grid"></div>
+      <div class="modal-btns" style="margin-top:8px">
+        <button class="btn-secondary" onclick="cancelAddUser()">Cancel</button>
+        <button class="btn-primary" onclick="confirmAddUser()">Add User</button>
+      </div>
+    </div>
+    <div id="manage-users-bottom" style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;display:flex;justify-content:space-between">
+      <button class="btn-secondary" onclick="closeManageUsersModal()" style="flex:none;padding:10px 16px">Done</button>
+      <button class="btn-primary" onclick="showAddUserForm()" style="flex:none;padding:10px 16px">+ Add User</button>
+    </div>
+  </div>
+</div>
+
 <!-- GROCERY VOICE OVERLAY -->
 <div id="grocery-voice">
   <div id="gv-listening">
@@ -762,6 +841,9 @@ let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
 let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {};
+let tasks = [];
+let taskPoints = {};
+let taskWeek = '';
 let activeDinnerDate = null;
 let drag = { active: false, sourceDate: null, mealText: '' };
 let touchChip = null;
@@ -876,7 +958,23 @@ async function loadFamilyData() {
       else if (row.key === 'recipes') recipesData = row.value || {};
       else if (row.key === 'people_config') {
         const cfg = row.value || {};
-        Object.keys(cfg).forEach(k => { if (PEOPLE[k]) Object.assign(PEOPLE[k], cfg[k]); });
+        Object.keys(cfg).forEach(k => {
+          if (PEOPLE[k]) Object.assign(PEOPLE[k], cfg[k]);
+          else if (k.startsWith('user_')) PEOPLE[k] = cfg[k];
+        });
+      }
+      else if (row.key === 'tasks') tasks = row.value || [];
+      else if (row.key === 'task_points') {
+        const stored = row.value || {};
+        const cw = currentISOWeek();
+        if (stored.week !== cw) {
+          taskPoints = {};
+          taskWeek = cw;
+          saveFamilyData('task_points', { points: taskPoints, week: taskWeek });
+        } else {
+          taskPoints = stored.points || {};
+          taskWeek = stored.week || cw;
+        }
       }
       else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
     }
@@ -892,33 +990,24 @@ async function saveFamilyData(key, value) {
 
 // ── NAV BADGES ────────────────────────────────────────────────────────────────
 function renderNavBadges() {
-  Object.keys(PEOPLE).forEach(person => {
-    const list = chores[person] || [];
-    const done = list.filter(c => c.done).length;
-    const todo = list.filter(c => !c.done).length;
-    const p = PEOPLE[person];
-    const navBtn = document.getElementById(`nav-${person}`);
-    const avatar = navBtn?.querySelector('.nav-avatar');
-    if (!avatar) return;
-    // Sync avatar emoji/color from PEOPLE in case they were edited
-    avatar.textContent = p.emoji;
-    avatar.style.background = p.color;
-    const label = navBtn.querySelector('span');
-    if (label) label.textContent = p.label;
-    avatar.querySelectorAll('.nav-badge').forEach(b => b.remove());
-    if (todo > 0) {
-      const b = document.createElement('div');
-      b.className = 'nav-badge nav-badge-todo';
-      b.textContent = todo > 9 ? '9+' : todo;
-      avatar.appendChild(b);
+  const tasksBtn = document.getElementById('nav-tasks');
+  if (tasksBtn) {
+    tasksBtn.querySelectorAll('.nav-badge').forEach(b => b.remove());
+    const count = tasks.length;
+    if (count > 0) {
+      const icon = tasksBtn.querySelector('.nav-home-icon');
+      if (icon) {
+        const b = document.createElement('div');
+        b.className = 'nav-badge nav-badge-todo';
+        b.textContent = count > 9 ? '9+' : count;
+        b.style.position = 'absolute';
+        b.style.top = '-4px';
+        b.style.right = '-4px';
+        icon.style.position = 'relative';
+        icon.appendChild(b);
+      }
     }
-    if (done > 0) {
-      const b = document.createElement('div');
-      b.className = 'nav-badge nav-badge-done';
-      b.textContent = '★';
-      avatar.appendChild(b);
-    }
-  });
+  }
 }
 
 // ── WEATHER ──────────────────────────────────────────────────────────────────
@@ -1343,7 +1432,7 @@ async function addDinnerIngredientsToGrocery() {
       grocery.push({ id: Date.now() + Math.random(), text, done: false });
   }
   await saveFamilyData('grocery', grocery);
-  renderHome();
+  if (currentPage === 'home') renderHome();
   btn.textContent = '✓ Added!';
   const status = document.getElementById('recipe-status');
   status.textContent = `${selected.length} ingredient${selected.length !== 1 ? 's' : ''} added to your grocery list.`;
@@ -1356,7 +1445,10 @@ function showPage(page) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
   const ca = document.getElementById('content-area');
   ca.classList.toggle('home-mode', page==='home');
-  if (page==='home') renderHome(); else renderPerson(page);
+  if (page==='home') renderHome();
+  else if (page==='tasks') renderTasks();
+  else if (page==='grocery') renderGrocery();
+  else renderPerson(page);
 }
 
 // ── HOME PAGE — 3 COLUMNS ─────────────────────────────────────────────────────
@@ -1421,58 +1513,63 @@ function renderHome() {
     col2 = `<div class="card"><div class="empty-state"><div class="empty-icon">📭</div>No briefing yet today</div></div>`;
   }
 
-  // ── COL 3: Grocery List ──
+  const calBtns = gcalToken
+    ? '<button onclick="reloadCalendar()" title="Reload events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
+      '<button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
+    : '<button onclick="signIn()" title="Sign in to see events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
+
+  document.getElementById('content-area').innerHTML =
+    '<div class="home-grid" style="grid-template-columns:1fr 1fr">' +
+      '<div class="home-col">' +
+        '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
+          '<span>📅 Upcoming Events</span>' +
+          '<div style="display:flex;gap:5px">' + calBtns + '</div>' +
+        '</div>' +
+        '<div class="home-col-body">' + col1 + '</div>' +
+      '</div>' +
+      '<div class="home-col">' +
+        '<div class="col-header">📋 Today\'s Briefing</div>' +
+        '<div class="home-col-body">' + col2 + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+// ── GROCERY PAGE ──────────────────────────────────────────────────────────────
+function renderGrocery() {
   const groceryRows = grocery.length
-    ? grocery.map(g => `<div class="list-item">
-        <button class="check-btn ${g.done?'done':''}" onclick="toggleGrocery('${g.id}')">${g.done?'✓':''}</button>
-        <span class="list-label ${g.done?'done':''}">${g.text}</span>
-        <button class="del-btn" onclick="deleteGrocery('${g.id}')">×</button>
-      </div>`).join('')
+    ? grocery.map(g => '<div class="list-item">' +
+        '<button class="check-btn ' + (g.done?'done':'') + '" onclick="toggleGrocery(\'' + g.id + '\')">' + (g.done?'✓':'') + '</button>' +
+        '<span class="list-label ' + (g.done?'done':'') + '">' + g.text + '</span>' +
+        '<button class="del-btn" onclick="deleteGrocery(\'' + g.id + '\')">×</button>' +
+      '</div>').join('')
     : '<div class="empty-state" style="padding:16px 14px;font-size:13px">Nothing on the list yet</div>';
 
-  document.getElementById('content-area').innerHTML = `
-    <div class="home-grid">
-      <div class="home-col">
-        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-          <span>📅 Upcoming Events</span>
-          <div style="display:flex;gap:5px">
-            ${gcalToken
-              ? `<button onclick="reloadCalendar()" title="Reload events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>
-                 <button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>`
-              : `<button onclick="signIn()" title="Sign in to see events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>`}
-          </div>
-        </div>
-        <div class="home-col-body">${col1}</div>
-      </div>
-      <div class="home-col">
-        <div class="col-header">📋 Today's Briefing</div>
-        <div class="home-col-body">${col2}</div>
-      </div>
-      <div class="home-col">
-        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between">
-          <span>🛒 Grocery List</span>
-          <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600;text-transform:none;letter-spacing:0">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
-        </div>
-        <div class="home-col-body" style="overflow:hidden">
-          <div class="card" style="display:flex;flex-direction:column;height:100%">
-            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
-              ${groceryRows}
-            </div>
-            <div class="list-add-row" style="justify-content:space-between;flex-shrink:0">
-              <div style="display:flex;gap:6px;align-items:center">
-                <button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">All</button>
-                <button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">None</button>
-                <button onclick="clearSelectedGrocery()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">Clear</button>
-              </div>
-              <div style="display:flex;gap:6px;align-items:center">
-                <button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add">🎤</button>
-                <button class="list-add-btn" onclick="openGroceryAddModal()">+</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`;
+  document.getElementById('content-area').innerHTML =
+    '<div style="padding:14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;height:100%;box-sizing:border-box;">' +
+      '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">' +
+        '<span>🛒 Grocery List</span>' +
+        '<button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">' + (krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger') + '</button>' +
+      '</div>' +
+      '<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">' +
+        '<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">' + groceryRows + '</div>' +
+        '<div class="list-add-row" style="justify-content:space-between;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.06)">' +
+          '<div style="display:flex;gap:6px;align-items:center">' +
+            '<button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">All</button>' +
+            '<button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">None</button>' +
+            '<button onclick="clearSelectedGrocery()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">Clear</button>' +
+          '</div>' +
+          '<div style="display:flex;gap:6px;align-items:center">' +
+            '<button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add">🎤</button>' +
+            '<button class="list-add-btn" onclick="openGroceryAddModal()">+</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function reRenderCurrentPage() {
+  if (currentPage === 'grocery') renderGrocery();
+  else if (currentPage === 'home') renderHome();
 }
 
 // ── GROCERY CRUD ──────────────────────────────────────────────────────────────
@@ -1490,22 +1587,22 @@ function confirmAddGrocery() {
   grocery.push({ id: uid(), text, done: false });
   saveFamilyData('grocery', grocery);
   closeGroceryAddModal();
-  renderHome();
+  reRenderCurrentPage();
 }
 function selectAllGrocery(done) {
   grocery.forEach(g => g.done = done);
-  saveFamilyData('grocery', grocery); renderHome();
+  saveFamilyData('grocery', grocery); reRenderCurrentPage();
 }
 function clearSelectedGrocery() {
   grocery = grocery.filter(g => !g.done);
-  saveFamilyData('grocery', grocery); renderHome();
+  saveFamilyData('grocery', grocery); reRenderCurrentPage();
 }
 function toggleGrocery(id) {
   const item = grocery.find(g => String(g.id)===String(id)); if (!item) return;
-  item.done = !item.done; saveFamilyData('grocery', grocery); renderHome();
+  item.done = !item.done; saveFamilyData('grocery', grocery); reRenderCurrentPage();
 }
 function deleteGrocery(id) {
-  grocery = grocery.filter(g => String(g.id)!==String(id)); saveFamilyData('grocery', grocery); renderHome();
+  grocery = grocery.filter(g => String(g.id)!==String(id)); saveFamilyData('grocery', grocery); reRenderCurrentPage();
 }
 
 // ── GROCERY VOICE ─────────────────────────────────────────────────────────────
@@ -1561,7 +1658,7 @@ function processGroceryVoice(text) {
 }
 function confirmGroceryItems() {
   pendingGroceryItems.forEach(text => grocery.push({id:uid(),text,done:false}));
-  saveFamilyData('grocery',grocery); closeGroceryVoice(); renderHome();
+  saveFamilyData('grocery',grocery); closeGroceryVoice(); reRenderCurrentPage();
 }
 
 // ── PERSON / CHORES PAGE ──────────────────────────────────────────────────────
@@ -1815,6 +1912,243 @@ async function confirmVoiceEvent() {
     if(!r.ok) throw new Error();
     closeVoice(); init();
   } catch {document.getElementById('voice-status').textContent='Failed to add — try again';}
+}
+
+// ── ISO WEEK ──────────────────────────────────────────────────────────────────
+function currentISOWeek() {
+  const d = new Date(); const day = d.getDay() || 7;
+  d.setDate(d.getDate() + 4 - day); const y = d.getFullYear();
+  const w = Math.ceil(((d - new Date(y, 0, 1)) / 86400000 + 1) / 7);
+  return y + '-W' + String(w).padStart(2, '0');
+}
+
+// ── TASKS PAGE ────────────────────────────────────────────────────────────────
+function deadlineLabel(deadline) {
+  if (!deadline) return '';
+  const diff = new Date(deadline) - new Date();
+  const overdue = diff < 0;
+  const abs = Math.abs(diff);
+  const mins = Math.floor(abs / 60000);
+  const hrs = Math.floor(abs / 3600000);
+  const days = Math.floor(abs / 86400000);
+  let label;
+  if (mins < 60) label = mins + 'm';
+  else if (hrs < 24) label = hrs + 'h';
+  else label = days + 'd';
+  return overdue ? ('OVERDUE ' + label) : ('⏰ ' + label);
+}
+
+function renderTasks() {
+  const cols = [{ key: null, label: 'House', emoji: '🏠', color: '#374151' }];
+  Object.entries(PEOPLE).forEach(function(entry) {
+    cols.push({ key: entry[0], label: entry[1].label, emoji: entry[1].emoji, color: entry[1].color });
+  });
+
+  function makeTaskCard(task) {
+    const dl = task.deadline ? deadlineLabel(task.deadline) : '';
+    const isOverdue = task.deadline && new Date(task.deadline) < new Date();
+    const dlClass = isOverdue ? 'task-card-deadline overdue' : 'task-card-deadline';
+    return '<div class="task-card" draggable="true" data-id="' + task.id + '" ondragstart="taskDragStart(event,\'' + task.id + '\')">' +
+      '<div class="task-card-top">' +
+        '<span class="task-card-title">' + task.title + '</span>' +
+        '<span class="task-card-pts">+' + (task.points || 0) + ' pts</span>' +
+      '</div>' +
+      (task.desc ? '<div class="task-card-desc">' + task.desc + '</div>' : '') +
+      '<div class="task-card-meta">' +
+        (dl ? '<span class="' + dlClass + '">' + dl + '</span>' : '') +
+        '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\')">✓ Done</button>' +
+        '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function makeCol(col) {
+    const colTasks = tasks.filter(function(t) { return String(t.assignee) === String(col.key); });
+    const pts = col.key ? (taskPoints[col.key] || 0) : null;
+    const ptsHtml = pts !== null ? '<span class="task-col-pts">' + pts + ' pts</span>' : '';
+    const cardsHtml = colTasks.length
+      ? colTasks.map(makeTaskCard).join('')
+      : '<div class="task-empty">Drop tasks here</div>';
+    return '<div class="task-col" data-assignee="' + col.key + '">' +
+      '<div class="task-col-header">' +
+        '<div class="task-col-avatar" style="background:' + col.color + ';border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center">' + col.emoji + '</div>' +
+        '<div class="task-col-name">' + col.label + '</div>' +
+        ptsHtml +
+      '</div>' +
+      '<div class="task-col-body" data-assignee="' + col.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + col.key + '\')">' +
+        cardsHtml +
+      '</div>' +
+    '</div>';
+  }
+
+  document.getElementById('content-area').innerHTML =
+    '<div id="tasks-page-wrap">' +
+      '<div class="tasks-page-header">' +
+        '<div class="tasks-page-title">🏆 Family Tasks</div>' +
+        '<div class="tasks-page-btns">' +
+          '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
+          '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tasks-cols-wrap">' + cols.map(makeCol).join('') + '</div>' +
+    '</div>';
+}
+
+// ── TASK DRAG/DROP ────────────────────────────────────────────────────────────
+let draggingTaskId = null;
+function taskDragStart(e, id) {
+  draggingTaskId = id;
+  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function() { var el = document.querySelector('.task-card[data-id="' + id + '"]'); if (el) el.classList.add('dragging'); }, 0);
+}
+function taskDragOver(e) {
+  e.preventDefault();
+  var body = e.currentTarget;
+  body.classList.add('drag-over');
+}
+function taskDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function taskDrop(e, assigneeKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  var id = e.dataTransfer.getData('text/plain') || draggingTaskId;
+  var task = tasks.find(function(t) { return t.id === id; });
+  if (!task) return;
+  task.assignee = assigneeKey === 'null' ? null : assigneeKey;
+  saveFamilyData('tasks', tasks);
+  renderTasks();
+}
+
+// ── TASK CRUD ─────────────────────────────────────────────────────────────────
+function completeTask(id) {
+  var task = tasks.find(function(t) { return t.id === id; });
+  if (!task) return;
+  if (task.assignee) {
+    var isOverdue = task.deadline && new Date(task.deadline) < new Date();
+    if (!isOverdue) {
+      if (!taskPoints[task.assignee]) taskPoints[task.assignee] = 0;
+      taskPoints[task.assignee] += (task.points || 0);
+    }
+  }
+  tasks = tasks.filter(function(t) { return t.id !== id; });
+  saveFamilyData('tasks', tasks);
+  saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
+  renderNavBadges();
+  renderTasks();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(function(t) { return t.id !== id; });
+  saveFamilyData('tasks', tasks);
+  renderNavBadges();
+  renderTasks();
+}
+
+// ── TASK ADD MODAL ────────────────────────────────────────────────────────────
+function openTaskAddModal() {
+  var sel = document.getElementById('task-add-assignee');
+  sel.innerHTML = '<option value="null">🏠 House</option>' +
+    Object.entries(PEOPLE).map(function(e) {
+      return '<option value="' + e[0] + '">' + e[1].emoji + ' ' + e[1].label + '</option>';
+    }).join('');
+  document.getElementById('task-add-title').value = '';
+  document.getElementById('task-add-desc').value = '';
+  document.getElementById('task-add-pts').value = '10';
+  document.getElementById('task-add-deadline').value = '';
+  document.getElementById('task-add-dim').classList.add('open');
+  setTimeout(function() { document.getElementById('task-add-title').focus(); }, 80);
+}
+function closeTaskAddModal() {
+  document.getElementById('task-add-dim').classList.remove('open');
+}
+function confirmAddTask() {
+  var title = document.getElementById('task-add-title').value.trim();
+  if (!title) return;
+  var desc = document.getElementById('task-add-desc').value.trim();
+  var points = parseInt(document.getElementById('task-add-pts').value) || 0;
+  var deadline = document.getElementById('task-add-deadline').value || null;
+  var assigneeVal = document.getElementById('task-add-assignee').value;
+  var assignee = assigneeVal === 'null' ? null : assigneeVal;
+  tasks.push({ id: uid(), title: title, desc: desc, points: points, deadline: deadline, assignee: assignee });
+  saveFamilyData('tasks', tasks);
+  closeTaskAddModal();
+  renderNavBadges();
+  renderTasks();
+}
+
+// ── MANAGE USERS MODAL ────────────────────────────────────────────────────────
+var newUserSelectedIcon = '😊';
+var newUserSelectedColor = PERSON_COLORS[0];
+
+function openManageUsersModal() {
+  renderManageUsersList();
+  document.getElementById('manage-users-add-form').style.display = 'none';
+  document.getElementById('manage-users-bottom').style.display = 'flex';
+  document.getElementById('manage-users-dim').classList.add('open');
+}
+function closeManageUsersModal() {
+  document.getElementById('manage-users-dim').classList.remove('open');
+}
+function renderManageUsersList() {
+  document.getElementById('manage-users-list').innerHTML = Object.entries(PEOPLE).map(function(entry) {
+    var k = entry[0], p = entry[1];
+    return '<div class="user-row">' +
+      '<div class="user-row-avatar" style="background:' + p.color + '">' + p.emoji + '</div>' +
+      '<div class="user-row-name">' + p.label + '</div>' +
+      '<button class="user-remove-btn" onclick="removeUser(\'' + k + '\')">Remove</button>' +
+    '</div>';
+  }).join('');
+}
+function showAddUserForm() {
+  newUserSelectedIcon = PERSON_ICONS[0];
+  newUserSelectedColor = PERSON_COLORS[0];
+  document.getElementById('new-user-name').value = '';
+  document.getElementById('new-user-icon-grid').innerHTML = PERSON_ICONS.map(function(ic) {
+    return '<div class="icon-opt' + (ic === newUserSelectedIcon ? ' selected' : '') + '" onclick="selectNewUserIcon(\'' + ic + '\')">' + ic + '</div>';
+  }).join('');
+  document.getElementById('new-user-color-grid').innerHTML = PERSON_COLORS.map(function(c) {
+    return '<div class="color-swatch' + (c === newUserSelectedColor ? ' selected' : '') + '" style="background:' + c + '" data-color="' + c + '" onclick="selectNewUserColor(\'' + c + '\')"></div>';
+  }).join('');
+  document.getElementById('manage-users-add-form').style.display = 'block';
+  document.getElementById('manage-users-bottom').style.display = 'none';
+}
+function cancelAddUser() {
+  document.getElementById('manage-users-add-form').style.display = 'none';
+  document.getElementById('manage-users-bottom').style.display = 'flex';
+}
+function selectNewUserIcon(icon) {
+  newUserSelectedIcon = icon;
+  document.querySelectorAll('#new-user-icon-grid .icon-opt').forEach(function(el) { el.classList.toggle('selected', el.textContent === icon); });
+}
+function selectNewUserColor(color) {
+  newUserSelectedColor = color;
+  document.querySelectorAll('#new-user-color-grid .color-swatch').forEach(function(el) { el.classList.toggle('selected', el.dataset.color === color); });
+}
+async function confirmAddUser() {
+  var name = document.getElementById('new-user-name').value.trim();
+  if (!name) return;
+  var key = 'user_' + uid();
+  PEOPLE[key] = { label: name, emoji: newUserSelectedIcon, color: newUserSelectedColor };
+  var cfg = {};
+  Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
+  await saveFamilyData('people_config', cfg);
+  cancelAddUser();
+  renderManageUsersList();
+  renderNavBadges();
+}
+async function removeUser(key) {
+  if (!confirm('Remove ' + (PEOPLE[key]?.label || key) + '? Their tasks will be moved to House.')) return;
+  tasks.forEach(function(t) { if (t.assignee === key) t.assignee = null; });
+  saveFamilyData('tasks', tasks);
+  delete PEOPLE[key];
+  var cfg = {};
+  Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
+  await saveFamilyData('people_config', cfg);
+  renderManageUsersList();
+  renderNavBadges();
+  if (currentPage === 'tasks') renderTasks();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -2134,7 +2468,7 @@ async function sendAllToKroger(items) {
   if (addedIds.length) {
     grocery = grocery.filter(g => !addedIds.includes(g.id));
     await saveFamilyData('grocery', grocery);
-    renderHome();
+    reRenderCurrentPage();
   }
 }
 
