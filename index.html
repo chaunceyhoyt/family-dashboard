@@ -470,10 +470,18 @@ const PEOPLE = {
 const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','#3b0764','#164e63'];
 
 const PERSON_ICONS = [
-  '👩','👨','👦','👧','👶','🧒','👱','🧔','👩‍🦰','👨‍🦰','👩‍🦱','👨‍🦱','👩‍🦳','👨‍🦳','👸','🤴',
-  '🐶','🐱','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐙','🦄','🐲',
-  '🌟','⭐','🌈','🌸','🔥','💎','🎯','🚀','🎮','🎵','🏆','🎉',
-  '🍕','🌮','🍦','🎂','🍩','🍭','🌴','🏄','⚽','🎸','🦸','🧙',
+  // People
+  '👩','👨','👦','👧','👶','🧒','👱','🧔','👩‍🦰','👨‍🦰','👩‍🦱','👨‍🦱','👸','🤴','🧝','🧝‍♂️',
+  // Animals
+  '🐶','🐱','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐙','🦄','🐆',
+  // Dragon Ball Z / anime fighter vibes
+  '🐉','👊','💥','⚡','🔥','🌀','🏋️','🥋','👿','😈','🔮','🌙',
+  // Sonic / speed vibes
+  '🦔','💨','🌀','🔵','⭐','🏃','🎮','🕹️',
+  // K-pop / demon hunter vibes
+  '🗡️','⚔️','🛡️','🦹','🦹‍♀️','🧙','🧙‍♀️','🕷️','🦸','🦸‍♀️','💜','🌸',
+  // Fun / kids
+  '🌟','🌈','🎯','🚀','🎵','🏆','🎉','🍕','🍦','🎂','🌴','🏄',
 ];
 
 const PERSON_COLORS = [
@@ -1070,7 +1078,7 @@ function openPersonEdit(person) {
   // Color grid
   const colorGrid = document.getElementById('person-color-grid');
   colorGrid.innerHTML = PERSON_COLORS.map(color =>
-    `<div class="color-swatch${color === editSelectedColor ? ' selected' : ''}" style="background:${color}" onclick="selectPersonColor('${color}')"></div>`
+    `<div class="color-swatch${color === editSelectedColor ? ' selected' : ''}" style="background:${color}" data-color="${color}" onclick="selectPersonColor('${color}')"></div>`
   ).join('');
 
   document.getElementById('person-edit-dim').classList.add('open');
@@ -1083,7 +1091,7 @@ function selectPersonIcon(icon) {
 
 function selectPersonColor(color) {
   editSelectedColor = color;
-  document.querySelectorAll('.color-swatch').forEach(el => el.classList.toggle('selected', el.style.background === color || el.style.backgroundColor === color));
+  document.querySelectorAll('.color-swatch').forEach(el => el.classList.toggle('selected', el.dataset.color === color));
 }
 
 async function savePersonEdit() {
@@ -1100,8 +1108,9 @@ async function savePersonEdit() {
   cfg[editingPerson] = { label: name, emoji: editSelectedIcon, color: editSelectedColor };
   await saveFamilyData('people_config', cfg);
 
+  const personKey = editingPerson;
   closePersonEditDirect();
-  renderPerson(editingPerson);
+  renderPerson(personKey);
   renderNavBadges();
 }
 
