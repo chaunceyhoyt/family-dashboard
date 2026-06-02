@@ -57,8 +57,9 @@
     .day-col.today .day-col-date { color: var(--accent); }
     .day-weather { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px; }
     .day-weather-icon { font-size: 22px; }
-    .day-events-wrap { flex-shrink: 0; height: 26px; overflow: hidden; }
-    .day-events { display: flex; flex-direction: column; gap: 3px; overflow: hidden; height: 26px; }
+    .day-events-wrap { flex-shrink: 0; overflow: hidden; }
+    .day-events { display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+    .day-more-indicator { font-size: 14px; color: rgba(255,255,255,0.35); text-align: center; line-height: 1; margin-top: 2px; flex-shrink: 0; }
     /* Strip wrapper */
     #strip-wrapper { flex-shrink: 0; display: flex; flex-direction: column; }
     #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 32px); }
@@ -73,7 +74,7 @@
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
     /* Toggle bar */
     #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 5px; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 0.25s; }
-    #strip-toggle-bar span { font-size: 18px; color: rgba(255,255,255,0.3); line-height: 1; transition: transform 0.25s; }
+    #strip-toggle-bar span { font-size: 28px; color: rgba(255,255,255,0.45); line-height: 1; transition: transform 0.25s; }
     #strip-toggle-bar.expanded span { transform: rotate(180deg); }
     #strip-toggle-bar.expanded { position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 201; border-top: 1px solid rgba(255,255,255,0.07); border-bottom: none; }
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
@@ -1077,17 +1078,19 @@ function renderStrip() {
   strip.innerHTML = weekDays.map((d, i) => {
     const w = weatherDays[i], evs = calEventsByDay[i] || [];
     const todayCls = isToday(d) ? ' today' : '';
-    const chips = evs.map(ev => {
-      const t = ev.start?.dateTime ? formatTime(ev.start.dateTime) : '';
-      const name = ev.summary || 'Event';
-      const link = ev.htmlLink || '#';
+    const firstEv = evs[0];
+    const chipHtml = firstEv ? (() => {
+      const t = firstEv.start?.dateTime ? formatTime(firstEv.start.dateTime) : '';
+      const name = firstEv.summary || 'Event';
+      const link = firstEv.htmlLink || '#';
       return `<a class="day-ev-chip" href="${link}" target="_blank" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</a>`;
-    }).join('');
+    })() : '';
+    const moreIndicator = evs.length > 1 ? `<div class="day-more-indicator">▾</div>` : '';
     return `<div class="day-col${todayCls}">
       <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
       <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
       <div class="day-weather" style="cursor:${w?'pointer':'default'}" onclick="${w?`openWeatherModal('${isoDate(d)}',${i})`:''}"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
-      <div class="day-events-wrap"><div class="day-events">${chips}</div></div>
+      <div class="day-events-wrap"><div class="day-events">${chipHtml}</div>${moreIndicator}</div>
     </div>`;
   }).join('');
 
