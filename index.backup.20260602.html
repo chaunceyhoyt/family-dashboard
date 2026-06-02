@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <title>Browning Family Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f172a; --surface: #1e293b; --surface2: #273548; --surface3: #2d3f55;
+      --accent: #3b82f6; --text: #f1f5f9; --text-muted: #94a3b8;
+      --urgent: #ef4444; --warning: #f59e0b; --success: #10b981;
+      --radius: 12px; --nav-h: 68px;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+
+    /* ── LOGIN ── */
+    #login-screen { position: fixed; inset: 0; background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; padding: 32px; text-align: center; }
+    .login-icon  { font-size: 56px; margin-bottom: 20px; }
+    .login-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .login-sub   { font-size: 14px; color: var(--text-muted); margin-bottom: 48px; }
+    .google-btn  { display: flex; align-items: center; gap: 12px; background: white; color: #1f2937; border: none; border-radius: 12px; padding: 14px 28px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; max-width: 300px; justify-content: center; box-shadow: 0 4px 24px rgba(0,0,0,0.3); transition: transform 0.1s; -webkit-tap-highlight-color: transparent; }
+    .google-btn:active { transform: scale(0.97); }
+    .google-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .login-note { margin-top: 20px; font-size: 12px; color: #475569; }
+
+    /* ── DASHBOARD SHELL ── */
+    #dashboard { display: none; flex-direction: column; height: 100%; }
+
+    /* ── WEEK NAV BAR ── */
+    #week-nav { flex-shrink: 0; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 6px; padding: 6px 10px; }
+    .week-nav-arrow { background: var(--surface2); border: none; color: var(--text); width: 30px; height: 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; flex-shrink: 0; transition: background 0.15s; }
+    .week-nav-arrow:active { background: var(--surface3); }
+    #week-label { flex: 1; font-size: 13px; font-weight: 700; text-align: center; color: var(--text); letter-spacing: -0.2px; }
+    .week-today-btn { background: var(--surface2); border: none; color: var(--text-muted); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.15s; letter-spacing: 0.3px; }
+    .week-today-btn:active { background: var(--surface3); }
+    .week-cal-btn { background: var(--surface2); border: none; color: var(--text-muted); width: 30px; height: 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; flex-shrink: 0; transition: background 0.15s; position: relative; }
+    .week-cal-btn:active { background: var(--surface3); }
+    #week-picker { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; }
+
+    /* ── WEEKLY STRIP ── */
+    #weekly-strip { flex-shrink: 0; background: linear-gradient(180deg, #0c1525 0%, #111e35 100%); border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: calc(env(safe-area-inset-top) + 8px) 8px 10px; }
+    #weekly-strip::-webkit-scrollbar { display: none; }
+    .day-col { flex: 1 0 100px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px 6px; border-radius: 12px; border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; min-width: 100px; }
+    .day-col.today { border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.05); }
+    .day-col-top { display: flex; align-items: center; justify-content: space-between; }
+    .day-col-name { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+    .day-col-date { font-size: 20px; font-weight: 800; line-height: 1; text-align: center; }
+    .day-col.today .day-col-date { color: var(--accent); }
+    .day-weather { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .day-weather-icon { font-size: 15px; }
+    .day-events { display: flex; flex-direction: column; gap: 2px; min-height: 18px; }
+    .day-ev-chip { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bfdbfe; }
+    .dinner-slot { margin-top: 2px; min-height: 38px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
+    .dinner-slot.drag-over { background: rgba(16,185,129,0.12); border-color: var(--success); border-style: solid; }
+    .dinner-chip { width: 100%; min-height: 38px; border-radius: 8px; display: flex; align-items: center; gap: 4px; padding: 4px 6px; text-align: center; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.28); font-size: 10px; font-weight: 700; color: #6ee7b7; line-height: 1.3; user-select: none; transition: opacity 0.15s; cursor: pointer; }
+    .dinner-chip.dragging { opacity: 0.3; }
+    .dinner-chip.today-meal { background: rgba(16,185,129,0.28); border-color: #6ee7b7; box-shadow: 0 0 0 2px rgba(110,231,183,0.35); color: #fff; font-size: 11px; }
+    .recipe-modal-box { max-height: 88vh; overflow-y: auto; padding-bottom: 16px; }
+    .recipe-section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+    .recipe-ingredient { font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; align-items: baseline; }
+    .recipe-ingredient::before { content: "•"; color: var(--accent); flex-shrink: 0; }
+    .recipe-step { font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 10px; align-items: baseline; line-height: 1.5; }
+    .recipe-step-num { font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(59,130,246,0.15); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .recipe-swap-item { padding: 10px 12px; border-radius: 8px; background: var(--surface2); margin-bottom: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
+    .recipe-swap-item:active { background: rgba(59,130,246,0.2); }
+    /* Portrait: stacked */
+    .recipe-two-col { display: block; }
+    /* Landscape: side-by-side, each column scrolls independently */
+    @media (orientation: landscape) {
+      .recipe-modal-box { max-height: 94vh; }
+      .recipe-two-col { display: grid; grid-template-columns: 5fr 2fr; gap: 0 16px; }
+      .recipe-col-left { max-height: 42vh; overflow-y: auto; }
+      .recipe-col-right { border-left: 1px solid rgba(255,255,255,0.07); padding-left: 16px; max-height: 42vh; overflow-y: auto; }
+    }
+    .dinner-chip-label { flex: 1; }
+    .dinner-drag-handle { font-size: 12px; opacity: 0.45; cursor: grab; touch-action: none; padding: 2px; flex-shrink: 0; }
+    .dinner-add-btn { background: none; border: none; color: rgba(255,255,255,0.2); font-size: 20px; cursor: pointer; width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; transition: color 0.15s; }
+    .dinner-add-btn:active { color: var(--text-muted); }
+    .day-col-mic { background: none; border: none; color: rgba(255,255,255,0.2); font-size: 13px; cursor: pointer; padding: 2px; -webkit-tap-highlight-color: transparent; transition: color 0.15s; line-height: 1; }
+    .day-col-mic:active { color: var(--accent); }
+
+    /* ── CONTENT AREA ── */
+    #content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); }
+    #content-area.home-mode { overflow: hidden; padding: 0; display: flex; flex-direction: column; }
+
+    /* ── BOTTOM NAV ── */
+    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid rgba(255,255,255,0.07); display: flex; align-items: stretch; z-index: 200; }
+    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.3px; -webkit-tap-highlight-color: transparent; transition: color 0.15s; padding: 8px 4px; }
+    .nav-btn.active { color: var(--accent); }
+    .nav-home-icon { font-size: 26px; line-height: 1; }
+    .nav-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.15s, box-shadow 0.15s; position: relative; }
+    .nav-btn.active .nav-avatar { transform: scale(1.1); box-shadow: 0 0 0 2px var(--accent); }
+    .nav-badge { position: absolute; width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; border: 2px solid var(--surface); line-height: 1; }
+    .nav-badge-todo { top: -2px; right: -2px; background: var(--urgent); color: white; }
+    .nav-badge-done { top: -2px; left: -2px; background: #d97706; color: white; font-size: 10px; }
+
+    /* ── 3-COLUMN HOME GRID ── */
+    .home-grid { flex: 1; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 12px 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px); min-height: 0; }
+    .home-col { display: flex; flex-direction: column; min-height: 0; }
+    .home-col-body { overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex: 1; min-height: 0; }
+    .home-col-body::-webkit-scrollbar { display: none; }
+    .col-header { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; padding-top: 2px; flex-shrink: 0; }
+    @media (max-width: 700px) { .home-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 440px) { .home-grid { grid-template-columns: 1fr; } }
+
+    /* ── EVENT CARDS ── */
+    a.ev-card { display: block; border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); text-decoration: none; color: var(--text); transition: transform 0.1s, border-color 0.15s; -webkit-tap-highlight-color: transparent; }
+    a.ev-card:active { transform: scale(0.98); border-color: rgba(255,255,255,0.18); }
+    .ev-card-banner { height: 56px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .ev-card-body { background: var(--surface); padding: 9px 12px 10px; }
+    .ev-card-title { font-size: 13px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
+    .ev-card-time  { font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
+    .ev-card-date  { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+    .ev-card-loc   { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+
+    /* Non-linked briefing items in local events */
+    .local-item { background: var(--surface); border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); padding: 10px 12px; }
+    .local-item-dot-row { display: flex; align-items: flex-start; gap: 8px; }
+    .local-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
+    .local-dot.urgent  { background: var(--urgent); }
+    .local-dot.warning { background: var(--warning); }
+    .local-dot.success { background: var(--success); }
+    .local-dot.info    { background: var(--text-muted); }
+    .local-item-text   { font-size: 13px; line-height: 1.4; flex: 1; }
+    .local-item-detail { font-size: 11px; color: var(--text-muted); margin-top: 3px; line-height: 1.3; }
+    .local-item-link   { display: inline-block; margin-top: 5px; font-size: 11px; color: var(--accent); text-decoration: none; font-weight: 600; }
+    .local-item-time   { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
+
+    /* ── LIST (grocery / chores) ── */
+    .card { background: var(--surface); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 12px; }
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .list-item:last-child { border-bottom: none; }
+    .check-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); background: none; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; -webkit-tap-highlight-color: transparent; font-size: 12px; font-weight: 700; color: white; }
+    .check-btn.done { background: var(--success); border-color: var(--success); }
+    .list-label { flex: 1; font-size: 15px; line-height: 1.4; transition: color 0.15s; }
+    .list-label.done { text-decoration: line-through; color: var(--text-muted); }
+    .del-btn { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px 6px; -webkit-tap-highlight-color: transparent; opacity: 0.35; transition: opacity 0.15s; line-height: 1; }
+    .del-btn:active { opacity: 1; color: var(--urgent); }
+    .list-add-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .list-add-input { flex: 1; background: none; border: none; color: var(--text); font-size: 15px; outline: none; font-family: inherit; min-width: 0; }
+    .list-add-input::placeholder { color: var(--text-muted); }
+    .list-add-btn { background: var(--accent); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+    .list-mic-btn { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.25); color: var(--accent); width: 28px; height: 28px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; transition: background 0.15s; }
+    .list-mic-btn:active { background: rgba(59,130,246,0.3); }
+
+    /* ── PERSON PAGE ── */
+    .person-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 4px 0; }
+    .person-avatar-lg { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; }
+    .person-name     { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    .person-edit-btn { background: var(--surface2); border: none; color: var(--text-muted); font-size: 13px; padding: 4px 10px; border-radius: 8px; cursor: pointer; margin-top: 5px; display: inline-block; }
+    /* ── PERSON EDIT MODAL ── */
+    .icon-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0 16px; }
+    .icon-opt  { font-size: 24px; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, background 0.15s; background: var(--surface2); }
+    .icon-opt.selected { border-color: var(--accent); background: rgba(59,130,246,0.18); }
+    .color-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0 16px; }
+    .color-swatch { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s, transform 0.1s; }
+    .color-swatch.selected { border-color: white; transform: scale(1.15); }
+    .person-progress { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── EMPTY / LOADING ── */
+    .empty-state { padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 14px; }
+    .empty-icon  { font-size: 36px; margin-bottom: 10px; }
+    .spinner { width: 26px; height: 26px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── DINNER MODAL ── */
+    .dim { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 500; display: none; align-items: center; justify-content: center; padding: 24px; }
+    .dim.open { display: flex; }
+    .modal-box { background: var(--surface); border-radius: 18px; padding: 24px; width: 100%; max-width: 340px; }
+    .modal-box.recipe-modal-box { width: min(92vw, 640px) !important; max-width: min(92vw, 640px) !important; }
+    @media (orientation: landscape) { .modal-box.recipe-modal-box { width: min(92vw, 900px) !important; max-width: min(92vw, 900px) !important; } }
+    .modal-box-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+    .modal-field { width: 100%; background: #0a1220; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 13px 14px; color: var(--text); font-size: 16px; font-family: inherit; outline: none; margin-bottom: 16px; transition: border-color 0.15s; }
+    .modal-field:focus { border-color: var(--accent); }
+    .modal-btns { display: flex; gap: 10px; }
+    .btn-primary   { flex: 1; background: var(--accent); border: none; color: white; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-secondary { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-danger-text { background: none; border: none; color: var(--urgent); font-size: 13px; cursor: pointer; width: 100%; text-align: center; padding: 10px 4px 0; display: block; }
+
+    /* ── ADD EVENT SHEET ── */
+    .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 400; display: none; align-items: flex-end; }
+    .sheet-overlay.open { display: flex; }
+    .sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 0 0 env(safe-area-inset-bottom); width: 100%; max-width: 600px; margin: 0 auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); max-height: 90vh; overflow-y: auto; }
+    .sheet-overlay.open .sheet { transform: translateY(0); }
+    .sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 12px auto 0; }
+    .sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; }
+    .sheet-title  { font-size: 18px; font-weight: 700; }
+    .sheet-close  { background: rgba(255,255,255,0.1); border: none; color: var(--text); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .sheet-body   { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .field-label  { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field-input  { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .field-input:focus { border-color: var(--accent); }
+    .field-row    { display: flex; gap: 10px; }
+    .field-row > div { flex: 1; }
+    .allday-row   { display: flex; align-items: center; gap: 10px; }
+    .allday-row label { font-size: 14px; color: var(--text-muted); cursor: pointer; }
+    .toggle       { width: 44px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; border: none; }
+    .toggle.on    { background: var(--accent); }
+    .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: left 0.2s; }
+    .toggle.on::after { left: 21px; }
+    .time-fields  { transition: opacity 0.2s; }
+    .time-fields.hidden { opacity: 0.3; pointer-events: none; }
+    .submit-btn   { background: var(--accent); border: none; color: white; width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+    .submit-btn:active   { background: #2563eb; }
+    .submit-btn:disabled { background: #334155; color: var(--text-muted); }
+    .sheet-status { font-size: 13px; text-align: center; min-height: 18px; color: var(--success); }
+    .sheet-status.error { color: var(--urgent); }
+
+    /* ── CALENDAR VOICE OVERLAY ── */
+    #voice-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
+    #voice-overlay.open { display: flex; }
+    .voice-date-label { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; letter-spacing: 0.3px; }
+    .voice-pulse-wrap { position: relative; width: 110px; height: 110px; margin: 0 auto 24px; }
+    .voice-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(59,130,246,0.4); animation: vring 1.6s ease-out infinite; }
+    .voice-ring:nth-child(2) { animation-delay: 0.5s; }
+    .voice-ring:nth-child(3) { animation-delay: 1s; }
+    @keyframes vring { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+    .voice-mic-btn { position: absolute; inset: 0; margin: auto; width: 74px; height: 74px; border-radius: 50%; background: var(--accent); border: none; font-size: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(59,130,246,0.5); }
+    .voice-status { font-size: 16px; font-weight: 600; margin-bottom: 8px; min-height: 24px; }
+    .voice-transcript-box { background: var(--surface); border-radius: 12px; padding: 14px 18px; margin: 12px 0 20px; font-size: 15px; line-height: 1.5; min-height: 52px; max-width: 380px; width: 100%; color: var(--text); border: 1px solid rgba(255,255,255,0.08); }
+    .voice-transcript-box.empty { color: var(--text-muted); font-style: italic; }
+    .voice-confirm-card { background: var(--surface); border-radius: 14px; padding: 16px; margin: 0 0 20px; max-width: 380px; width: 100%; border: 1px solid rgba(255,255,255,0.08); text-align: left; }
+    .vc-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .vc-row:last-child { border-bottom: none; }
+    .vc-icon  { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .vc-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .vc-value { font-size: 14px; font-weight: 600; margin-top: 1px; }
+    .voice-btn-row { display: flex; gap: 12px; max-width: 380px; width: 100%; }
+    .voice-confirm-btn { flex: 1; background: var(--accent); border: none; color: white; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .voice-cancel-btn  { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    .kroger-cart-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--surface2); font-size:13px; }
+    .kroger-cart-item-name { flex:1; color:var(--text); font-weight:500; }
+    .kroger-cart-item-qty { color:var(--text2); font-size:12px; min-width:40px; text-align:right; }
+    .kroger-cart-item-price { color:var(--success); font-size:12px; min-width:48px; text-align:right; font-weight:600; }
+    .kroger-cart-total { display:flex; justify-content:space-between; padding:10px 0 0; font-weight:700; color:var(--text); font-size:14px; border-top:2px solid var(--surface2); margin-top:4px; }
+    /* ── KROGER OVERLAY ── */
+    #kroger-overlay { position: fixed; inset: 0; z-index: 950; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
+    #kroger-overlay.open { display: flex; }
+    .kroger-logo { font-size: 48px; margin-bottom: 12px; }
+    .kroger-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .kroger-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; max-width: 320px; }
+    .kroger-progress { width: 100%; max-width: 340px; background: var(--surface2); border-radius: 8px; overflow: hidden; height: 6px; margin: 16px 0; }
+    .kroger-progress-bar { height: 100%; background: #2055b7; border-radius: 8px; transition: width 0.3s; }
+    .kroger-item-list { width: 100%; max-width: 340px; max-height: 220px; overflow-y: auto; margin-bottom: 16px; }
+    .kroger-item-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface2); font-size: 13px; text-align: left; }
+    .kroger-item-icon { font-size: 16px; min-width: 22px; }
+    .kroger-item-name { flex: 1; color: var(--text); }
+    .kroger-item-status { font-size: 12px; color: var(--text2); }
+    .kroger-btn { padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; margin: 6px; }
+    .kroger-btn-primary { background: #2055b7; color: #fff; }
+    .kroger-btn-close { background: var(--surface2); color: var(--text); }
+    /* ── GROCERY VOICE OVERLAY ── */
+    #grocery-voice { position: fixed; inset: 0; z-index: 900; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
+    #grocery-voice.open { display: flex; }
+    .gv-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .gv-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+    .gv-pulse-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto 20px; }
+    .gv-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(16,185,129,0.4); animation: gvring 1.6s ease-out infinite; }
+    .gv-ring:nth-child(2) { animation-delay: 0.5s; }
+    .gv-ring:nth-child(3) { animation-delay: 1s; }
+    @keyframes gvring { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+    .gv-mic-btn { position: absolute; inset: 0; margin: auto; width: 68px; height: 68px; border-radius: 50%; background: var(--success); border: none; font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 28px rgba(16,185,129,0.5); }
+    .gv-status { font-size: 15px; font-weight: 600; margin-bottom: 6px; min-height: 22px; color: var(--text-muted); }
+    .gv-transcript { font-size: 15px; color: var(--text); min-height: 40px; margin: 8px 0 16px; font-style: italic; color: var(--text-muted); max-width: 360px; line-height: 1.5; }
+    .gv-transcript.has-text { font-style: normal; color: var(--text); }
+    .gv-chips { display: flex; flex-wrap: wrap; gap: 8px; max-width: 400px; justify-content: center; margin: 0 0 20px; }
+    .gv-chip { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 20px; padding: 7px 14px; font-size: 14px; font-weight: 600; color: #6ee7b7; }
+    .gv-btn-row { display: flex; gap: 12px; max-width: 360px; width: 100%; }
+    .gv-confirm-btn { flex: 1; background: var(--success); border: none; color: white; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .gv-cancel-btn  { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    /* ── DRAG GHOST ── */
+    #drag-ghost { position: fixed; pointer-events: none; z-index: 9999; background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.5); border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; color: #6ee7b7; transform: rotate(3deg); display: none; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-icon">🏠</div>
+  <div class="login-title">Browning Family</div>
+  <div class="login-sub">Sign in to view your dashboard</div>
+  <button class="google-btn" onclick="signIn()">
+    <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Sign in with Google
+  </button>
+  <div class="login-note">Only approved family members can access this dashboard</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div id="week-nav">
+    <button class="week-nav-arrow" onclick="changeWeek(-1)">‹</button>
+    <span id="week-label">Loading…</span>
+    <button class="week-nav-arrow" onclick="changeWeek(1)">›</button>
+    <button class="week-today-btn" onclick="jumpToToday()">Today</button>
+    <button class="week-cal-btn" title="Jump to date">📅<input type="date" id="week-picker" onchange="jumpToDate(this.value)"></button>
+  </div>
+  <div id="weekly-strip"></div>
+  <div id="content-area"><div class="spinner"></div></div>
+  <div id="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
+      <div class="nav-home-icon">🏠</div><span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav-mom" onclick="showPage('mom')">
+      <div class="nav-avatar" style="background:#9d174d">👩</div><span>Mom</span>
+    </button>
+    <button class="nav-btn" id="nav-dad" onclick="showPage('dad')">
+      <div class="nav-avatar" style="background:#1e3a8a">👨</div><span>Dad</span>
+    </button>
+    <button class="nav-btn" id="nav-son" onclick="showPage('son')">
+      <div class="nav-avatar" style="background:#14532d">👦</div><span>Son</span>
+    </button>
+    <button class="nav-btn" id="nav-daughter" onclick="showPage('daughter')">
+      <div class="nav-avatar" style="background:#3b0764">👧</div><span>Daughter</span>
+    </button>
+  </div>
+</div>
+
+<!-- PERSON EDIT MODAL -->
+<div class="dim" id="person-edit-dim" onclick="closePersonEdit(event)">
+  <div class="modal-box" style="max-width:360px;max-height:85vh;overflow-y:auto">
+    <div class="modal-box-title">Edit Profile</div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Name</label>
+    <input class="modal-field" id="person-edit-name" type="text" style="margin-top:6px">
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Icon</label>
+    <div class="icon-grid" id="person-icon-grid"></div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Circle Color</label>
+    <div class="color-grid" id="person-color-grid"></div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closePersonEditDirect()">Cancel</button>
+      <button class="btn-primary" onclick="savePersonEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- DINNER MODAL -->
+<div class="dim" id="dinner-dim" onclick="closeDinnerModal(event)">
+  <div class="modal-box">
+    <div class="modal-box-title" id="dinner-modal-title">Set Dinner</div>
+    <input class="modal-field" id="dinner-input" type="text" placeholder="e.g. Tacos, Pasta, Pizza…" onkeydown="if(event.key==='Enter')saveDinner()">
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeDinnerModalDirect()">Cancel</button>
+      <button class="btn-primary" onclick="saveDinner()">Save</button>
+    </div>
+    <button class="btn-danger-text" onclick="clearDinner()">Remove meal</button>
+  </div>
+</div>
+
+<!-- RECIPE MODAL -->
+<div class="dim" id="recipe-dim" onclick="closeRecipeModal(event)">
+  <div class="modal-box recipe-modal-box">
+
+    <!-- View mode -->
+    <div id="recipe-view-mode">
+      <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+        <div class="modal-box-title" id="recipe-title" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>
+        <button onclick="openSwapRecipeMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Swap</button>
+        <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
+      </div>
+
+      <div id="recipe-view-times" style="display:flex;gap:14px;margin-bottom:10px"></div>
+      <div class="recipe-section-label">About</div>
+      <div id="recipe-view-desc" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px"></div>
+
+      <!-- Portrait: stacked. Landscape: two columns (steps left, ingredients right) -->
+      <div class="recipe-two-col">
+        <div class="recipe-col-left">
+          <div class="recipe-section-label">Steps</div>
+          <div id="recipe-view-steps"></div>
+        </div>
+        <div class="recipe-col-right">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="recipe-section-label" style="margin-bottom:0">Ingredients</div>
+            <div style="display:flex;gap:6px">
+              <button onclick="selectAllIngredients(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px">All</button>
+              <button onclick="selectAllIngredients(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px">None</button>
+            </div>
+          </div>
+          <div id="recipe-view-ingredients"></div>
+          <div style="margin-top:12px">
+            <button class="btn-primary" id="recipe-add-btn" onclick="addDinnerIngredientsToGrocery()" style="width:100%;justify-content:center">+ Add to grocery list</button>
+          </div>
+          <div id="recipe-status" style="font-size:11px;color:var(--success);margin-top:6px;text-align:center;display:none"></div>
+        </div>
+      </div>
+
+      <div class="modal-btns" style="flex-wrap:wrap;gap:8px;margin-top:14px">
+        <button class="btn-secondary" onclick="closeRecipeModalDirect()">Close</button>
+      </div>
+    </div>
+
+    <!-- Edit mode -->
+    <div id="recipe-edit-mode" style="display:none">
+      <div class="modal-box-title">Edit Recipe</div>
+
+      <label class="recipe-section-label">Meal Name</label>
+      <input id="recipe-edit-name" class="modal-field" type="text" style="font-size:15px">
+
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label class="recipe-section-label">Prep Time</label>
+          <input id="recipe-edit-prep" class="modal-field" type="text" placeholder="e.g. 15 min" style="font-size:13px">
+        </div>
+        <div style="flex:1">
+          <label class="recipe-section-label">Cook Time</label>
+          <input id="recipe-edit-cook" class="modal-field" type="text" placeholder="e.g. 30 min" style="font-size:13px">
+        </div>
+      </div>
+
+      <label class="recipe-section-label">Description</label>
+      <textarea id="recipe-edit-desc" class="modal-field" rows="3" style="resize:vertical;font-size:13px;line-height:1.5"></textarea>
+
+      <label class="recipe-section-label">Ingredients <span style="font-weight:400;color:var(--text-muted)">(one per line)</span></label>
+      <textarea id="recipe-edit-ingredients" class="modal-field" rows="7" style="resize:vertical;font-size:13px;line-height:1.6"></textarea>
+
+      <label class="recipe-section-label">Steps <span style="font-weight:400;color:var(--text-muted)">(one per line)</span></label>
+      <textarea id="recipe-edit-steps" class="modal-field" rows="7" style="resize:vertical;font-size:13px;line-height:1.6"></textarea>
+
+      <div class="modal-btns" style="gap:8px;margin-top:4px">
+        <button class="btn-secondary" onclick="closeRecipeEditMode()">Cancel</button>
+        <button class="btn-primary" onclick="saveRecipeEdits()">Save</button>
+      </div>
+    </div>
+
+    <!-- Swap mode -->
+    <div id="recipe-swap-mode" style="display:none">
+      <div class="modal-box-title">Swap Recipe</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Choose a recipe to use for this dinner:</p>
+      <div id="recipe-swap-list" style="max-height:55vh;overflow-y:auto"></div>
+      <div class="modal-btns" style="margin-top:12px">
+        <button class="btn-secondary" onclick="closeSwapRecipeMode()">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD EVENT SHEET -->
+<div class="sheet-overlay" id="event-sheet" onclick="closeEventSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Add Event</div>
+      <button class="sheet-close" onclick="closeEventSheetDirect()">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div><div class="field-label">Event Title</div><input class="field-input" id="ev-title" type="text" placeholder="e.g. Soccer practice"></div>
+      <div><div class="field-label">Date</div><input class="field-input" id="ev-date" type="date"></div>
+      <div class="allday-row"><button class="toggle" id="allday-toggle" onclick="toggleAllDay()"></button><label onclick="toggleAllDay()">All day</label></div>
+      <div class="time-fields" id="time-fields">
+        <div class="field-label">Start → End</div>
+        <div class="field-row"><div><input class="field-input" id="ev-start" type="time" value="09:00"></div><div><input class="field-input" id="ev-end" type="time" value="10:00"></div></div>
+      </div>
+      <div><div class="field-label">Location (optional)</div><input class="field-input" id="ev-location" type="text" placeholder="Address or place name"></div>
+      <div class="sheet-status" id="sheet-status"></div>
+      <button class="submit-btn" id="submit-btn" onclick="submitEvent()">Add to Google Calendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR VOICE OVERLAY -->
+<div id="voice-overlay">
+  <div class="voice-date-label" id="voice-date-label">Adding event for today</div>
+  <div id="voice-listening-view">
+    <div class="voice-pulse-wrap">
+      <div class="voice-ring"></div><div class="voice-ring"></div><div class="voice-ring"></div>
+      <div class="voice-mic-btn">🎤</div>
+    </div>
+    <div class="voice-status" id="voice-status">Listening…</div>
+    <div class="voice-transcript-box empty" id="voice-transcript">Say something like:<br>"Soccer practice Saturday at 10am at Centennial Park"</div>
+    <div class="voice-btn-row" style="margin-top:4px"><button class="voice-cancel-btn" onclick="closeVoice()">Cancel</button></div>
+  </div>
+  <div id="voice-confirm-view" style="display:none">
+    <div class="voice-status" style="margin-bottom:16px">Does this look right?</div>
+    <div class="voice-confirm-card" id="voice-confirm-card"></div>
+    <div class="voice-btn-row">
+      <button class="voice-cancel-btn" onclick="retryVoice()">Try Again</button>
+      <button class="voice-confirm-btn" onclick="confirmVoiceEvent()">Add to Calendar ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- GROCERY VOICE OVERLAY -->
+<div id="grocery-voice">
+  <div id="gv-listening">
+    <div class="gv-title">🛒 Voice Add</div>
+    <div class="gv-sub">Say one or more items — "milk, eggs, and bread"</div>
+    <div class="gv-pulse-wrap">
+      <div class="gv-ring"></div><div class="gv-ring"></div><div class="gv-ring"></div>
+      <div class="gv-mic-btn">🎤</div>
+    </div>
+    <div class="gv-status" id="gv-status">Listening…</div>
+    <div class="gv-transcript empty" id="gv-transcript">Waiting for speech…</div>
+    <div class="gv-btn-row"><button class="gv-cancel-btn" onclick="closeGroceryVoice()">Cancel</button></div>
+  </div>
+  <div id="gv-confirm" style="display:none">
+    <div class="gv-title" style="margin-bottom:6px">Add these items?</div>
+    <div class="gv-sub" style="margin-bottom:16px">Tap confirm to add all to your list</div>
+    <div class="gv-chips" id="gv-chips"></div>
+    <div class="gv-btn-row">
+      <button class="gv-cancel-btn" onclick="retryGroceryVoice()">Try Again</button>
+      <button class="gv-confirm-btn" onclick="confirmGroceryItems()">Add to List ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- KROGER OVERLAY -->
+<div id="kroger-overlay">
+  <div class="kroger-logo">🛒</div>
+  <div class="kroger-title" id="kroger-title">Connect to Kroger</div>
+  <div class="kroger-sub" id="kroger-sub">Sign in with your Kroger account to add grocery items directly to your cart.</div>
+  <div id="kroger-progress-wrap" style="width:100%;max-width:340px;display:none">
+    <div class="kroger-progress"><div class="kroger-progress-bar" id="kroger-progress-bar" style="width:0%"></div></div>
+    <div style="font-size:12px;color:var(--text2);margin-top:6px" id="kroger-progress-label"></div>
+  </div>
+  <div class="kroger-item-list" id="kroger-item-list"></div>
+  <div style="margin-bottom:10px;display:flex;gap:6px;justify-content:center" id="kroger-modality-row">
+    <button onclick="setKrogerModality('PICKUP',this)" style="padding:6px 14px;border-radius:8px;border:2px solid #2055b7;background:#2055b7;color:#fff;font-size:12px;font-weight:700;cursor:pointer">🏪 Pickup</button>
+    <button onclick="setKrogerModality('DELIVERY',this)" style="padding:6px 14px;border-radius:8px;border:2px solid var(--surface2);background:var(--surface2);color:var(--text);font-size:12px;font-weight:700;cursor:pointer">🚚 Delivery</button>
+    <button onclick="setKrogerModality('SHIP',this)" style="padding:6px 14px;border-radius:8px;border:2px solid var(--surface2);background:var(--surface2);color:var(--text);font-size:12px;font-weight:700;cursor:pointer">📦 Ship</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center">
+    <button class="kroger-btn kroger-btn-primary" id="kroger-action-btn" onclick="krogerConnect()">Sign in to Kroger</button>
+    <button class="kroger-btn kroger-btn-close" onclick="closeKrogerOverlay()">Cancel</button>
+    <button class="kroger-btn kroger-btn-primary" id="kroger-viewcart-btn" onclick="window.open('https://www.kroger.com/cart','_blank')" style="display:none">🛒 View Cart / Checkout</button>
+    <button class="kroger-btn kroger-btn-close" id="kroger-whoami-btn" onclick="krogerWhoAmI()" style="display:none;font-size:12px">🔍 Debug: Who am I?</button>
+  </div>
+  <div id="kroger-debug-out" style="width:100%;max-width:340px;margin-top:10px;font-size:11px;color:var(--text2);word-break:break-all;text-align:left;display:none"></div>
+</div>
+
+<!-- TOUCH DRAG GHOST -->
+<div id="drag-ghost"></div>
+
+<script>
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://qhvzfgsfkqrnykgryvej.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodnpmZ3Nma3FybnlrZ3J5dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzk1NjIsImV4cCI6MjA5NTgxNTU2Mn0.WbXMQaEfaewGarq7W4-hgp74OQuQtwpDNpxSzc-jNA4';
+const LAT = 36.7682, LON = -76.2875, TZ = 'America/New_York';
+const KROGER_CLIENT_ID = 'familydashboard-bbcfh5bm';
+const KROGER_CLIENT_SECRET = 'J19lW3UZfTwpfy3pvwETMjvUTTMEwSIUdabFTsQa';
+const KROGER_REDIRECT = location.origin + location.pathname;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WMO_EMOJI   = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
+const PEOPLE = {
+  mom:      { label:'Mom',      emoji:'👩', color:'#9d174d' },
+  dad:      { label:'Dad',      emoji:'👨', color:'#1e3a8a' },
+  son:      { label:'Son',      emoji:'👦', color:'#14532d' },
+  daughter: { label:'Daughter', emoji:'👧', color:'#3b0764' },
+};
+const EV_COLORS = ['#1e3a8a','#065f46','#581c87','#7c2d12','#134e4a','#1e1b4b','#3b0764','#164e63'];
+
+const PERSON_ICONS = [
+  // People
+  '👩','👨','👦','👧','👶','🧒','👱','🧔','👩‍🦰','👨‍🦰','👩‍🦱','👨‍🦱','👸','🤴','🧝','🧝‍♂️',
+  // Animals
+  '🐶','🐱','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐙','🦄','🐆',
+  // Dragon Ball Z / anime fighter vibes
+  '🐉','👊','💥','⚡','🔥','🌀','🏋️','🥋','👿','😈','🔮','🌙',
+  // Sonic / speed vibes
+  '🦔','💨','🌀','🔵','⭐','🏃','🎮','🕹️',
+  // K-pop / demon hunter vibes
+  '🗡️','⚔️','🛡️','🦹','🦹‍♀️','🧙','🧙‍♀️','🕷️','🦸','🦸‍♀️','💜','🌸',
+  // Fun / kids
+  '🌟','🌈','🎯','🚀','🎵','🏆','🎉','🍕','🍦','🎂','🌴','🏄',
+];
+
+const PERSON_COLORS = [
+  '#9d174d','#1e3a8a','#14532d','#3b0764',
+  '#7c2d12','#0c4a6e','#064e3b','#4a1d96',
+  '#be185d','#1d4ed8','#15803d','#7c3aed',
+  '#dc2626','#2563eb','#16a34a','#9333ea',
+  '#ea580c','#0891b2','#ca8a04','#db2777',
+  '#374151','#1e293b','#0f766e','#b45309',
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, krogerModality = 'PICKUP', allDayMode = false, currentPage = 'home';
+let weekOffset = 0;
+let weekDays = [], weatherDays = [], calEventsByDay = [];
+let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
+let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {};
+let activeDinnerDate = null;
+let drag = { active: false, sourceDate: null, mealText: '' };
+let touchChip = null;
+let groceryVoiceRec = null, pendingGroceryItems = [];
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+function isToday(d) { return isoDate(d) === isoDate(new Date()); }
+function uid() { return Math.random().toString(36).slice(2,10); }
+
+function getWeekDays() {
+  const now = new Date(), dow = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1) + weekOffset * 7);
+  mon.setHours(0,0,0,0);
+  return Array.from({length:7}, (_,i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function weekLabel() {
+  const f = weekDays[0], l = weekDays[6];
+  if (f.getMonth() === l.getMonth()) return `${MONTH_NAMES[f.getMonth()]} ${f.getDate()}–${l.getDate()}, ${f.getFullYear()}`;
+  return `${MONTH_NAMES[f.getMonth()]} ${f.getDate()} – ${MONTH_NAMES[l.getMonth()]} ${l.getDate()}`;
+}
+
+function changeWeek(delta) { weekOffset += delta; init(); }
+function jumpToToday() { weekOffset = 0; init(); }
+function jumpToDate(val) {
+  if (!val) return;
+  const picked = new Date(val + 'T12:00:00');
+  const now = new Date(), dow = now.getDay();
+  const curMon = new Date(now);
+  curMon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1)); curMon.setHours(0,0,0,0);
+  const pdow = picked.getDay();
+  const pickedMon = new Date(picked);
+  pickedMon.setDate(picked.getDate() - (pdow === 0 ? 6 : pdow - 1)); pickedMon.setHours(0,0,0,0);
+  weekOffset = Math.round((pickedMon - curMon) / (7 * 864e5)); init();
+}
+
+function formatTime(dtStr) {
+  if (!dtStr) return 'All day';
+  return new Date(dtStr).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+}
+function formatDateShort(dtStr) {
+  if (!dtStr) return '';
+  const d = new Date(dtStr);
+  return `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+}
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+
+function eventColor(str) {
+  let h = 0; for (let i=0; i<str.length; i++) h = str.charCodeAt(i) + ((h<<5)-h);
+  return EV_COLORS[Math.abs(h) % EV_COLORS.length];
+}
+
+function eventEmoji(title) {
+  const t = title.toLowerCase();
+  if (/soccer|football|sport|game|practice|match/.test(t)) return '⚽';
+  if (/baseball|softball/.test(t)) return '⚾';
+  if (/basketball/.test(t)) return '🏀';
+  if (/swim|pool|aquatic/.test(t)) return '🏊';
+  if (/dance|ballet|recital/.test(t)) return '💃';
+  if (/music|concert|band|choir|perform/.test(t)) return '🎵';
+  if (/birthday|party|celebrat/.test(t)) return '🎉';
+  if (/doctor|dentist|medical|appt|appointment|clinic/.test(t)) return '🏥';
+  if (/school|class|homework|study|exam|test/.test(t)) return '📚';
+  if (/church|worship|sunday/.test(t)) return '⛪';
+  if (/dinner|restaurant|eat|food|lunch|breakfast/.test(t)) return '🍽️';
+  if (/movie|film|theater|cinema/.test(t)) return '🎬';
+  if (/park|hike|outdoor|nature|trail/.test(t)) return '🌳';
+  if (/travel|trip|vacation|flight|airport/.test(t)) return '✈️';
+  if (/meet|call|zoom|conference/.test(t)) return '📋';
+  if (/gym|workout|yoga|fitness/.test(t)) return '💪';
+  if (/volunteer|community/.test(t)) return '🤝';
+  return '📅';
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+async function signIn() {
+  const btn = document.querySelector('.google-btn');
+  if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href.split('?')[0].split('#')[0], scopes: 'https://www.googleapis.com/auth/calendar' }
+  });
+}
+async function signOut() { localStorage.removeItem('gcal_token'); sessionStorage.removeItem('gcal_token'); await sb.auth.signOut(); }
+
+// ── SUPABASE FAMILY DATA ──────────────────────────────────────────────────────
+async function loadFamilyData() {
+  try {
+    const { data } = await sb.from('family_data').select('*');
+    if (!data) return;
+    for (const row of data) {
+      if (row.key === 'grocery') grocery = row.value || [];
+      else if (row.key === 'dinners') dinners = row.value || {};
+      else if (row.key === 'recipes') recipesData = row.value || {};
+      else if (row.key === 'people_config') {
+        const cfg = row.value || {};
+        Object.keys(cfg).forEach(k => { if (PEOPLE[k]) Object.assign(PEOPLE[k], cfg[k]); });
+      }
+      else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
+    }
+  } catch(e) { console.error('family_data error', e); }
+  renderNavBadges();
+}
+
+async function saveFamilyData(key, value) {
+  try {
+    await sb.from('family_data').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  } catch(e) { console.error('save error', e); }
+}
+
+// ── NAV BADGES ────────────────────────────────────────────────────────────────
+function renderNavBadges() {
+  Object.keys(PEOPLE).forEach(person => {
+    const list = chores[person] || [];
+    const done = list.filter(c => c.done).length;
+    const todo = list.filter(c => !c.done).length;
+    const p = PEOPLE[person];
+    const navBtn = document.getElementById(`nav-${person}`);
+    const avatar = navBtn?.querySelector('.nav-avatar');
+    if (!avatar) return;
+    // Sync avatar emoji/color from PEOPLE in case they were edited
+    avatar.textContent = p.emoji;
+    avatar.style.background = p.color;
+    const label = navBtn.querySelector('span');
+    if (label) label.textContent = p.label;
+    avatar.querySelectorAll('.nav-badge').forEach(b => b.remove());
+    if (todo > 0) {
+      const b = document.createElement('div');
+      b.className = 'nav-badge nav-badge-todo';
+      b.textContent = todo > 9 ? '9+' : todo;
+      avatar.appendChild(b);
+    }
+    if (done > 0) {
+      const b = document.createElement('div');
+      b.className = 'nav-badge nav-badge-done';
+      b.textContent = '★';
+      avatar.appendChild(b);
+    }
+  });
+}
+
+// ── WEATHER ──────────────────────────────────────────────────────────────────
+async function fetchWeekWeather(days) {
+  const start = isoDate(days[0]), end = isoDate(days[6]);
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max&temperature_unit=fahrenheit&timezone=${encodeURIComponent(TZ)}&start_date=${start}&end_date=${end}`);
+  if (!r.ok) throw new Error();
+  const d = (await r.json()).daily;
+  return days.map((_,i) => ({ code: d.weather_code[i], high: Math.round(d.temperature_2m_max[i]), low: Math.round(d.temperature_2m_min[i]) }));
+}
+
+// ── GOOGLE CALENDAR ───────────────────────────────────────────────────────────
+async function gcalFetch(url, token) {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (r.status === 401) { localStorage.removeItem('gcal_token'); gcalToken = null; throw new Error('gcal_401'); }
+  if (!r.ok) throw new Error('cal_' + r.status);
+  return r.json();
+}
+
+async function fetchCalEvents(start, end, token) {
+  const data = await gcalFetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}&orderBy=startTime&singleEvents=true`,
+    token
+  );
+  return data.items || [];
+}
+
+async function fetchUpcomingFamilyEvents(token) {
+  const now = new Date().toISOString();
+  const data = await gcalFetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&orderBy=startTime&singleEvents=true&maxResults=20`,
+    token
+  );
+  return data.items || [];
+}
+
+// ── WEEKLY STRIP ──────────────────────────────────────────────────────────────
+function renderStrip() {
+  const strip = document.getElementById('weekly-strip');
+  strip.innerHTML = weekDays.map((d, i) => {
+    const w = weatherDays[i], evs = calEventsByDay[i] || [], meal = dinners[isoDate(d)] || '';
+    const todayCls = isToday(d) ? ' today' : '';
+    const chips = evs.slice(0,2).map(ev => `<div class="day-ev-chip">${ev.start?.dateTime ? formatTime(ev.start.dateTime)+' ' : ''}${ev.summary||'Event'}</div>`).join('');
+    const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
+    const dinnerHtml = meal
+      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
+      : `<button class="dinner-add-btn" onclick="openDinnerModal('${isoDate(d)}')">+</button>`;
+    return `<div class="day-col${todayCls}">
+      <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
+      <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
+      <div class="day-weather"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
+      <div class="day-events">${chips}</div>
+      <div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div>
+    </div>`;
+  }).join('');
+
+  strip.querySelectorAll('.dinner-chip').forEach(chip => {
+    const date = chip.dataset.date, meal = chip.dataset.meal;
+    // Tapping the chip label opens recipe modal
+    chip.addEventListener('click', e => { if (!e.target.classList.contains('dinner-drag-handle')) openRecipeModal(date, meal); });
+    // Drag handle wires up desktop drag and touch drag
+    const handle = chip.querySelector('.dinner-drag-handle');
+    if (handle) {
+      handle.addEventListener('mousedown', () => { chip.draggable = true; });
+      chip.addEventListener('dragstart', e => { drag.sourceDate=date; drag.mealText=meal; chip.classList.add('dragging'); e.dataTransfer.setData('text/plain',date); e.dataTransfer.effectAllowed='move'; });
+      chip.addEventListener('dragend', () => { chip.classList.remove('dragging'); chip.draggable = false; });
+      handle.addEventListener('touchstart', e => touchDragStart(e, chip, date, meal), { passive: false });
+    }
+  });
+  strip.querySelectorAll('.dinner-slot').forEach(slot => {
+    const date = slot.dataset.date;
+    slot.addEventListener('dragover',  e => { e.preventDefault(); slot.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('drop', e => { e.preventDefault(); slot.classList.remove('drag-over'); const from=e.dataTransfer.getData('text/plain'); if(from&&from!==date) swapDinners(from,date); });
+  });
+}
+
+// ── TOUCH DRAG ────────────────────────────────────────────────────────────────
+const ghost = document.getElementById('drag-ghost');
+
+function touchDragStart(e, chip, date, meal) {
+  e.preventDefault(); drag.active=true; drag.sourceDate=date; drag.mealText=meal;
+  touchChip=chip; touchChip.classList.add('dragging');
+  ghost.textContent=meal; ghost.style.display='block';
+  const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
+}
+document.addEventListener('touchmove', e => {
+  if (!drag.active) return; e.preventDefault();
+  const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
+  document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
+  const el=document.elementFromPoint(t.clientX,t.clientY); const slot=el?.closest('.dinner-slot');
+  if(slot&&slot.dataset.date!==drag.sourceDate) slot.classList.add('drag-over');
+}, { passive: false });
+document.addEventListener('touchend', e => {
+  if (!drag.active) return; ghost.style.display='none';
+  if (touchChip) { touchChip.classList.remove('dragging'); touchChip=null; }
+  document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
+  const t=e.changedTouches[0]; const el=document.elementFromPoint(t.clientX,t.clientY);
+  const slot=el?.closest('.dinner-slot'); const target=slot?.dataset.date;
+  if(target&&target!==drag.sourceDate) swapDinners(drag.sourceDate,target);
+  drag.active=false;
+});
+
+// ── DINNER CRUD ───────────────────────────────────────────────────────────────
+function swapDinners(dateA, dateB) {
+  const tmp=dinners[dateA]||''; dinners[dateA]=dinners[dateB]||''; dinners[dateB]=tmp;
+  if(!dinners[dateA]) delete dinners[dateA]; if(!dinners[dateB]) delete dinners[dateB];
+  saveFamilyData('dinners',dinners); renderStrip();
+}
+function openDinnerModal(dateStr) {
+  activeDinnerDate=dateStr; const d=new Date(dateStr+'T12:00:00');
+  document.getElementById('dinner-modal-title').textContent=`Dinner — ${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  document.getElementById('dinner-input').value=dinners[dateStr]||'';
+  document.getElementById('dinner-dim').classList.add('open');
+  setTimeout(()=>document.getElementById('dinner-input').focus(),100);
+}
+function closeDinnerModal(e) { if(e.target===document.getElementById('dinner-dim')) closeDinnerModalDirect(); }
+function closeDinnerModalDirect() { document.getElementById('dinner-dim').classList.remove('open'); activeDinnerDate=null; }
+function saveDinner() {
+  const meal=document.getElementById('dinner-input').value.trim(); if(!activeDinnerDate) return;
+  if(meal) dinners[activeDinnerDate]=meal; else delete dinners[activeDinnerDate];
+  saveFamilyData('dinners',dinners); closeDinnerModalDirect(); renderStrip();
+}
+function clearDinner() {
+  if(!activeDinnerDate) return; delete dinners[activeDinnerDate];
+  saveFamilyData('dinners',dinners); closeDinnerModalDirect(); renderStrip();
+}
+
+// ── RECIPE MODAL ──────────────────────────────────────────────────────────────
+let recipeCurrentMeal = '', recipeCurrentIngredients = [], recipeCurrentDate = '';
+
+function setRecipeViewMode(show) {
+  document.getElementById('recipe-view-mode').style.display = show === 'view' ? '' : 'none';
+  document.getElementById('recipe-edit-mode').style.display = show === 'edit' ? '' : 'none';
+  document.getElementById('recipe-swap-mode').style.display = show === 'swap' ? '' : 'none';
+}
+
+function renderRecipeView(recipe) {
+  const { description, ingredients, steps, prepTime, cookTime } = recipe;
+  recipeCurrentIngredients = ingredients || [];
+  const timesEl = document.getElementById('recipe-view-times');
+  const timeParts = [];
+  if (prepTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">⏱ <strong style="color:var(--text2)">Prep</strong> ${prepTime}</span>`);
+  if (cookTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">🍳 <strong style="color:var(--text2)">Cook</strong> ${cookTime}</span>`);
+  timesEl.innerHTML = timeParts.join('');
+  timesEl.style.display = timeParts.length ? 'flex' : 'none';
+  document.getElementById('recipe-view-desc').textContent = description || 'No description yet.';
+  document.getElementById('recipe-view-ingredients').innerHTML = ingredients?.length
+    ? ingredients.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
+    : '<div style="color:var(--text-muted);font-size:12px">No ingredients listed.</div>';
+  document.getElementById('recipe-view-steps').innerHTML = steps?.length
+    ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+    : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
+  document.getElementById('recipe-status').style.display = 'none';
+  const btn = document.getElementById('recipe-add-btn');
+  btn.disabled = false;
+  btn.textContent = '+ Add to grocery list';
+}
+
+async function openRecipeModal(dateStr, meal) {
+  recipeCurrentMeal = meal;
+  recipeCurrentDate = dateStr;
+  recipeCurrentIngredients = [];
+  document.getElementById('recipe-title').textContent = '🍽️ ' + meal;
+  setRecipeViewMode('view');
+  document.getElementById('recipe-view-desc').textContent = 'Loading…';
+  document.getElementById('recipe-view-ingredients').innerHTML = '';
+  document.getElementById('recipe-view-steps').innerHTML = '';
+  document.getElementById('recipe-dim').classList.add('open');
+
+  const recipe = await fetchRecipe(meal);
+  renderRecipeView(recipe);
+}
+
+async function fetchRecipe(meal) {
+  if (recipesData[meal]) return recipesData[meal];
+  const { data } = await sb.from('family_data').select('value').eq('key','recipes').single();
+  if (data?.value) recipesData = data.value;
+  return recipesData[meal] || { description: '', ingredients: [], steps: [] };
+}
+
+function openRecipeEditMode() {
+  const r = recipesData[recipeCurrentMeal] || {};
+  document.getElementById('recipe-edit-name').value = recipeCurrentMeal;
+  document.getElementById('recipe-edit-prep').value = r.prepTime || '';
+  document.getElementById('recipe-edit-cook').value = r.cookTime || '';
+  document.getElementById('recipe-edit-desc').value = r.description || '';
+  document.getElementById('recipe-edit-ingredients').value = (r.ingredients || []).join('\n');
+  document.getElementById('recipe-edit-steps').value = (r.steps || []).join('\n');
+  setRecipeViewMode('edit');
+}
+
+function closeRecipeEditMode() { setRecipeViewMode('view'); }
+
+async function saveRecipeEdits() {
+  const newName = document.getElementById('recipe-edit-name').value.trim() || recipeCurrentMeal;
+  const prepTime = document.getElementById('recipe-edit-prep').value.trim();
+  const cookTime = document.getElementById('recipe-edit-cook').value.trim();
+  const description = document.getElementById('recipe-edit-desc').value.trim();
+  const ingredients = document.getElementById('recipe-edit-ingredients').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const steps = document.getElementById('recipe-edit-steps').value.split('\n').map(s => s.trim()).filter(Boolean);
+
+  // If meal name changed, update dinners and recipe key
+  if (newName !== recipeCurrentMeal) {
+    delete recipesData[recipeCurrentMeal];
+    if (dinners[recipeCurrentDate] === recipeCurrentMeal) {
+      dinners[recipeCurrentDate] = newName;
+      saveFamilyData('dinners', dinners);
+      renderStrip();
+    }
+    recipeCurrentMeal = newName;
+    document.getElementById('recipe-title').textContent = '🍽️ ' + newName;
+  }
+
+  recipesData[recipeCurrentMeal] = { prepTime, cookTime, description, ingredients, steps };
+  await saveFamilyData('recipes', recipesData);
+  setRecipeViewMode('view');
+  renderRecipeView(recipesData[recipeCurrentMeal]);
+}
+
+function openSwapRecipeMode() {
+  const names = Object.keys(recipesData).sort();
+  document.getElementById('recipe-swap-list').innerHTML = names.map(name => {
+    const r = recipesData[name] || {};
+    const times = [r.prepTime ? `⏱ ${r.prepTime}` : '', r.cookTime ? `🍳 ${r.cookTime}` : ''].filter(Boolean).join('  ·  ');
+    const desc = (r.description || '').length > 80 ? r.description.slice(0, 80) + '…' : (r.description || '');
+    return `<div class="recipe-swap-item" onclick="swapToRecipe('${name.replace(/'/g,"\\'")}')">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <span>${name}</span>
+        ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
+      </div>
+      ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
+    </div>`;
+  }).join('');
+  setRecipeViewMode('swap');
+}
+
+function closeSwapRecipeMode() { setRecipeViewMode('view'); }
+
+function swapToRecipe(name) {
+  recipeCurrentMeal = name;
+  // Update the dinner slot to show the swapped meal name
+  dinners[recipeCurrentDate] = name;
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+  document.getElementById('recipe-title').textContent = '🍽️ ' + name;
+  setRecipeViewMode('view');
+  renderRecipeView(recipesData[name]);
+}
+
+function closeRecipeModal(e) { if (e.target === document.getElementById('recipe-dim')) closeRecipeModalDirect(); }
+function closeRecipeModalDirect() { document.getElementById('recipe-dim').classList.remove('open'); }
+
+function selectAllIngredients(checked) {
+  document.querySelectorAll('.recipe-ing-check').forEach(cb => cb.checked = checked);
+}
+
+async function addDinnerIngredientsToGrocery() {
+  const checks = [...document.querySelectorAll('.recipe-ing-check')];
+  const selected = checks.filter(cb => cb.checked).map(cb => recipeCurrentIngredients[+cb.dataset.idx]);
+  if (!selected.length) return;
+  const btn = document.getElementById('recipe-add-btn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+  for (const ing of selected) {
+    const text = ing.trim();
+    if (text && !grocery.some(g => g.text.toLowerCase() === text.toLowerCase()))
+      grocery.push({ id: Date.now() + Math.random(), text, done: false });
+  }
+  await saveFamilyData('grocery', grocery);
+  renderHome();
+  btn.textContent = '✓ Added!';
+  const status = document.getElementById('recipe-status');
+  status.textContent = `${selected.length} ingredient${selected.length !== 1 ? 's' : ''} added to your grocery list.`;
+  status.style.display = 'block';
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
+  const ca = document.getElementById('content-area');
+  ca.classList.toggle('home-mode', page==='home');
+  if (page==='home') renderHome(); else renderPerson(page);
+}
+
+// ── HOME PAGE — 3 COLUMNS ─────────────────────────────────────────────────────
+function renderHome() {
+  // ── COL 1: Upcoming Family Events (Google Calendar, next 20) ──
+  let col1 = '';
+  if (!gcalToken) {
+    col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">🔐</div>Sign in to see events</div></div>`;
+  } else if (upcomingFamilyEvents === null) {
+    col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">⚠️</div>Couldn't load events — try signing out and back in</div></div>`;
+  } else if (!upcomingFamilyEvents.length) {
+    col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">📅</div>No upcoming events</div></div>`;
+  } else {
+    col1 = upcomingFamilyEvents.map(ev => {
+      const title = ev.summary || 'Event';
+      const time = ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day';
+      const dateStr = ev.start?.dateTime || ev.start?.date || '';
+      const dateLabel = formatDateShort(dateStr + (ev.start?.date ? 'T12:00:00' : ''));
+      const color = eventColor(title);
+      const emoji = eventEmoji(title);
+      const link = ev.htmlLink || '#';
+      return `<a class="ev-card" href="${link}" target="_blank">
+        <div class="ev-card-banner" style="background:linear-gradient(135deg,${color},${color}cc)">${emoji}</div>
+        <div class="ev-card-body">
+          <div class="ev-card-title">${title}</div>
+          <div class="ev-card-time">${time}</div>
+          <div class="ev-card-date">${dateLabel}</div>
+          ${ev.location ? `<div class="ev-card-loc">📍 ${ev.location}</div>` : ''}
+        </div>
+      </a>`;
+    }).join('');
+  }
+
+  // ── COL 2: Upcoming Local Events (from briefings) ──
+  let col2 = '';
+  const allItems = [];
+  if (briefingData?.content?.sections?.length) {
+    briefingData.content.sections.filter(s => s.id !== 'weather' && s.items?.length).forEach(s => {
+      s.items.forEach(item => allItems.push(item));
+    });
+  }
+  if (allItems.length) {
+    col2 = allItems.map(item => {
+      const dot = ({urgent:'urgent',action:'warning',success:'success',info:'info'})[item.type]||'';
+      return `<div class="local-item">
+        ${item.time ? `<div class="local-item-time">${item.time}</div>` : ''}
+        <div class="local-item-dot-row">
+          <div class="local-dot ${dot}"></div>
+          <div>
+            <div class="local-item-text">${item.text}</div>
+            ${item.detail ? `<div class="local-item-detail">${item.detail}</div>` : ''}
+            ${item.link ? `<a class="local-item-link" href="${item.link}" target="_blank">↗ ${item.link_label||'Open'}</a>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    col2 = `<div class="card"><div class="empty-state"><div class="empty-icon">📭</div>No briefing yet today</div></div>`;
+  }
+
+  // ── COL 3: Grocery List ──
+  const groceryRows = grocery.length
+    ? grocery.map(g => `<div class="list-item">
+        <button class="check-btn ${g.done?'done':''}" onclick="toggleGrocery('${g.id}')">${g.done?'✓':''}</button>
+        <span class="list-label ${g.done?'done':''}">${g.text}</span>
+        <button class="del-btn" onclick="deleteGrocery('${g.id}')">×</button>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:16px 14px;font-size:13px">Nothing on the list yet</div>';
+
+  document.getElementById('content-area').innerHTML = `
+    <div class="home-grid">
+      <div class="home-col">
+        <div class="col-header">📅 Upcoming Events</div>
+        <div class="home-col-body">${col1}</div>
+      </div>
+      <div class="home-col">
+        <div class="col-header">📋 Today's Briefing</div>
+        <div class="home-col-body">${col2}</div>
+      </div>
+      <div class="home-col">
+        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between">
+          <span>🛒 Grocery List</span>
+          <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
+        </div>
+        <div class="home-col-body">
+          <div class="card">
+            ${groceryRows}
+            <div class="list-add-row">
+              <input class="list-add-input" id="grocery-input" type="text" placeholder="Add item…" onkeydown="if(event.key==='Enter')addGrocery()">
+              <button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add">🎤</button>
+              <button class="list-add-btn" onclick="addGrocery()">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── GROCERY CRUD ──────────────────────────────────────────────────────────────
+function addGrocery() {
+  const input = document.getElementById('grocery-input');
+  const text = input?.value.trim(); if (!text) return;
+  grocery.push({ id: uid(), text, done: false });
+  saveFamilyData('grocery', grocery); input.value = ''; renderHome();
+  document.getElementById('grocery-input')?.focus();
+}
+function toggleGrocery(id) {
+  const item = grocery.find(g => g.id===id); if (!item) return;
+  item.done = !item.done; saveFamilyData('grocery', grocery); renderHome();
+}
+function deleteGrocery(id) {
+  grocery = grocery.filter(g => g.id!==id); saveFamilyData('grocery', grocery); renderHome();
+}
+
+// ── GROCERY VOICE ─────────────────────────────────────────────────────────────
+function openGroceryVoice() {
+  document.getElementById('gv-listening').style.display='block';
+  document.getElementById('gv-confirm').style.display='none';
+  document.getElementById('gv-transcript').textContent='Waiting for speech…';
+  document.getElementById('gv-transcript').className='gv-transcript';
+  document.getElementById('gv-status').textContent='Listening…';
+  document.getElementById('grocery-voice').classList.add('open');
+  startGroceryRecognition();
+}
+function closeGroceryVoice() {
+  if(groceryVoiceRec){try{groceryVoiceRec.stop();}catch(e){} groceryVoiceRec=null;}
+  document.getElementById('grocery-voice').classList.remove('open');
+}
+function retryGroceryVoice() {
+  document.getElementById('gv-listening').style.display='block';
+  document.getElementById('gv-confirm').style.display='none';
+  document.getElementById('gv-transcript').textContent='Waiting for speech…';
+  document.getElementById('gv-transcript').className='gv-transcript';
+  document.getElementById('gv-status').textContent='Listening…';
+  startGroceryRecognition();
+}
+function startGroceryRecognition() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById('gv-status').textContent='Speech not supported';return;}
+  groceryVoiceRec=new SR(); groceryVoiceRec.lang='en-US'; groceryVoiceRec.interimResults=true; groceryVoiceRec.maxAlternatives=1;
+  groceryVoiceRec.onresult=e=>{
+    const transcript=Array.from(e.results).map(r=>r[0].transcript).join('');
+    const el=document.getElementById('gv-transcript');
+    el.textContent=transcript; el.className='gv-transcript has-text';
+    if(e.results[e.results.length-1].isFinal){groceryVoiceRec=null; processGroceryVoice(transcript);}
+  };
+  groceryVoiceRec.onerror=e=>{
+    document.getElementById('gv-status').textContent=
+      e.error==='no-speech'?'No speech — tap Try Again':
+      e.error==='not-allowed'?'Microphone denied':`Error: ${e.error}`;
+  };
+  groceryVoiceRec.onend=()=>{if(groceryVoiceRec)groceryVoiceRec=null;};
+  groceryVoiceRec.start();
+}
+function processGroceryVoice(text) {
+  pendingGroceryItems = text
+    .split(/,|\band\b|\balso\b|\bplus\b/i)
+    .map(s => s.replace(/^(add|get|buy|pick up|need|some|a |an |the )\s*/gi,'').trim())
+    .filter(s => s.length > 1)
+    .map(s => s.charAt(0).toUpperCase()+s.slice(1));
+  if (!pendingGroceryItems.length) { document.getElementById('gv-status').textContent='Couldn\'t parse — try again'; return; }
+  document.getElementById('gv-chips').innerHTML = pendingGroceryItems.map(i=>`<div class="gv-chip">${i}</div>`).join('');
+  document.getElementById('gv-listening').style.display='none';
+  document.getElementById('gv-confirm').style.display='block';
+}
+function confirmGroceryItems() {
+  pendingGroceryItems.forEach(text => grocery.push({id:uid(),text,done:false}));
+  saveFamilyData('grocery',grocery); closeGroceryVoice(); renderHome();
+}
+
+// ── PERSON / CHORES PAGE ──────────────────────────────────────────────────────
+function renderPerson(person) {
+  const p=PEOPLE[person]; if(!chores[person]) chores[person]=[];
+  const list=chores[person]; const done=list.filter(c=>c.done).length;
+  const rows=list.length
+    ? list.map(c=>`<div class="list-item">
+        <button class="check-btn ${c.done?'done':''}" onclick="toggleChore('${person}','${c.id}')">${c.done?'✓':''}</button>
+        <span class="list-label ${c.done?'done':''}">${c.text}</span>
+        <button class="del-btn" onclick="deleteChore('${person}','${c.id}')">×</button>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:16px 14px">No chores yet — add one below</div>';
+  document.getElementById('content-area').innerHTML=`
+    <div class="person-header">
+      <div class="person-avatar-lg" style="background:${p.color}">${p.emoji}</div>
+      <div>
+        <div class="person-name">${p.label}'s Chores</div>
+        <div class="person-progress">${done} of ${list.length} done</div>
+        <button class="person-edit-btn" onclick="openPersonEdit('${person}')">✏️ Edit</button>
+      </div>
+    </div>
+    <div class="card">
+      ${rows}
+      <div class="list-add-row">
+        <input class="list-add-input" id="chore-input" type="text" placeholder="Add a chore…" onkeydown="if(event.key==='Enter')addChore('${person}')">
+        <button class="list-add-btn" onclick="addChore('${person}')">+</button>
+      </div>
+    </div>`;
+}
+
+function addChore(person) {
+  const input=document.getElementById('chore-input'); const text=input?.value.trim(); if(!text) return;
+  if(!chores[person]) chores[person]=[];
+  chores[person].push({id:uid(),text,done:false});
+  saveFamilyData(`chores_${person}`,chores[person]);
+  input.value=''; renderPerson(person); renderNavBadges();
+  document.getElementById('chore-input')?.focus();
+}
+function toggleChore(person, id) {
+  const item=chores[person]?.find(c=>c.id===id); if(!item) return;
+  item.done=!item.done; saveFamilyData(`chores_${person}`,chores[person]); renderPerson(person); renderNavBadges();
+}
+function deleteChore(person, id) {
+  if(!chores[person]) return;
+  chores[person]=chores[person].filter(c=>c.id!==id);
+  saveFamilyData(`chores_${person}`,chores[person]); renderPerson(person); renderNavBadges();
+}
+
+// ── PERSON EDIT ───────────────────────────────────────────────────────────────
+let editingPerson = null;
+let editSelectedIcon = '', editSelectedColor = '';
+
+function openPersonEdit(person) {
+  editingPerson = person;
+  const p = PEOPLE[person];
+  editSelectedIcon = p.emoji;
+  editSelectedColor = p.color;
+  document.getElementById('person-edit-name').value = p.label;
+
+  // Icon grid
+  const iconGrid = document.getElementById('person-icon-grid');
+  iconGrid.innerHTML = PERSON_ICONS.map(icon =>
+    `<div class="icon-opt${icon === editSelectedIcon ? ' selected' : ''}" onclick="selectPersonIcon('${icon}')">${icon}</div>`
+  ).join('');
+
+  // Color grid
+  const colorGrid = document.getElementById('person-color-grid');
+  colorGrid.innerHTML = PERSON_COLORS.map(color =>
+    `<div class="color-swatch${color === editSelectedColor ? ' selected' : ''}" style="background:${color}" data-color="${color}" onclick="selectPersonColor('${color}')"></div>`
+  ).join('');
+
+  document.getElementById('person-edit-dim').classList.add('open');
+}
+
+function selectPersonIcon(icon) {
+  editSelectedIcon = icon;
+  document.querySelectorAll('.icon-opt').forEach(el => el.classList.toggle('selected', el.textContent === icon));
+}
+
+function selectPersonColor(color) {
+  editSelectedColor = color;
+  document.querySelectorAll('.color-swatch').forEach(el => el.classList.toggle('selected', el.dataset.color === color));
+}
+
+async function savePersonEdit() {
+  if (!editingPerson) return;
+  const name = document.getElementById('person-edit-name').value.trim();
+  if (!name) return;
+  PEOPLE[editingPerson].label = name;
+  PEOPLE[editingPerson].emoji = editSelectedIcon;
+  PEOPLE[editingPerson].color = editSelectedColor;
+
+  // Persist config
+  const { data } = await sb.from('family_data').select('value').eq('key','people_config').single();
+  const cfg = data?.value || {};
+  cfg[editingPerson] = { label: name, emoji: editSelectedIcon, color: editSelectedColor };
+  await saveFamilyData('people_config', cfg);
+
+  const personKey = editingPerson;
+  closePersonEditDirect();
+  renderPerson(personKey);
+  renderNavBadges();
+}
+
+function closePersonEdit(e) { if (e.target === document.getElementById('person-edit-dim')) closePersonEditDirect(); }
+function closePersonEditDirect() { document.getElementById('person-edit-dim').classList.remove('open'); editingPerson = null; }
+
+// ── BRIEFINGS ─────────────────────────────────────────────────────────────────
+async function fetchLatestBriefing() {
+  try {
+    const {data}=await sb.from('briefings').select('*').eq('type','daily').order('date',{ascending:false}).limit(1);
+    return data?.[0]||null;
+  } catch {return null;}
+}
+
+// ── ADD EVENT SHEET ───────────────────────────────────────────────────────────
+function openEventSheet(dateStr) {
+  document.getElementById('ev-title').value=''; document.getElementById('ev-date').value=dateStr||isoDate(new Date());
+  document.getElementById('ev-start').value='09:00'; document.getElementById('ev-end').value='10:00';
+  document.getElementById('ev-location').value=''; document.getElementById('sheet-status').textContent='';
+  document.getElementById('submit-btn').disabled=false;
+  allDayMode=false; document.getElementById('allday-toggle').classList.remove('on');
+  document.getElementById('time-fields').classList.remove('hidden');
+  document.getElementById('event-sheet').classList.add('open');
+  setTimeout(()=>document.getElementById('ev-title').focus(),300);
+}
+function closeEventSheet(e) { if(e.target===document.getElementById('event-sheet')) closeEventSheetDirect(); }
+function closeEventSheetDirect() { document.getElementById('event-sheet').classList.remove('open'); }
+function toggleAllDay() {
+  allDayMode=!allDayMode;
+  document.getElementById('allday-toggle').classList.toggle('on',allDayMode);
+  document.getElementById('time-fields').classList.toggle('hidden',allDayMode);
+}
+async function submitEvent() {
+  const title=document.getElementById('ev-title').value.trim(), date=document.getElementById('ev-date').value;
+  const startT=document.getElementById('ev-start').value, endT=document.getElementById('ev-end').value;
+  const loc=document.getElementById('ev-location').value.trim();
+  const statusEl=document.getElementById('sheet-status'), btn=document.getElementById('submit-btn');
+  if(!title){statusEl.textContent='Please enter a title';statusEl.className='sheet-status error';return;}
+  if(!date){statusEl.textContent='Please pick a date';statusEl.className='sheet-status error';return;}
+  if(!gcalToken){statusEl.textContent='No calendar access — please re-sign in';statusEl.className='sheet-status error';return;}
+  btn.disabled=true; btn.textContent='Adding…'; statusEl.textContent='';
+  const ev={summary:title}; if(loc) ev.location=loc;
+  if(allDayMode){const next=new Date(date);next.setDate(next.getDate()+1);ev.start={date};ev.end={date:isoDate(next)};}
+  else{ev.start={dateTime:`${date}T${startT}:00`,timeZone:TZ};ev.end={dateTime:`${date}T${endT}:00`,timeZone:TZ};}
+  try {
+    const r=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{method:'POST',headers:{Authorization:`Bearer ${gcalToken}`,'Content-Type':'application/json'},body:JSON.stringify(ev)});
+    if(!r.ok) throw new Error();
+    statusEl.textContent='✓ Event added!'; statusEl.className='sheet-status';
+    btn.textContent='Add to Google Calendar'; btn.disabled=false;
+    setTimeout(()=>{closeEventSheetDirect();init();},800);
+  } catch {
+    statusEl.textContent='Failed — try again'; statusEl.className='sheet-status error';
+    btn.textContent='Add to Google Calendar'; btn.disabled=false;
+  }
+}
+
+// ── CALENDAR VOICE ────────────────────────────────────────────────────────────
+let recognition=null, voiceTargetDate=null, parsedVoiceEvent=null;
+
+function openVoice(dateStr) {
+  voiceTargetDate=dateStr||isoDate(new Date()); const d=new Date(voiceTargetDate+'T12:00:00');
+  const label=isToday(d)?'Adding event for today':`Adding event for ${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  document.getElementById('voice-date-label').textContent=label;
+  document.getElementById('voice-listening-view').style.display='block';
+  document.getElementById('voice-confirm-view').style.display='none';
+  document.getElementById('voice-transcript').textContent='Say something like:\n"Soccer practice Saturday at 10am at Centennial Park"';
+  document.getElementById('voice-transcript').classList.add('empty');
+  document.getElementById('voice-status').textContent='Listening…';
+  document.getElementById('voice-overlay').classList.add('open');
+  startRecognition();
+}
+function closeVoice() { if(recognition){try{recognition.stop();}catch(e){}recognition=null;} document.getElementById('voice-overlay').classList.remove('open'); }
+function retryVoice() {
+  document.getElementById('voice-listening-view').style.display='block';
+  document.getElementById('voice-confirm-view').style.display='none';
+  document.getElementById('voice-transcript').classList.add('empty');
+  document.getElementById('voice-status').textContent='Listening…';
+  startRecognition();
+}
+function startRecognition() {
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById('voice-status').textContent='Speech not supported';return;}
+  recognition=new SR(); recognition.lang='en-US'; recognition.interimResults=true; recognition.maxAlternatives=1;
+  recognition.onresult=e=>{
+    const transcript=Array.from(e.results).map(r=>r[0].transcript).join('');
+    const box=document.getElementById('voice-transcript'); box.textContent=transcript; box.classList.remove('empty');
+    if(e.results[e.results.length-1].isFinal){recognition=null;processVoiceInput(transcript);}
+  };
+  recognition.onerror=e=>{ document.getElementById('voice-status').textContent=e.error==='no-speech'?'No speech — tap Try Again':e.error==='not-allowed'?'Microphone denied':`Error: ${e.error}`; };
+  recognition.onend=()=>{if(recognition)recognition=null;};
+  recognition.start();
+}
+function processVoiceInput(text) { document.getElementById('voice-status').textContent='Got it — reviewing…'; parsedVoiceEvent=parseVoiceText(text,voiceTargetDate); showVoiceConfirm(parsedVoiceEvent); }
+
+function parseVoiceText(text, defaultDate) {
+  const lower=text.toLowerCase(), today=new Date();
+  const dayNames=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const monthNames=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  let date=defaultDate;
+  if(/\btoday\b/.test(lower)){date=isoDate(today);}
+  else if(/\btomorrow\b/.test(lower)){const d=new Date(today);d.setDate(d.getDate()+1);date=isoDate(d);}
+  else{
+    const nd=lower.match(/next\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/);
+    if(nd){const t=dayNames.indexOf(nd[1]),d=new Date(today),diff=(t-today.getDay()+7)%7||7;d.setDate(today.getDate()+diff+7);date=isoDate(d);}
+    else{const dm=lower.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+      if(dm){const t=dayNames.indexOf(dm[1]),d=new Date(today);let diff=(t-today.getDay()+7)%7;if(diff===0)diff=7;d.setDate(today.getDate()+diff);date=isoDate(d);}
+      else{const mm=lower.match(new RegExp(`(${monthNames.join('|')})\\s+(\\d{1,2})`));
+        if(mm){const d=new Date(today.getFullYear(),monthNames.indexOf(mm[1]),parseInt(mm[2]));if(d<today)d.setFullYear(d.getFullYear()+1);date=isoDate(d);}}}
+  }
+  let startTime='09:00',endTime='10:00',allDay=false;
+  const tm=lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m|p\.m)?/);
+  if(tm){let h=parseInt(tm[1]),m=tm[2]?parseInt(tm[2]):0;const ap=(tm[3]||'').replace(/\./g,'').toLowerCase();
+    if(ap==='pm'&&h<12)h+=12;else if(ap==='am'&&h===12)h=0;else if(!ap&&h>=1&&h<=6)h+=12;
+    startTime=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    endTime=`${String(h+1<24?h+1:h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  } else if(/\ball.?day\b/.test(lower)){allDay=true;}
+  let location='';
+  for(const m of[...lower.matchAll(/\bat\s+(?![\d])([\w\s]+?)(?=\s+(?:on|at|from|$)|\s*$)/g)]){
+    const c=m[1].trim();if(!/^(the\s+)?\d/.test(c)&&c.length>2){location=c.replace(/\b\w/g,x=>x.toUpperCase());break;}
+  }
+  let title=text.replace(/\b(add|create|schedule|set up|put|new event|event)\b/gi,'').replace(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi,'').replace(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi,'').replace(/\b(today|tomorrow)\b/gi,'').replace(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m|p\.m)?\b/gi,'').replace(/\ball.?day\b/gi,'').replace(/\bat\s+(?!\d)[\w\s]+$/gi,'').replace(/\s+/g,' ').trim()||'New Event';
+  return {title:title.charAt(0).toUpperCase()+title.slice(1),date,startTime,endTime,location,allDay};
+}
+
+function showVoiceConfirm(p) {
+  const d=new Date(p.date+'T12:00:00');
+  document.getElementById('voice-confirm-card').innerHTML=`
+    <div class="vc-row"><span class="vc-icon">📌</span><div><div class="vc-label">Event</div><div class="vc-value">${p.title}</div></div></div>
+    <div class="vc-row"><span class="vc-icon">📅</span><div><div class="vc-label">Date</div><div class="vc-value">${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}</div></div></div>
+    <div class="vc-row"><span class="vc-icon">🕐</span><div><div class="vc-label">Time</div><div class="vc-value">${p.allDay?'All day':fmt12(p.startTime)+' – '+fmt12(p.endTime)}</div></div></div>
+    ${p.location?`<div class="vc-row"><span class="vc-icon">📍</span><div><div class="vc-label">Location</div><div class="vc-value">${p.location}</div></div></div>`:''}`;
+  document.getElementById('voice-listening-view').style.display='none';
+  document.getElementById('voice-confirm-view').style.display='block';
+}
+
+async function confirmVoiceEvent() {
+  if(!gcalToken){alert('No calendar access — please re-sign in.');return;}
+  const p=parsedVoiceEvent; const ev={summary:p.title};
+  if(p.location)ev.location=p.location;
+  if(p.allDay){const next=new Date(p.date+'T12:00:00');next.setDate(next.getDate()+1);ev.start={date:p.date};ev.end={date:isoDate(next)};}
+  else{ev.start={dateTime:`${p.date}T${p.startTime}:00`,timeZone:TZ};ev.end={dateTime:`${p.date}T${p.endTime}:00`,timeZone:TZ};}
+  try {
+    const r=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{method:'POST',headers:{Authorization:`Bearer ${gcalToken}`,'Content-Type':'application/json'},body:JSON.stringify(ev)});
+    if(!r.ok) throw new Error();
+    closeVoice(); init();
+  } catch {document.getElementById('voice-status').textContent='Failed to add — try again';}
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// If this page loaded inside the Kroger OAuth popup, hand the code back and close
+(function() {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code'), state = params.get('state');
+  if (code && state === 'kroger_auth' && window.opener) {
+    window.opener.postMessage({ type: 'kroger_code', code }, location.origin);
+    window.close();
+    return; // stop the rest of the page from initializing in the popup
+  }
+  krogerToken = sessionStorage.getItem('kroger_token');
+  krogerRefreshToken = sessionStorage.getItem('kroger_refresh_token') || null;
+  krogerLocationId = sessionStorage.getItem('kroger_location') || null;
+})();
+
+async function init() {
+  weekDays=getWeekDays(); weatherDays=Array(7).fill(null); calEventsByDay=Array(7).fill([]);
+  document.getElementById('week-label').textContent=weekLabel();
+  renderStrip(); showPage(currentPage);
+
+  const [wRes,evRes,upRes,,brRes]=await Promise.allSettled([
+    fetchWeekWeather(weekDays),
+    gcalToken ? fetchCalEvents(weekDays[0].toISOString(),new Date(weekDays[6].getTime()+86399999).toISOString(),gcalToken) : Promise.resolve([]),
+    gcalToken ? fetchUpcomingFamilyEvents(gcalToken) : Promise.resolve([]),
+    loadFamilyData(),
+    fetchLatestBriefing()
+  ]);
+
+  if(wRes.status==='fulfilled') weatherDays=wRes.value;
+  if(evRes.status==='fulfilled'){
+    calEventsByDay=weekDays.map(d=>{
+      const ds=isoDate(d);
+      return evRes.value.filter(ev=>(ev.start?.dateTime||ev.start?.date||'').slice(0,10)===ds);
+    });
+  }
+  if(upRes.status==='fulfilled') { upcomingFamilyEvents=upRes.value; }
+  else { upcomingFamilyEvents=null; } // null = fetch failed (vs [] = genuinely empty)
+  if(brRes.status==='fulfilled') briefingData=brRes.value;
+
+  renderStrip(); showPage(currentPage); renderNavBadges();
+}
+
+// ── KROGER ───────────────────────────────────────────────────────────────────
+function setKrogerModality(mode, btn) {
+  krogerModality = mode;
+  document.querySelectorAll('#kroger-modality-row button').forEach(b => {
+    b.style.background = 'var(--surface2)'; b.style.borderColor = 'var(--surface2)'; b.style.color = 'var(--text)';
+  });
+  btn.style.background = '#2055b7'; btn.style.borderColor = '#2055b7'; btn.style.color = '#fff';
+}
+
+function krogerConnect() {
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: KROGER_CLIENT_ID,
+    redirect_uri: KROGER_REDIRECT,
+    scope: 'cart.basic:write profile.compact',
+    state: 'kroger_auth'
+  });
+  const popup = window.open(
+    'https://api.kroger.com/v1/connect/oauth2/authorize?' + params,
+    'kroger_login',
+    'width=500,height=650,left=' + Math.round((screen.width-500)/2) + ',top=' + Math.round((screen.height-650)/2)
+  );
+  const timer = setInterval(() => { if (popup.closed) clearInterval(timer); }, 500);
+  window.addEventListener('message', async function onMsg(e) {
+    if (e.data?.type !== 'kroger_code') return;
+    window.removeEventListener('message', onMsg);
+    clearInterval(timer);
+    try {
+      const tokenData = await krogerExchangeCode(e.data.code);
+      krogerToken = tokenData.access_token;
+      krogerRefreshToken = tokenData.refresh_token || null;
+      sessionStorage.setItem('kroger_token', krogerToken);
+      if (krogerRefreshToken) sessionStorage.setItem('kroger_refresh_token', krogerRefreshToken);
+      await krogerResolveLocation();
+      showKrogerSendUI();
+    } catch(err) {
+      alert('Kroger sign-in failed: ' + err.message);
+    }
+  });
+}
+
+async function krogerExchangeCode(code) {
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, redirect_uri: KROGER_REDIRECT })
+  });
+  const data = await r.json();
+  if (!data.access_token) throw new Error(data.error_description || data.error || 'No access token returned');
+  return data; // return full object including refresh_token
+}
+
+async function krogerRefreshAccessToken() {
+  if (!krogerRefreshToken) throw new Error('No refresh token — please reconnect Kroger');
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: krogerRefreshToken })
+  });
+  const data = await r.json();
+  if (!data.access_token) throw new Error('Token refresh failed — please reconnect Kroger');
+  krogerToken = data.access_token;
+  if (data.refresh_token) krogerRefreshToken = data.refresh_token;
+  sessionStorage.setItem('kroger_token', krogerToken);
+  if (krogerRefreshToken) sessionStorage.setItem('kroger_refresh_token', krogerRefreshToken);
+}
+
+function openKrogerOverlay() {
+  const overlay = document.getElementById('kroger-overlay');
+  overlay.classList.add('open');
+  if (krogerToken) {
+    // Already connected — show send UI
+    showKrogerSendUI();
+  } else {
+    document.getElementById('kroger-title').textContent = 'Connect to Kroger';
+    document.getElementById('kroger-sub').textContent = 'Sign in with your Kroger account to add grocery items directly to your cart.';
+    document.getElementById('kroger-action-btn').textContent = 'Sign in to Kroger';
+    document.getElementById('kroger-action-btn').onclick = krogerConnect;
+    document.getElementById('kroger-action-btn').style.display = '';
+    document.getElementById('kroger-viewcart-btn').style.display = 'none';
+    document.getElementById('kroger-whoami-btn').style.display = 'none';
+    document.getElementById('kroger-progress-wrap').style.display = 'none';
+    document.getElementById('kroger-item-list').innerHTML = '';
+    document.getElementById('kroger-debug-out').style.display = 'none';
+  }
+}
+
+
+async function krogerWhoAmI() {
+  const out = document.getElementById('kroger-debug-out');
+  out.style.display = 'block';
+  out.textContent = 'Fetching identity…';
+  try {
+    // Decode JWT payload locally (no verification needed for debug)
+    let jwtClaims = null;
+    try {
+      const parts = krogerToken.split('.');
+      if (parts.length === 3) {
+        const payload = parts[1].replace(/-/g,'+').replace(/_/g,'/');
+        jwtClaims = JSON.parse(atob(payload));
+      }
+    } catch(e) { jwtClaims = 'Not a JWT or decode failed'; }
+
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=whoami`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: krogerToken })
+    });
+    const data = await r.json();
+    out.textContent = JSON.stringify({ jwt_claims: jwtClaims, ...data }, null, 2);
+  } catch(e) {
+    out.textContent = 'Error: ' + e.message;
+  }
+}
+
+function showKrogerSendUI() {
+  const pending = grocery.filter(g => !g.done);
+  document.getElementById('kroger-title').textContent = 'Send to Kroger Cart';
+  document.getElementById('kroger-sub').textContent = pending.length
+    ? `${pending.length} item${pending.length > 1 ? 's' : ''} will be searched and added to your Kroger cart.`
+    : 'No unchecked items on the grocery list.';
+  document.getElementById('kroger-progress-wrap').style.display = 'none';
+  document.getElementById('kroger-item-list').innerHTML = pending.map(g =>
+    `<div class="kroger-item-row" id="krow-${g.id}">
+      <span class="kroger-item-icon">⏳</span>
+      <span class="kroger-item-name">${g.text}</span>
+      <span class="kroger-item-status" id="kstat-${g.id}">Pending</span>
+    </div>`
+  ).join('');
+  const btn = document.getElementById('kroger-action-btn');
+  if (pending.length) {
+    btn.textContent = 'Add All to Kroger Cart';
+    btn.onclick = () => sendAllToKroger(pending);
+    btn.style.display = '';
+  } else {
+    btn.style.display = 'none';
+  }
+  document.getElementById('kroger-viewcart-btn').style.display = '';
+  document.getElementById('kroger-whoami-btn').style.display = '';
+  document.getElementById('kroger-debug-out').style.display = 'none';
+  document.getElementById('kroger-debug-out').textContent = '';
+}
+
+function closeKrogerOverlay() {
+  document.getElementById('kroger-overlay').classList.remove('open');
+}
+
+async function krogerResolveLocation() {
+  if (krogerLocationId) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=location`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: LAT, lon: LON })
+    });
+    const data = await r.json();
+    const loc = data.data?.[0];
+    if (loc) {
+      krogerLocationId = loc.locationId;
+      sessionStorage.setItem('kroger_location', krogerLocationId);
+    }
+  } catch(e) { console.warn('Kroger location lookup failed', e); }
+}
+
+async function loadKrogerHistory() {
+  const { data } = await sb.from('family_data').select('value').eq('key', 'kroger_history').maybeSingle();
+  return data?.value || [];
+}
+
+async function saveKrogerHistory(term, upc, name) {
+  const history = await loadKrogerHistory();
+  const filtered = history.filter(h => h.term.toLowerCase() !== term.toLowerCase());
+  filtered.unshift({ term, upc, name, addedAt: new Date().toISOString() });
+  await sb.from('family_data').upsert({ key: 'kroger_history', value: filtered.slice(0, 100) });
+}
+
+async function krogerSearchProduct(token, term) {
+  await krogerResolveLocation();
+  const history = await loadKrogerHistory();
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ term, locationId: krogerLocationId || undefined, history })
+  });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => r.status);
+    throw new Error(`Search HTTP ${r.status}: ${txt}`);
+  }
+  const data = await r.json();
+  console.log('Kroger search', term, '→', data);
+  const product = data.data?.[0] || null;
+  if (product) product._source = data.source;
+  return product;
+}
+
+async function krogerAddToCart(upc, qty = 1) {
+  const doAdd = async (tok) => fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=cart`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: tok, upc, quantity: qty, modality: krogerModality })
+  });
+  let r = await doAdd(krogerToken);
+  const data = await r.json().catch(() => ({}));
+  if (data.kroger_status === 401) {
+    await krogerRefreshAccessToken();
+    r = await doAdd(krogerToken);
+    const data2 = await r.json().catch(() => ({}));
+    return { ok: data2.kroger_ok, detail: data2.kroger_body };
+  }
+  return { ok: data.kroger_ok, detail: data.kroger_body };
+}
+
+async function sendAllToKroger(items) {
+  const btn = document.getElementById('kroger-action-btn');
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+  const addedIds = [];
+  const wrap = document.getElementById('kroger-progress-wrap');
+  wrap.style.display = 'block';
+  const bar = document.getElementById('kroger-progress-bar');
+  const label = document.getElementById('kroger-progress-label');
+
+  let done = 0, succeeded = 0;
+  for (const item of items) {
+    const statEl = document.getElementById('kstat-' + item.id);
+    const rowEl = document.getElementById('krow-' + item.id);
+    if (statEl) statEl.textContent = 'Searching…';
+    if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '🔍';
+
+    try {
+      const product = await krogerSearchProduct(krogerToken, item.text);
+      if (product) {
+        const upc = product.upc;
+        const productName = product.description || item.text;
+        const result = await krogerAddToCart(upc);
+        if (result.ok) {
+          const src = product._source;
+          const badge = src === 'history' ? '🕐 prev' : src === 'organic' ? '🌿 organic' : '';
+          if (statEl) statEl.textContent = '✓ Added' + (badge ? ` · ${badge}` : '');
+          if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '✅';
+          await saveKrogerHistory(item.text, upc, productName);
+          addedIds.push(item.id);
+          succeeded++;
+        } else {
+          const errMsg = result.detail ? result.detail.slice(0, 80) : `HTTP ${result.kroger_status||'?'}`;
+          if (statEl) statEl.textContent = errMsg;
+          if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '❌';
+        }
+      } else {
+        if (statEl) statEl.textContent = 'Not found';
+        if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '❓';
+      }
+    } catch (e) {
+      if (statEl) statEl.textContent = 'Error';
+      if (rowEl) rowEl.querySelector('.kroger-item-icon').textContent = '❌';
+    }
+
+    done++;
+    bar.style.width = Math.round((done / items.length) * 100) + '%';
+    label.textContent = `${done} of ${items.length} processed`;
+  }
+
+  btn.textContent = `Done — ${succeeded} of ${items.length} added`;
+  btn.disabled = false;
+  btn.onclick = closeKrogerOverlay;
+  label.textContent = `${succeeded} item${succeeded !== 1 ? 's' : ''} added to your Kroger cart!`;
+
+  if (succeeded > 0) {
+    document.getElementById('kroger-viewcart-btn').style.display = '';
+  }
+
+  // Remove successfully added items from grocery list
+  if (addedIds.length) {
+    grocery = grocery.filter(g => !addedIds.includes(g.id));
+    await saveFamilyData('grocery', grocery);
+    renderHome();
+  }
+}
+
+// ── AUTH STATE ────────────────────────────────────────────────────────────────
+sb.auth.onAuthStateChange((event, session) => {
+  if(session){
+    if(session.provider_token) localStorage.setItem('gcal_token',session.provider_token);
+    gcalToken = localStorage.getItem('gcal_token') || sessionStorage.getItem('gcal_token') || null;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('dashboard').style.display='flex';
+    if(event==='SIGNED_IN'||event==='INITIAL_SESSION') init();
+  } else {
+    gcalToken=null;
+    document.getElementById('dashboard').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+  }
+});
+</script>
+</body>
+</html>
