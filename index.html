@@ -583,6 +583,18 @@
   </div>
 </div>
 
+<!-- GROCERY ADD MODAL -->
+<div class="dim" id="grocery-add-dim" onclick="if(event.target===this)closeGroceryAddModal()">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-box-title">Add Grocery Item</div>
+    <input class="modal-field" id="grocery-add-input" type="text" placeholder="e.g. Almond milk" onkeydown="if(event.key==='Enter')confirmAddGrocery()">
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeGroceryAddModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmAddGrocery()">Add</button>
+    </div>
+  </div>
+</div>
+
 <!-- GROCERY VOICE OVERLAY -->
 <div id="grocery-voice">
   <div id="gv-listening">
@@ -1196,20 +1208,23 @@ function renderHome() {
         <div class="home-col-body">${col2}</div>
       </div>
       <div class="home-col">
-        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between">
           <span>🛒 Grocery List</span>
-          <div style="display:flex;align-items:center;gap:6px">
-            ${grocery.length ? `<button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px;text-transform:none;letter-spacing:0">All</button><button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px;text-transform:none;letter-spacing:0">None</button>` : ''}
-            <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
-          </div>
+          <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600;text-transform:none;letter-spacing:0">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
         </div>
         <div class="home-col-body">
           <div class="card">
             ${groceryRows}
-            <div class="list-add-row">
-              <input class="list-add-input" id="grocery-input" type="text" placeholder="Add item…" onkeydown="if(event.key==='Enter')addGrocery()">
-              <button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add">🎤</button>
-              <button class="list-add-btn" onclick="addGrocery()">+</button>
+            <div class="list-add-row" style="justify-content:space-between">
+              <div style="display:flex;gap:6px;align-items:center">
+                <button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">All</button>
+                <button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">None</button>
+                <button onclick="clearSelectedGrocery()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">Clear</button>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add">🎤</button>
+                <button class="list-add-btn" onclick="openGroceryAddModal()">+</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1218,15 +1233,28 @@ function renderHome() {
 }
 
 // ── GROCERY CRUD ──────────────────────────────────────────────────────────────
-function addGrocery() {
-  const input = document.getElementById('grocery-input');
-  const text = input?.value.trim(); if (!text) return;
+function openGroceryAddModal() {
+  document.getElementById('grocery-add-dim').classList.add('open');
+  setTimeout(() => document.getElementById('grocery-add-input').focus(), 80);
+}
+function closeGroceryAddModal() {
+  document.getElementById('grocery-add-dim').classList.remove('open');
+  document.getElementById('grocery-add-input').value = '';
+}
+function confirmAddGrocery() {
+  const input = document.getElementById('grocery-add-input');
+  const text = input.value.trim(); if (!text) return;
   grocery.push({ id: uid(), text, done: false });
-  saveFamilyData('grocery', grocery); input.value = ''; renderHome();
-  document.getElementById('grocery-input')?.focus();
+  saveFamilyData('grocery', grocery);
+  closeGroceryAddModal();
+  renderHome();
 }
 function selectAllGrocery(done) {
   grocery.forEach(g => g.done = done);
+  saveFamilyData('grocery', grocery); renderHome();
+}
+function clearSelectedGrocery() {
+  grocery = grocery.filter(g => !g.done);
   saveFamilyData('grocery', grocery); renderHome();
 }
 function toggleGrocery(id) {
