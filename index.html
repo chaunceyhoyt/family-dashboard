@@ -57,10 +57,10 @@
     .day-col.today .day-col-date { color: var(--accent); }
     .day-weather { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px; }
     .day-weather-icon { font-size: 22px; }
-    .day-events-wrap { flex: 1; position: relative; min-height: 0; overflow: hidden; }
-    .day-events { display: flex; flex-direction: column; gap: 3px; overflow-y: scroll; scrollbar-width: none; height: 100%; -webkit-overflow-scrolling: touch; }
+    .day-events-wrap { position: relative; flex-shrink: 0; }
+    .day-events { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; scrollbar-width: none; height: 26px; -webkit-overflow-scrolling: touch; }
     .day-events::-webkit-scrollbar { display: none; }
-    .day-events-more { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 11px; color: #93c5fd; line-height: 1; pointer-events: none; background: linear-gradient(transparent, #111e35 70%); padding-top: 12px; transition: opacity 0.2s; }
+    .day-events-more { text-align: center; font-size: 11px; color: #93c5fd; line-height: 1; margin-top: 1px; transition: opacity 0.2s; }
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
     .day-ev-chip:active { background: rgba(59,130,246,0.32); }
     .dinner-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; opacity: 0.7; }
@@ -932,8 +932,13 @@ async function openWeatherModal(dateStr, dayIdx) {
   document.getElementById('weather-modal-body').innerHTML = '<div class="spinner"></div>';
 
   try {
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,uv_index&daily=sunrise,sunset,uv_index_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=${encodeURIComponent(TZ)}&start_date=${dateStr}&end_date=${dateStr}`);
-    const data = await r.json();
+    const [weatherRes, tideRes] = await Promise.allSettled([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,uv_index&daily=sunrise,sunset,uv_index_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=${encodeURIComponent(TZ)}&start_date=${dateStr}&end_date=${dateStr}`),
+      fetch(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=family_dashboard&begin_date=${dateStr.replace(/-/g,'')}&end_date=${dateStr.replace(/-/g,'')}&datum=MLLW&station=8638863&time_zone=lst_ldt&interval=hilo&units=english&format=json`)
+    ]);
+    const data = await weatherRes.value.json();
+    const tideData = tideRes.status === 'fulfilled' ? await tideRes.value.json() : null;
+    const tides = tideData?.predictions || [];
     const daily = data.daily;
     const hourly = data.hourly;
     const w = weatherDays[dayIdx];
@@ -953,15 +958,15 @@ async function openWeatherModal(dateStr, dayIdx) {
     const formatHour = h => h === 12 ? '12pm' : h > 12 ? `${h-12}pm` : `${h}am`;
     const uvColor = uv => uv <= 2 ? '#4ade80' : uv <= 5 ? '#fbbf24' : uv <= 7 ? '#f97316' : '#ef4444';
 
-    const hourRows = hours.map(h => `
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px">
-        <span style="width:38px;color:var(--text-muted);font-weight:600">${formatHour(h.hour)}</span>
-        <span style="font-size:16px">${WMO_EMOJI[h.code]||'🌡️'}</span>
-        <span style="font-weight:700;width:36px">${h.temp}°</span>
-        <span style="color:var(--text-muted);font-size:12px">Feels ${h.feels}°</span>
-        <span style="margin-left:auto;color:#60a5fa;font-size:12px">${h.precip}%🌧</span>
-        <span style="color:var(--text-muted);font-size:12px">${h.wind}mph</span>
-        ${h.uv !== null ? `<span style="color:${uvColor(h.uv)};font-size:12px;font-weight:700">UV${Math.round(h.uv)}</span>` : ''}
+    const hourCards = hours.map(h => `
+      <div style="flex-shrink:0;width:72px;background:var(--surface2);border-radius:10px;padding:10px 8px;text-align:center;font-size:12px">
+        <div style="color:var(--text-muted);font-weight:600;margin-bottom:4px">${formatHour(h.hour)}</div>
+        <div style="font-size:20px;margin-bottom:4px">${WMO_EMOJI[h.code]||'🌡️'}</div>
+        <div style="font-weight:800;font-size:15px;margin-bottom:2px">${h.temp}°</div>
+        <div style="color:var(--text-muted);margin-bottom:4px">Feels ${h.feels}°</div>
+        <div style="color:#60a5fa">${h.precip}% 🌧</div>
+        <div style="color:var(--text-muted)">${h.wind}mph</div>
+        ${h.uv !== null ? `<div style="color:${uvColor(h.uv)};font-weight:700;margin-top:2px">UV${Math.round(h.uv)}</div>` : ''}
       </div>`).join('');
 
     const sunrise = daily.sunrise?.[0] ? new Date(daily.sunrise[0]).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : '–';
@@ -989,6 +994,20 @@ async function openWeatherModal(dateStr, dayIdx) {
             <div><span style="color:var(--text-muted)">Sky</span><div style="font-weight:700;margin-top:2px">${WMO_DESC[w?.code]||'–'}</div></div>
           </div>
           ${uvWarn?`<div style="font-size:12px;color:#fbbf24;margin-top:10px">⚠️ High UV — apply SPF 50+ and reapply every 2 hours</div>`:''}
+          ${tides.length ? `<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.07);padding-top:10px">
+            <div style="font-size:11px;font-weight:700;color:#6ee7b7;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🌊 Tides</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              ${tides.map(t => {
+                const time = new Date('2000-01-01T'+t.t.split(' ')[1]).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+                const isHigh = t.type === 'H';
+                return `<div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:6px 10px;font-size:12px;text-align:center">
+                  <div style="font-weight:700;color:${isHigh?'#93c5fd':'#94a3b8'}">${isHigh?'▲ High':'▼ Low'}</div>
+                  <div style="font-weight:600;margin:2px 0">${time}</div>
+                  <div style="color:var(--text-muted)">${parseFloat(t.v).toFixed(1)} ft</div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>` : ''}
         </div>`;
     }
 
@@ -1000,7 +1019,7 @@ async function openWeatherModal(dateStr, dayIdx) {
         <div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="color:var(--text-muted);font-size:11px">PRECIP / UV</div><div style="font-weight:700;margin-top:4px">${precSum}"</div><div style="color:${uvColor(uvMax)};font-weight:700">UV ${uvMax}</div></div>
       </div>
       <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Hourly Forecast</div>
-      ${hourRows}`;
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none">${hourCards}</div>`;
   } catch(e) {
     document.getElementById('weather-modal-body').innerHTML = '<div class="empty-state">Could not load detailed forecast</div>';
   }
@@ -1044,7 +1063,7 @@ function renderStrip() {
       const link = ev.htmlLink || '#';
       return `<a class="day-ev-chip" href="${link}" target="_blank" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</a>`;
     }).join('');
-    const moreIndicator = evs.length > 2 ? `<div class="day-events-more">▾</div>` : '';
+    const moreIndicator = evs.length > 1 ? `<div class="day-events-more">▾</div>` : '';
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
     const dinnerHtml = meal
       ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
@@ -1073,7 +1092,8 @@ function renderStrip() {
     }
   });
   strip.querySelectorAll('.day-events').forEach(el => {
-    const arrow = el.parentElement?.querySelector('.day-events-more');
+    const wrap = el.closest('.day-events-wrap');
+    const arrow = wrap?.nextElementSibling?.classList.contains('day-events-more') ? wrap.nextElementSibling : null;
     if (!arrow) return;
     el.addEventListener('scroll', () => {
       const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
@@ -1375,7 +1395,7 @@ function renderHome() {
           <div style="display:flex;gap:5px">
             ${gcalToken
               ? `<button onclick="reloadCalendar()" title="Reload events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>
-                 <button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">⏏</button>`
+                 <button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>`
               : `<button onclick="signIn()" title="Sign in to see events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>`}
           </div>
         </div>
