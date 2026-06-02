@@ -76,7 +76,7 @@
     /* Landscape: side-by-side, each column scrolls independently */
     @media (orientation: landscape) {
       .recipe-modal-box { max-height: 94vh; }
-      .recipe-two-col { display: grid; grid-template-columns: 3fr 1fr; gap: 0 16px; }
+      .recipe-two-col { display: grid; grid-template-columns: 5fr 2fr; gap: 0 16px; }
       .recipe-col-left { max-height: 42vh; overflow-y: auto; }
       .recipe-col-right { border-left: 1px solid rgba(255,255,255,0.07); padding-left: 16px; max-height: 42vh; overflow-y: auto; }
     }
@@ -362,8 +362,8 @@
 
     <!-- View mode -->
     <div id="recipe-view-mode">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
-        <div class="modal-box-title" id="recipe-title" style="margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+        <div class="modal-box-title" id="recipe-title" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>
         <button onclick="openSwapRecipeMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Swap</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
       </div>
@@ -381,8 +381,8 @@
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <div class="recipe-section-label" style="margin-bottom:0">Ingredients</div>
             <div style="display:flex;gap:6px">
-              <button onclick="selectAllIngredients(true)" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0">All</button>
-              <button onclick="selectAllIngredients(false)" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0">None</button>
+              <button onclick="selectAllIngredients(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px">All</button>
+              <button onclick="selectAllIngredients(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px">None</button>
             </div>
           </div>
           <div id="recipe-view-ingredients"></div>
