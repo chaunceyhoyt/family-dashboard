@@ -64,14 +64,19 @@
     #weekly-strip.expanded .day-col { flex: 1 0 0; }
     #weekly-strip.expanded .day-events-wrap { height: auto; overflow: visible; }
     #weekly-strip.expanded .day-events { height: auto; overflow: visible; }
+    /* Dinner row — sits below weekly strip, always aligned */
+    #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, #111e35 0%, #0d1a2e 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    #dinner-row.hidden { display: none; }
+    .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
     /* Toggle bar */
-    #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 5px; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 5px; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 0.25s; }
     #strip-toggle-bar span { font-size: 18px; color: rgba(255,255,255,0.3); line-height: 1; transition: transform 0.25s; }
     #strip-toggle-bar.expanded span { transform: rotate(180deg); }
+    #strip-toggle-bar.expanded { position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 201; border-top: 1px solid rgba(255,255,255,0.07); border-bottom: none; }
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
     .day-ev-chip:active { background: rgba(59,130,246,0.32); }
     .dinner-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; opacity: 0.7; }
-    .dinner-slot { margin-top: 4px; min-height: 44px; flex-shrink: 0; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.13); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
+    .dinner-slot { margin-top: 0; min-height: 44px; flex-shrink: 0; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.13); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
     .dinner-slot.drag-over { background: rgba(16,185,129,0.12); border-color: var(--success); border-style: solid; }
     .dinner-chip { width: 100%; min-height: 44px; border-radius: 8px; display: flex; align-items: center; gap: 4px; padding: 6px 7px; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.3); font-size: 11px; font-weight: 700; color: #6ee7b7; user-select: none; transition: opacity 0.15s; cursor: pointer; overflow: hidden; }
     .dinner-chip.dragging { opacity: 0.3; }
@@ -426,6 +431,7 @@
     <button class="week-cal-btn" title="Jump to date">📅<input type="date" id="week-picker" onchange="jumpToDate(this.value)"></button>
   </div>
   <div id="weekly-strip"></div>
+  <div id="dinner-row"></div>
   <div id="strip-toggle-bar" onclick="toggleStrip()"><span>▾</span></div>
   <div id="content-area"><div class="spinner"></div></div>
   <div id="bottom-nav">
@@ -1062,8 +1068,9 @@ async function fetchUpcomingFamilyEvents(token) {
 // ── WEEKLY STRIP ──────────────────────────────────────────────────────────────
 function renderStrip() {
   const strip = document.getElementById('weekly-strip');
+  const dinnerRow = document.getElementById('dinner-row');
   strip.innerHTML = weekDays.map((d, i) => {
-    const w = weatherDays[i], evs = calEventsByDay[i] || [], meal = dinners[isoDate(d)] || '';
+    const w = weatherDays[i], evs = calEventsByDay[i] || [];
     const todayCls = isToday(d) ? ' today' : '';
     const chips = evs.map(ev => {
       const t = ev.start?.dateTime ? formatTime(ev.start.dateTime) : '';
@@ -1071,22 +1078,25 @@ function renderStrip() {
       const link = ev.htmlLink || '#';
       return `<a class="day-ev-chip" href="${link}" target="_blank" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</a>`;
     }).join('');
-    const moreIndicator = '';
-    const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
-    const dinnerHtml = meal
-      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
-      : `<button class="dinner-add-btn" onclick="openDinnerModal('${isoDate(d)}')">+</button>`;
     return `<div class="day-col${todayCls}">
       <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
       <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
       <div class="day-weather" style="cursor:${w?'pointer':'default'}" onclick="${w?`openWeatherModal('${isoDate(d)}',${i})`:''}"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
       <div class="day-events-wrap"><div class="day-events">${chips}</div></div>
-      <div class="dinner-label">🍽 Dinner</div>
-      <div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div>
     </div>`;
   }).join('');
 
-  strip.querySelectorAll('.dinner-chip').forEach(chip => {
+  // Render dinner row separately so chips always align regardless of event count
+  dinnerRow.innerHTML = weekDays.map((d) => {
+    const meal = dinners[isoDate(d)] || '';
+    const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
+    const dinnerHtml = meal
+      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
+      : `<button class="dinner-add-btn" onclick="openDinnerModal('${isoDate(d)}')">+</button>`;
+    return `<div class="dinner-row-cell"><div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div></div>`;
+  }).join('');
+
+  dinnerRow.querySelectorAll('.dinner-chip').forEach(chip => {
     const date = chip.dataset.date, meal = chip.dataset.meal;
     // Tapping the chip label opens recipe modal
     chip.addEventListener('click', e => { if (!e.target.classList.contains('dinner-drag-handle')) openRecipeModal(date, meal); });
@@ -1099,7 +1109,7 @@ function renderStrip() {
       handle.addEventListener('touchstart', e => touchDragStart(e, chip, date, meal), { passive: false });
     }
   });
-  strip.querySelectorAll('.dinner-slot').forEach(slot => {
+  dinnerRow.querySelectorAll('.dinner-slot').forEach(slot => {
     const date = slot.dataset.date;
     slot.addEventListener('dragover',  e => { e.preventDefault(); slot.classList.add('drag-over'); });
     slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
@@ -1110,9 +1120,11 @@ function renderStrip() {
 function toggleStrip() {
   const strip = document.getElementById('weekly-strip');
   const bar = document.getElementById('strip-toggle-bar');
+  const dinnerRow = document.getElementById('dinner-row');
   const content = document.getElementById('content-area');
   const expanded = strip.classList.toggle('expanded');
   bar.classList.toggle('expanded', expanded);
+  dinnerRow.classList.toggle('hidden', expanded);
   content.style.display = expanded ? 'none' : '';
 }
 function collapseStrip() {
@@ -1120,6 +1132,7 @@ function collapseStrip() {
   if (!strip.classList.contains('expanded')) return;
   strip.classList.remove('expanded');
   document.getElementById('strip-toggle-bar').classList.remove('expanded');
+  document.getElementById('dinner-row').classList.remove('hidden');
   document.getElementById('content-area').style.display = '';
 }
 
