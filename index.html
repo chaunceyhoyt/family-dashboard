@@ -112,14 +112,16 @@
     @media (max-width: 440px) { .home-grid { grid-template-columns: 1fr; } }
 
     /* ── EVENT CARDS ── */
-    a.ev-card { display: block; border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); text-decoration: none; color: var(--text); transition: transform 0.1s, border-color 0.15s; -webkit-tap-highlight-color: transparent; }
+    a.ev-card { display: flex; align-items: stretch; border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); text-decoration: none; color: var(--text); transition: transform 0.1s, border-color 0.15s; -webkit-tap-highlight-color: transparent; background: var(--surface); }
     a.ev-card:active { transform: scale(0.98); border-color: rgba(255,255,255,0.18); }
-    .ev-card-banner { height: 56px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
-    .ev-card-body { background: var(--surface); padding: 9px 12px 10px; }
-    .ev-card-title { font-size: 13px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
-    .ev-card-time  { font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
-    .ev-card-date  { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
-    .ev-card-loc   { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+    .ev-card-icon { width: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .ev-card-body { flex: 1; padding: 9px 12px 9px 0; min-width: 0; }
+    .ev-card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-bottom: 2px; }
+    .ev-card-title { font-size: 13px; font-weight: 700; line-height: 1.3; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ev-card-time  { font-size: 11px; font-weight: 600; color: var(--accent); flex-shrink: 0; }
+    .ev-card-date  { font-size: 11px; color: var(--text-muted); }
+    .ev-card-desc  { font-size: 11px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .ev-card-loc   { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; margin-top: 2px; }
 
     /* Non-linked briefing items in local events */
     .local-item { background: var(--surface); border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); padding: 10px 12px; }
@@ -317,10 +319,11 @@
       .col-header { font-size: 13px; margin-bottom: 10px; letter-spacing: 0.8px; }
 
       /* Event cards */
-      .ev-card-banner { height: 64px; font-size: 30px; }
-      .ev-card-body { padding: 11px 14px 12px; }
+      .ev-card-icon { width: 62px; font-size: 28px; }
+      .ev-card-body { padding: 11px 14px 11px 0; }
       .ev-card-title { font-size: 15px; }
-      .ev-card-time, .ev-card-date, .ev-card-loc { font-size: 13px; }
+      .ev-card-time { font-size: 13px; }
+      .ev-card-date, .ev-card-loc, .ev-card-desc { font-size: 13px; }
       .local-item { padding: 12px 14px; }
       .local-item-text { font-size: 15px; }
       .local-item-detail, .local-item-link, .local-item-time { font-size: 13px; }
@@ -1129,13 +1132,17 @@ function renderHome() {
       const color = eventColor(title);
       const emoji = eventEmoji(title);
       const link = ev.htmlLink || '#';
+      const desc = ev.description ? ev.description.replace(/<[^>]+>/g,'').trim() : '';
       return `<a class="ev-card" href="${link}" target="_blank">
-        <div class="ev-card-banner" style="background:linear-gradient(135deg,${color},${color}cc)">${emoji}</div>
+        <div class="ev-card-icon" style="background:linear-gradient(160deg,${color}33,${color}18)">${emoji}</div>
         <div class="ev-card-body">
-          <div class="ev-card-title">${title}</div>
-          <div class="ev-card-time">${time}</div>
+          <div class="ev-card-header">
+            <div class="ev-card-title">${title}</div>
+            <div class="ev-card-time">${time}</div>
+          </div>
           <div class="ev-card-date">${dateLabel}</div>
           ${ev.location ? `<div class="ev-card-loc">📍 ${ev.location}</div>` : ''}
+          ${desc ? `<div class="ev-card-desc">${desc}</div>` : ''}
         </div>
       </a>`;
     }).join('');
