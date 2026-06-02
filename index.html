@@ -641,7 +641,7 @@ function renderStrip() {
     chip.draggable = true;
     chip.addEventListener('dragstart', e => { drag.sourceDate=date; drag.mealText=meal; drag.didDrag=true; chip.classList.add('dragging'); e.dataTransfer.setData('text/plain',date); e.dataTransfer.effectAllowed='move'; });
     chip.addEventListener('dragend', () => { chip.classList.remove('dragging'); setTimeout(()=>{ drag.didDrag=false; },0); });
-    chip.addEventListener('touchstart', e => touchDragStart(e, date, meal), { passive: false });
+    chip.addEventListener('touchstart', e => touchDragStart(e, date, meal), { passive: true });
   });
   strip.querySelectorAll('.dinner-slot').forEach(slot => {
     const date = slot.dataset.date;
@@ -653,28 +653,50 @@ function renderStrip() {
 
 // ── TOUCH DRAG ────────────────────────────────────────────────────────────────
 const ghost = document.getElementById('drag-ghost');
+const DRAG_THRESHOLD = 8;
+let touchStartX = 0, touchStartY = 0, pendingDrag = null;
 
 function touchDragStart(e, date, meal) {
-  e.preventDefault(); drag.active=true; drag.sourceDate=date; drag.mealText=meal;
-  touchChip=e.currentTarget; touchChip.classList.add('dragging');
-  ghost.textContent=meal; ghost.style.display='block';
-  const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
+  const t = e.touches[0];
+  touchStartX = t.clientX; touchStartY = t.clientY;
+  pendingDrag = { date, meal, chip: e.currentTarget };
+  // Don't preventDefault yet — wait to see if it's a drag or a tap
 }
 document.addEventListener('touchmove', e => {
-  if (!drag.active) return; e.preventDefault();
-  const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
-  document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
-  const el=document.elementFromPoint(t.clientX,t.clientY); const slot=el?.closest('.dinner-slot');
-  if(slot&&slot.dataset.date!==drag.sourceDate) slot.classList.add('drag-over');
+  if (drag.active) {
+    e.preventDefault();
+    const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
+    document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
+    const el=document.elementFromPoint(t.clientX,t.clientY); const slot=el?.closest('.dinner-slot');
+    if(slot&&slot.dataset.date!==drag.sourceDate) slot.classList.add('drag-over');
+    return;
+  }
+  if (!pendingDrag) return;
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
+  if (Math.sqrt(dx*dx + dy*dy) >= DRAG_THRESHOLD) {
+    // Crossed threshold — commit to drag
+    e.preventDefault();
+    const { date, meal, chip } = pendingDrag;
+    drag.active = true; drag.sourceDate = date; drag.mealText = meal; drag.didDrag = true;
+    touchChip = chip; touchChip.classList.add('dragging');
+    ghost.textContent = meal; ghost.style.display = 'block';
+    ghost.style.left = (t.clientX-40)+'px'; ghost.style.top = (t.clientY-20)+'px';
+    pendingDrag = null;
+  }
+}, { passive: false });
 }, { passive: false });
 document.addEventListener('touchend', e => {
-  if (!drag.active) return; ghost.style.display='none';
+  pendingDrag = null;
+  if (!drag.active) return;
+  ghost.style.display='none';
   if (touchChip) { touchChip.classList.remove('dragging'); touchChip=null; }
   document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
   const t=e.changedTouches[0]; const el=document.elementFromPoint(t.clientX,t.clientY);
   const slot=el?.closest('.dinner-slot'); const target=slot?.dataset.date;
   if(target&&target!==drag.sourceDate) swapDinners(drag.sourceDate,target);
   drag.active=false;
+  setTimeout(() => { drag.didDrag = false; }, 0);
 });
 
 // ── DINNER CRUD ───────────────────────────────────────────────────────────────
