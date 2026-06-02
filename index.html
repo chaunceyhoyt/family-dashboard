@@ -57,10 +57,17 @@
     .day-col.today .day-col-date { color: var(--accent); }
     .day-weather { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px; }
     .day-weather-icon { font-size: 22px; }
-    .day-events-wrap { position: relative; flex-shrink: 0; height: 42px; }
-    .day-events { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; scrollbar-width: none; height: 26px; -webkit-overflow-scrolling: touch; }
-    .day-events::-webkit-scrollbar { display: none; }
-    .day-events-more { text-align: center; font-size: 14px; color: #93c5fd; line-height: 1; margin-top: 3px; transition: opacity 0.2s; }
+    .day-events-wrap { position: relative; flex-shrink: 0; height: 42px; overflow: hidden; transition: height 0.25s ease; }
+    .day-events { display: flex; flex-direction: column; gap: 3px; overflow: hidden; height: 26px; transition: height 0.25s ease; }
+    .day-events-more { text-align: center; font-size: 20px; color: #93c5fd; line-height: 1; margin-top: 2px; cursor: pointer; transition: opacity 0.2s; -webkit-tap-highlight-color: transparent; }
+    /* Expanded state */
+    #weekly-strip.expanded .day-events-wrap { height: auto; overflow: visible; }
+    #weekly-strip.expanded .day-events { height: auto; overflow: visible; }
+    #weekly-strip.expanded .day-events-more { display: none; }
+    /* Collapse bar */
+    #strip-collapse-bar { display: none; justify-content: center; align-items: center; padding: 8px; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    #strip-collapse-bar.visible { display: flex; }
+    #strip-collapse-bar span { font-size: 22px; color: #93c5fd; line-height: 1; }
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
     .day-ev-chip:active { background: rgba(59,130,246,0.32); }
     .dinner-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; opacity: 0.7; }
@@ -419,6 +426,7 @@
     <button class="week-cal-btn" title="Jump to date">📅<input type="date" id="week-picker" onchange="jumpToDate(this.value)"></button>
   </div>
   <div id="weekly-strip"></div>
+  <div id="strip-collapse-bar" onclick="collapseStrip()"><span>▴</span></div>
   <div id="content-area"><div class="spinner"></div></div>
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
@@ -765,8 +773,8 @@ function weekLabel() {
   return `${MONTH_NAMES[f.getMonth()]} ${f.getDate()} – ${MONTH_NAMES[l.getMonth()]} ${l.getDate()}`;
 }
 
-function changeWeek(delta) { weekOffset += delta; init(); }
-function jumpToToday() { weekOffset = 0; init(); }
+function changeWeek(delta) { collapseStrip(); weekOffset += delta; init(); }
+function jumpToToday() { collapseStrip(); weekOffset = 0; init(); }
 function jumpToDate(val) {
   if (!val) return;
   const picked = new Date(val + 'T12:00:00');
@@ -1063,7 +1071,7 @@ function renderStrip() {
       const link = ev.htmlLink || '#';
       return `<a class="day-ev-chip" href="${link}" target="_blank" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</a>`;
     }).join('');
-    const moreIndicator = evs.length > 1 ? `<div class="day-events-more">▾</div>` : '';
+    const moreIndicator = `<div class="day-events-more" onclick="expandStrip()" style="opacity:${evs.length > 1 ? 1 : 0};pointer-events:${evs.length > 1 ? 'auto' : 'none'}">▾</div>`;
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
     const dinnerHtml = meal
       ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
@@ -1091,21 +1099,21 @@ function renderStrip() {
       handle.addEventListener('touchstart', e => touchDragStart(e, chip, date, meal), { passive: false });
     }
   });
-  strip.querySelectorAll('.day-events').forEach(el => {
-    const wrap = el.closest('.day-events-wrap');
-    const arrow = wrap?.nextElementSibling?.classList.contains('day-events-more') ? wrap.nextElementSibling : null;
-    if (!arrow) return;
-    el.addEventListener('scroll', () => {
-      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-      arrow.style.opacity = atBottom ? '0' : '1';
-    }, { passive: true });
-  });
   strip.querySelectorAll('.dinner-slot').forEach(slot => {
     const date = slot.dataset.date;
     slot.addEventListener('dragover',  e => { e.preventDefault(); slot.classList.add('drag-over'); });
     slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
     slot.addEventListener('drop', e => { e.preventDefault(); slot.classList.remove('drag-over'); const from=e.dataTransfer.getData('text/plain'); if(from&&from!==date) swapDinners(from,date); });
   });
+}
+
+function expandStrip() {
+  document.getElementById('weekly-strip').classList.add('expanded');
+  document.getElementById('strip-collapse-bar').classList.add('visible');
+}
+function collapseStrip() {
+  document.getElementById('weekly-strip').classList.remove('expanded');
+  document.getElementById('strip-collapse-bar').classList.remove('visible');
 }
 
 // ── TOUCH DRAG ────────────────────────────────────────────────────────────────
