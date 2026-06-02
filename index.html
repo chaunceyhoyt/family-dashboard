@@ -280,6 +280,95 @@
 
     /* ── DRAG GHOST ── */
     #drag-ghost { position: fixed; pointer-events: none; z-index: 9999; background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.5); border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; color: #6ee7b7; transform: rotate(3deg); display: none; }
+
+    /* ── TABLET (SM-P580 landscape ≥ 960px) ── */
+    @media (min-width: 960px) {
+      :root { --nav-h: 84px; }
+
+      /* Week nav */
+      #week-nav { gap: 10px; padding: 8px 14px; }
+      .week-nav-arrow { width: 38px; height: 38px; font-size: 19px; }
+      #week-label { font-size: 16px; }
+      .week-today-btn { font-size: 13px; padding: 7px 14px; }
+      .week-cal-btn { width: 38px; height: 38px; font-size: 19px; }
+
+      /* Weekly strip */
+      .day-col { min-width: 120px; padding: 10px 8px; gap: 6px; }
+      .day-col-name { font-size: 12px; }
+      .day-col-date { font-size: 26px; }
+      .day-weather { font-size: 13px; gap: 5px; }
+      .day-weather-icon { font-size: 18px; }
+      .day-ev-chip { font-size: 12px; padding: 3px 7px; }
+      .dinner-slot { min-height: 46px; }
+      .dinner-chip { min-height: 46px; font-size: 12px; padding: 6px 8px; }
+      .dinner-chip.today-meal { font-size: 13px; }
+      .dinner-add-btn { height: 46px; font-size: 24px; }
+      .dinner-drag-handle { font-size: 15px; }
+      .day-col-mic { font-size: 16px; }
+
+      /* Bottom nav */
+      .nav-btn { font-size: 12px; gap: 6px; }
+      .nav-home-icon { font-size: 30px; }
+      .nav-avatar { width: 44px; height: 44px; font-size: 24px; }
+      .nav-badge { width: 19px; height: 19px; font-size: 10px; }
+
+      /* Home grid */
+      .home-grid { gap: 14px; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); }
+      .col-header { font-size: 13px; margin-bottom: 10px; letter-spacing: 0.8px; }
+
+      /* Event cards */
+      .ev-card-banner { height: 64px; font-size: 30px; }
+      .ev-card-body { padding: 11px 14px 12px; }
+      .ev-card-title { font-size: 15px; }
+      .ev-card-time, .ev-card-date, .ev-card-loc { font-size: 13px; }
+      .local-item { padding: 12px 14px; }
+      .local-item-text { font-size: 15px; }
+      .local-item-detail, .local-item-link, .local-item-time { font-size: 13px; }
+
+      /* Lists (grocery / chores) */
+      .list-item { padding: 14px 16px; gap: 14px; }
+      .check-btn { width: 28px; height: 28px; font-size: 14px; }
+      .list-label { font-size: 17px; }
+      .del-btn { font-size: 21px; }
+      .list-add-row { padding: 12px 16px; }
+      .list-add-input { font-size: 17px; }
+      .list-add-btn { width: 34px; height: 34px; font-size: 19px; }
+      .list-mic-btn { width: 34px; height: 34px; font-size: 16px; }
+
+      /* Person page */
+      .person-avatar-lg { width: 72px; height: 72px; font-size: 36px; }
+      .person-name { font-size: 28px; }
+      .person-edit-btn { font-size: 15px; padding: 6px 14px; }
+      .person-progress { font-size: 15px; }
+
+      /* Modals */
+      .modal-box { padding: 28px; }
+      .modal-box-title { font-size: 20px; margin-bottom: 20px; }
+      .modal-field { font-size: 17px; padding: 14px 16px; }
+      .btn-primary, .btn-secondary { font-size: 17px; padding: 15px; }
+      .btn-danger-text { font-size: 15px; }
+
+      /* Recipe modal */
+      .recipe-section-label { font-size: 13px; }
+      .recipe-ingredient { font-size: 15px; padding: 7px 0; }
+      .recipe-step { font-size: 15px; padding: 8px 0; line-height: 1.6; }
+      .recipe-step-num { font-size: 13px; width: 24px; height: 24px; }
+      .recipe-swap-item { font-size: 15px; padding: 12px 14px; }
+
+      /* Icon / color grids in person edit */
+      .icon-opt { width: 46px; height: 46px; font-size: 26px; }
+      .color-swatch { width: 42px; height: 42px; }
+
+      /* Voice overlays */
+      .voice-status { font-size: 18px; }
+      .voice-transcript-box { font-size: 17px; }
+      .vc-value { font-size: 16px; }
+      .voice-confirm-btn, .voice-cancel-btn { font-size: 17px; padding: 16px; }
+      .gv-title { font-size: 24px; }
+      .gv-sub, .gv-status, .gv-transcript { font-size: 15px; }
+      .gv-chip { font-size: 16px; padding: 9px 16px; }
+      .gv-confirm-btn, .gv-cancel-btn { font-size: 17px; padding: 16px; }
+    }
   </style>
 </head>
 <body>
