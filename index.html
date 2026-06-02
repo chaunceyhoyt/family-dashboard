@@ -498,7 +498,7 @@ let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocat
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
-let dinners = {}, grocery = [], chores = {}, briefingData = null;
+let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {};
 let activeDinnerDate = null;
 let drag = { active: false, sourceDate: null, mealText: '' };
 let touchChip = null;
@@ -597,6 +597,7 @@ async function loadFamilyData() {
     for (const row of data) {
       if (row.key === 'grocery') grocery = row.value || [];
       else if (row.key === 'dinners') dinners = row.value || {};
+      else if (row.key === 'recipes') recipesData = row.value || {};
       else if (row.key === 'people_config') {
         const cfg = row.value || {};
         Object.keys(cfg).forEach(k => { if (PEOPLE[k]) Object.assign(PEOPLE[k], cfg[k]); });
@@ -803,13 +804,13 @@ function openRecipeModal(dateStr, meal) {
 }
 
 async function fetchRecipe(meal) {
-  const r = await fetch(`${SUPABASE_URL}/functions/v1/recipe-lookup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
-    body: JSON.stringify({ meal })
-  });
-  if (!r.ok) throw new Error('recipe fetch failed');
-  return r.json();
+  // Check local cache first (loaded with family data)
+  if (recipesData[meal]) return recipesData[meal];
+  // Fallback: fetch fresh from DB in case it was added after load
+  const { data } = await sb.from('family_data').select('value').eq('key','recipes').single();
+  if (data?.value) { recipesData = data.value; }
+  if (recipesData[meal]) return recipesData[meal];
+  return { description: '', ingredients: [] };
 }
 
 function closeRecipeModal(e) { if (e.target === document.getElementById('recipe-dim')) closeRecipeModalDirect(); }
