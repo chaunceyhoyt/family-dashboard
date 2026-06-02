@@ -512,12 +512,14 @@ function eventEmoji(title) {
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
 async function signIn() {
+  const btn = document.querySelector('.google-btn');
+  if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
   await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.href.split('?')[0].split('#')[0], scopes: 'https://www.googleapis.com/auth/calendar' }
   });
 }
-async function signOut() { sessionStorage.removeItem('gcal_token'); await sb.auth.signOut(); }
+async function signOut() { localStorage.removeItem('gcal_token'); sessionStorage.removeItem('gcal_token'); await sb.auth.signOut(); }
 
 // ── SUPABASE FAMILY DATA ──────────────────────────────────────────────────────
 async function loadFamilyData() {
@@ -573,23 +575,28 @@ async function fetchWeekWeather(days) {
 }
 
 // ── GOOGLE CALENDAR ───────────────────────────────────────────────────────────
+async function gcalFetch(url, token) {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (r.status === 401) { localStorage.removeItem('gcal_token'); gcalToken = null; throw new Error('gcal_401'); }
+  if (!r.ok) throw new Error('cal_' + r.status);
+  return r.json();
+}
+
 async function fetchCalEvents(start, end, token) {
-  const r = await fetch(
+  const data = await gcalFetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}&orderBy=startTime&singleEvents=true`,
-    { headers: { Authorization: `Bearer ${token}` } }
+    token
   );
-  if (!r.ok) throw new Error('cal');
-  return (await r.json()).items || [];
+  return data.items || [];
 }
 
 async function fetchUpcomingFamilyEvents(token) {
   const now = new Date().toISOString();
-  const r = await fetch(
+  const data = await gcalFetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&orderBy=startTime&singleEvents=true&maxResults=20`,
-    { headers: { Authorization: `Bearer ${token}` } }
+    token
   );
-  if (!r.ok) throw new Error('cal');
-  return (await r.json()).items || [];
+  return data.items || [];
 }
 
 // ── WEEKLY STRIP ──────────────────────────────────────────────────────────────
@@ -1362,8 +1369,8 @@ async function sendAllToKroger(items) {
 // ── AUTH STATE ────────────────────────────────────────────────────────────────
 sb.auth.onAuthStateChange((event, session) => {
   if(session){
-    if(session.provider_token) sessionStorage.setItem('gcal_token',session.provider_token);
-    gcalToken=sessionStorage.getItem('gcal_token');
+    if(session.provider_token) localStorage.setItem('gcal_token',session.provider_token);
+    gcalToken = localStorage.getItem('gcal_token') || sessionStorage.getItem('gcal_token') || null;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('dashboard').style.display='flex';
     if(event==='SIGNED_IN'||event==='INITIAL_SESSION') init();
