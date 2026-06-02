@@ -1212,10 +1212,12 @@ function renderHome() {
           <span>🛒 Grocery List</span>
           <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600;text-transform:none;letter-spacing:0">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
         </div>
-        <div class="home-col-body">
-          <div class="card">
-            ${groceryRows}
-            <div class="list-add-row" style="justify-content:space-between">
+        <div class="home-col-body" style="overflow:hidden">
+          <div class="card" style="display:flex;flex-direction:column;height:100%">
+            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+              ${groceryRows}
+            </div>
+            <div class="list-add-row" style="justify-content:space-between;flex-shrink:0">
               <div style="display:flex;gap:6px;align-items:center">
                 <button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">All</button>
                 <button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">None</button>
