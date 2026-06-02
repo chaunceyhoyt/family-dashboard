@@ -51,17 +51,18 @@
     .day-col { flex: 1 0 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: background 0.15s, border-color 0.15s; min-width: 0; }
     .day-col.today { border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.08); }
     .day-col-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1px; }
-    .day-col-name { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .day-col-name { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
     .day-col.today .day-col-name { color: var(--accent); }
     .day-col-date { font-size: 26px; font-weight: 800; line-height: 1; text-align: center; color: var(--text); margin-bottom: 2px; }
     .day-col.today .day-col-date { color: var(--accent); }
     .day-weather { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px; }
     .day-weather-icon { font-size: 22px; }
-    .day-events-wrap { flex: 1; position: relative; min-height: 0; display: flex; flex-direction: column; }
-    .day-events { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; scrollbar-width: none; max-height: 58px; }
+    .day-events-wrap { flex: 1; position: relative; min-height: 0; overflow: hidden; }
+    .day-events { display: flex; flex-direction: column; gap: 3px; overflow-y: scroll; scrollbar-width: none; height: 100%; -webkit-overflow-scrolling: touch; }
     .day-events::-webkit-scrollbar { display: none; }
-    .day-events-more { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--accent); line-height: 1; pointer-events: none; background: linear-gradient(transparent, #111e35 60%); padding-top: 10px; }
-    .day-ev-chip { font-size: 11px; padding: 3px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .day-events-more { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 11px; color: #93c5fd; line-height: 1; pointer-events: none; background: linear-gradient(transparent, #111e35 70%); padding-top: 12px; transition: opacity 0.2s; }
+    .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
+    .day-ev-chip:active { background: rgba(59,130,246,0.32); }
     .dinner-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; opacity: 0.7; }
     .dinner-slot { margin-top: 4px; min-height: 44px; flex-shrink: 0; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.13); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
     .dinner-slot.drag-over { background: rgba(16,185,129,0.12); border-color: var(--success); border-style: solid; }
@@ -614,6 +615,17 @@
   </div>
 </div>
 
+<!-- WEATHER DETAIL MODAL -->
+<div class="dim" id="weather-dim" onclick="if(event.target===this)closeWeatherModal()">
+  <div class="modal-box" style="max-width:480px;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-box-title" id="weather-modal-title" style="margin:0"></div>
+      <button onclick="closeWeatherModal()" style="background:var(--surface2);border:none;color:var(--text-muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div id="weather-modal-body"><div class="spinner"></div></div>
+  </div>
+</div>
+
 <!-- GROCERY ADD MODAL -->
 <div class="dim" id="grocery-add-dim" onclick="if(event.target===this)closeGroceryAddModal()">
   <div class="modal-box" style="max-width:380px">
@@ -687,7 +699,8 @@ const KROGER_CLIENT_SECRET = 'J19lW3UZfTwpfy3pvwETMjvUTTMEwSIUdabFTsQa';
 const KROGER_REDIRECT = location.origin + location.pathname;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const WMO_EMOJI   = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
 const PEOPLE = {
@@ -896,6 +909,104 @@ async function fetchWeekWeather(days) {
   return days.map((_,i) => ({ code: d.weather_code[i], high: Math.round(d.temperature_2m_max[i]), low: Math.round(d.temperature_2m_min[i]) }));
 }
 
+// ── WEATHER MODAL ────────────────────────────────────────────────────────────
+const WMO_DESC = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Heavy showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'};
+
+function isBeachSeason(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const y = d.getFullYear();
+  // Memorial Day = last Monday of May
+  const memDay = new Date(y, 4, 31);
+  while (memDay.getDay() !== 1) memDay.setDate(memDay.getDate() - 1);
+  // Labor Day = first Monday of September
+  const labDay = new Date(y, 8, 1);
+  while (labDay.getDay() !== 1) labDay.setDate(labDay.getDate() + 1);
+  return d >= memDay && d <= labDay;
+}
+
+async function openWeatherModal(dateStr, dayIdx) {
+  document.getElementById('weather-dim').classList.add('open');
+  const d = new Date(dateStr + 'T12:00:00');
+  const label = `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  document.getElementById('weather-modal-title').textContent = `${WMO_EMOJI[weatherDays[dayIdx]?.code]||'🌡️'} ${label}`;
+  document.getElementById('weather-modal-body').innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,uv_index&daily=sunrise,sunset,uv_index_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=${encodeURIComponent(TZ)}&start_date=${dateStr}&end_date=${dateStr}`);
+    const data = await r.json();
+    const daily = data.daily;
+    const hourly = data.hourly;
+    const w = weatherDays[dayIdx];
+    const beach = isBeachSeason(dateStr);
+
+    // Hourly forecast for daytime (7am–9pm)
+    const hours = hourly.time.map((t,i) => ({
+      hour: new Date(t).getHours(),
+      temp: Math.round(hourly.temperature_2m[i]),
+      feels: Math.round(hourly.apparent_temperature[i]),
+      precip: hourly.precipitation_probability[i],
+      code: hourly.weather_code[i],
+      wind: Math.round(hourly.wind_speed_10m[i]),
+      uv: hourly.uv_index?.[i] ?? null,
+    })).filter(h => h.hour >= 6 && h.hour <= 21);
+
+    const formatHour = h => h === 12 ? '12pm' : h > 12 ? `${h-12}pm` : `${h}am`;
+    const uvColor = uv => uv <= 2 ? '#4ade80' : uv <= 5 ? '#fbbf24' : uv <= 7 ? '#f97316' : '#ef4444';
+
+    const hourRows = hours.map(h => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px">
+        <span style="width:38px;color:var(--text-muted);font-weight:600">${formatHour(h.hour)}</span>
+        <span style="font-size:16px">${WMO_EMOJI[h.code]||'🌡️'}</span>
+        <span style="font-weight:700;width:36px">${h.temp}°</span>
+        <span style="color:var(--text-muted);font-size:12px">Feels ${h.feels}°</span>
+        <span style="margin-left:auto;color:#60a5fa;font-size:12px">${h.precip}%🌧</span>
+        <span style="color:var(--text-muted);font-size:12px">${h.wind}mph</span>
+        ${h.uv !== null ? `<span style="color:${uvColor(h.uv)};font-size:12px;font-weight:700">UV${Math.round(h.uv)}</span>` : ''}
+      </div>`).join('');
+
+    const sunrise = daily.sunrise?.[0] ? new Date(daily.sunrise[0]).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : '–';
+    const sunset  = daily.sunset?.[0]  ? new Date(daily.sunset[0]).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : '–';
+    const maxWind = Math.round(daily.wind_speed_10m_max?.[0]??0);
+    const gust    = Math.round(daily.wind_gusts_10m_max?.[0]??0);
+    const precSum = (daily.precipitation_sum?.[0]??0).toFixed(2);
+    const uvMax   = Math.round(daily.uv_index_max?.[0]??0);
+
+    let beachHtml = '';
+    if (beach) {
+      // Determine beach conditions from hourly midday data
+      const midday = hours.find(h => h.hour === 13) || hours[0];
+      const wavesGood = w?.code <= 2;
+      const windOk = maxWind < 20;
+      const uvWarn = uvMax >= 8;
+      const rating = wavesGood && windOk ? '🟢 Good' : (!wavesGood || maxWind > 25) ? '🔴 Rough' : '🟡 Fair';
+      beachHtml = `
+        <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:14px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:#6ee7b7;margin-bottom:10px">🏖️ Beach Report — Virginia Beach</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+            <div><span style="color:var(--text-muted)">Conditions</span><div style="font-weight:700;margin-top:2px">${rating}</div></div>
+            <div><span style="color:var(--text-muted)">Max Wind</span><div style="font-weight:700;margin-top:2px">${maxWind} mph${gust>maxWind?` (gusts ${gust})`:''}` </div></div>
+            <div><span style="color:var(--text-muted)">UV Index</span><div style="font-weight:700;color:${uvColor(uvMax)};margin-top:2px">${uvMax} ${uvMax>=8?'⚠️ High':''}` </div></div>
+            <div><span style="color:var(--text-muted)">Sky</span><div style="font-weight:700;margin-top:2px">${WMO_DESC[w?.code]||'–'}</div></div>
+          </div>
+          ${uvWarn?`<div style="font-size:12px;color:#fbbf24;margin-top:10px">⚠️ High UV — apply SPF 50+ and reapply every 2 hours</div>`:''}
+        </div>`;
+    }
+
+    document.getElementById('weather-modal-body').innerHTML = `
+      ${beachHtml}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;font-size:13px;text-align:center">
+        <div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="color:var(--text-muted);font-size:11px">HIGH / LOW</div><div style="font-size:20px;font-weight:800;margin-top:4px">${w?.high}°<span style="font-size:14px;font-weight:400;color:var(--text-muted)">/${w?.low}°</span></div></div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="color:var(--text-muted);font-size:11px">SUNRISE / SET</div><div style="font-weight:700;margin-top:4px">${sunrise}</div><div style="color:var(--text-muted)">${sunset}</div></div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="color:var(--text-muted);font-size:11px">PRECIP / UV</div><div style="font-weight:700;margin-top:4px">${precSum}"</div><div style="color:${uvColor(uvMax)};font-weight:700">UV ${uvMax}</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Hourly Forecast</div>
+      ${hourRows}`;
+  } catch(e) {
+    document.getElementById('weather-modal-body').innerHTML = '<div class="empty-state">Could not load detailed forecast</div>';
+  }
+}
+function closeWeatherModal() { document.getElementById('weather-dim').classList.remove('open'); }
+
 // ── GOOGLE CALENDAR ───────────────────────────────────────────────────────────
 async function gcalFetch(url, token) {
   const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -930,7 +1041,8 @@ function renderStrip() {
     const chips = evs.map(ev => {
       const t = ev.start?.dateTime ? formatTime(ev.start.dateTime) : '';
       const name = ev.summary || 'Event';
-      return `<div class="day-ev-chip" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</div>`;
+      const link = ev.htmlLink || '#';
+      return `<a class="day-ev-chip" href="${link}" target="_blank" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</a>`;
     }).join('');
     const moreIndicator = evs.length > 2 ? `<div class="day-events-more">▾</div>` : '';
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
@@ -940,7 +1052,7 @@ function renderStrip() {
     return `<div class="day-col${todayCls}">
       <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
       <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
-      <div class="day-weather"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
+      <div class="day-weather" style="cursor:${w?'pointer':'default'}" onclick="${w?`openWeatherModal('${isoDate(d)}',${i})`:''}"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
       <div class="day-events-wrap"><div class="day-events">${chips}</div>${moreIndicator}</div>
       <div class="dinner-label">🍽 Dinner</div>
       <div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div>
@@ -1262,9 +1374,9 @@ function renderHome() {
           <span>📅 Upcoming Events</span>
           <div style="display:flex;gap:5px">
             ${gcalToken
-              ? `<button onclick="reloadCalendar()" title="Reload events" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>
-                 <button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">⏏</button>`
-              : `<button onclick="signIn()" title="Sign in to see events" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>`}
+              ? `<button onclick="reloadCalendar()" title="Reload events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>
+                 <button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">⏏</button>`
+              : `<button onclick="signIn()" title="Sign in to see events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>`}
           </div>
         </div>
         <div class="home-col-body">${col1}</div>
