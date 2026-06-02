@@ -71,8 +71,10 @@
     .recipe-step-num { font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(59,130,246,0.15); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .recipe-swap-item { padding: 10px 12px; border-radius: 8px; background: var(--surface2); margin-bottom: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
     .recipe-swap-item:active { background: rgba(59,130,246,0.2); }
-    /* Portrait: stacked */
-    .recipe-two-col { display: block; }
+    /* Portrait: steps left (70%), ingredients right (30%) */
+    .recipe-two-col { display: grid; grid-template-columns: 7fr 3fr; gap: 0 14px; }
+    .recipe-col-left { max-height: 45vh; overflow-y: auto; }
+    .recipe-col-right { border-left: 1px solid rgba(255,255,255,0.07); padding-left: 14px; max-height: 45vh; overflow-y: auto; }
     /* Landscape: side-by-side, each column scrolls independently */
     @media (orientation: landscape) {
       .recipe-modal-box { max-height: 94vh; }
