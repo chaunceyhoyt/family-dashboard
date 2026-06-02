@@ -480,16 +480,14 @@
             </div>
           </div>
           <div id="recipe-view-ingredients"></div>
-          <div style="margin-top:12px">
-            <button class="btn-primary" id="recipe-add-btn" onclick="addDinnerIngredientsToGrocery()" style="width:100%;justify-content:center">+ Add to grocery list</button>
-          </div>
-          <div id="recipe-status" style="font-size:11px;color:var(--success);margin-top:6px;text-align:center;display:none"></div>
         </div>
       </div>
 
       <div class="modal-btns" style="flex-wrap:wrap;gap:8px;margin-top:14px">
         <button class="btn-secondary" onclick="closeRecipeModalDirect()">Close</button>
+        <button class="btn-primary" id="recipe-add-btn" onclick="addDinnerIngredientsToGrocery()">+ Add to grocery list</button>
       </div>
+      <div id="recipe-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center;display:none"></div>
     </div>
 
     <!-- Edit mode -->
