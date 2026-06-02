@@ -59,11 +59,14 @@
     .day-weather-icon { font-size: 22px; }
     .day-events-wrap { flex-shrink: 0; height: 26px; overflow: hidden; }
     .day-events { display: flex; flex-direction: column; gap: 3px; overflow: hidden; height: 26px; }
+    /* Strip wrapper */
+    #strip-wrapper { flex-shrink: 0; display: flex; flex-direction: column; }
+    #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     /* Expanded strip */
-    #weekly-strip.expanded { flex: 1; overflow-y: auto; align-items: flex-start; }
-    #weekly-strip.expanded .day-col { flex: 1 0 0; }
-    #weekly-strip.expanded .day-events-wrap { height: auto; overflow: visible; }
-    #weekly-strip.expanded .day-events { height: auto; overflow: visible; }
+    #strip-wrapper.expanded #weekly-strip { flex: 1; overflow-y: auto; align-items: flex-start; }
+    #strip-wrapper.expanded .day-col { flex: 1 0 0; }
+    #strip-wrapper.expanded .day-events-wrap { height: auto; overflow: visible; }
+    #strip-wrapper.expanded .day-events { height: auto; overflow: visible; }
     /* Dinner row — sits below weekly strip, always aligned */
     #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, #111e35 0%, #0d1a2e 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
     #dinner-row.hidden { display: none; }
@@ -430,8 +433,10 @@
     <button class="week-today-btn" onclick="jumpToToday()">Today</button>
     <button class="week-cal-btn" title="Jump to date">📅<input type="date" id="week-picker" onchange="jumpToDate(this.value)"></button>
   </div>
-  <div id="weekly-strip"></div>
-  <div id="dinner-row"></div>
+  <div id="strip-wrapper">
+    <div id="weekly-strip"></div>
+    <div id="dinner-row"></div>
+  </div>
   <div id="strip-toggle-bar" onclick="toggleStrip()"><span>▾</span></div>
   <div id="content-area"><div class="spinner"></div></div>
   <div id="bottom-nav">
@@ -1118,20 +1123,19 @@ function renderStrip() {
 }
 
 function toggleStrip() {
-  const strip = document.getElementById('weekly-strip');
+  const wrapper = document.getElementById('strip-wrapper');
   const bar = document.getElementById('strip-toggle-bar');
-  const dinnerRow = document.getElementById('dinner-row');
   const content = document.getElementById('content-area');
-  const expanded = strip.classList.toggle('expanded');
+  const expanded = wrapper.classList.toggle('expanded');
   bar.classList.toggle('expanded', expanded);
   content.style.display = expanded ? 'none' : '';
 }
 function collapseStrip() {
-  const strip = document.getElementById('weekly-strip');
-  if (!strip.classList.contains('expanded')) return;
-  strip.classList.remove('expanded');
+  const wrapper = document.getElementById('strip-wrapper');
+  if (!wrapper.classList.contains('expanded')) return;
+  wrapper.classList.remove('expanded');
   document.getElementById('strip-toggle-bar').classList.remove('expanded');
-document.getElementById('content-area').style.display = '';
+  document.getElementById('content-area').style.display = '';
 }
 
 // ── TOUCH DRAG ────────────────────────────────────────────────────────────────
