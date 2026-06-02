@@ -1196,9 +1196,12 @@ function renderHome() {
         <div class="home-col-body">${col2}</div>
       </div>
       <div class="home-col">
-        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
           <span>🛒 Grocery List</span>
-          <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${grocery.length ? `<button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px;text-transform:none;letter-spacing:0">All</button><button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px;text-transform:none;letter-spacing:0">None</button>` : ''}
+            <button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">${krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger'}</button>
+          </div>
         </div>
         <div class="home-col-body">
           <div class="card">
@@ -1221,6 +1224,10 @@ function addGrocery() {
   grocery.push({ id: uid(), text, done: false });
   saveFamilyData('grocery', grocery); input.value = ''; renderHome();
   document.getElementById('grocery-input')?.focus();
+}
+function selectAllGrocery(done) {
+  grocery.forEach(g => g.done = done);
+  saveFamilyData('grocery', grocery); renderHome();
 }
 function toggleGrocery(id) {
   const item = grocery.find(g => String(g.id)===String(id)); if (!item) return;
