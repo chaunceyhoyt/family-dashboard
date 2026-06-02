@@ -1124,7 +1124,6 @@ function toggleStrip() {
   const content = document.getElementById('content-area');
   const expanded = strip.classList.toggle('expanded');
   bar.classList.toggle('expanded', expanded);
-  dinnerRow.classList.toggle('hidden', expanded);
   content.style.display = expanded ? 'none' : '';
 }
 function collapseStrip() {
@@ -1132,8 +1131,7 @@ function collapseStrip() {
   if (!strip.classList.contains('expanded')) return;
   strip.classList.remove('expanded');
   document.getElementById('strip-toggle-bar').classList.remove('expanded');
-  document.getElementById('dinner-row').classList.remove('hidden');
-  document.getElementById('content-area').style.display = '';
+document.getElementById('content-area').style.display = '';
 }
 
 // ── TOUCH DRAG ────────────────────────────────────────────────────────────────
