@@ -368,6 +368,7 @@
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
       </div>
 
+      <div id="recipe-view-times" style="display:flex;gap:14px;margin-bottom:10px"></div>
       <div class="recipe-section-label">About</div>
       <div id="recipe-view-desc" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px"></div>
 
@@ -404,6 +405,17 @@
 
       <label class="recipe-section-label">Meal Name</label>
       <input id="recipe-edit-name" class="modal-field" type="text" style="font-size:15px">
+
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label class="recipe-section-label">Prep Time</label>
+          <input id="recipe-edit-prep" class="modal-field" type="text" placeholder="e.g. 15 min" style="font-size:13px">
+        </div>
+        <div style="flex:1">
+          <label class="recipe-section-label">Cook Time</label>
+          <input id="recipe-edit-cook" class="modal-field" type="text" placeholder="e.g. 30 min" style="font-size:13px">
+        </div>
+      </div>
 
       <label class="recipe-section-label">Description</label>
       <textarea id="recipe-edit-desc" class="modal-field" rows="3" style="resize:vertical;font-size:13px;line-height:1.5"></textarea>
@@ -862,8 +874,14 @@ function setRecipeViewMode(show) {
 }
 
 function renderRecipeView(recipe) {
-  const { description, ingredients, steps } = recipe;
+  const { description, ingredients, steps, prepTime, cookTime } = recipe;
   recipeCurrentIngredients = ingredients || [];
+  const timesEl = document.getElementById('recipe-view-times');
+  const timeParts = [];
+  if (prepTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">⏱ <strong style="color:var(--text2)">Prep</strong> ${prepTime}</span>`);
+  if (cookTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">🍳 <strong style="color:var(--text2)">Cook</strong> ${cookTime}</span>`);
+  timesEl.innerHTML = timeParts.join('');
+  timesEl.style.display = timeParts.length ? 'flex' : 'none';
   document.getElementById('recipe-view-desc').textContent = description || 'No description yet.';
   document.getElementById('recipe-view-ingredients').innerHTML = ingredients?.length
     ? ingredients.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
@@ -902,6 +920,8 @@ async function fetchRecipe(meal) {
 function openRecipeEditMode() {
   const r = recipesData[recipeCurrentMeal] || {};
   document.getElementById('recipe-edit-name').value = recipeCurrentMeal;
+  document.getElementById('recipe-edit-prep').value = r.prepTime || '';
+  document.getElementById('recipe-edit-cook').value = r.cookTime || '';
   document.getElementById('recipe-edit-desc').value = r.description || '';
   document.getElementById('recipe-edit-ingredients').value = (r.ingredients || []).join('\n');
   document.getElementById('recipe-edit-steps').value = (r.steps || []).join('\n');
@@ -912,6 +932,8 @@ function closeRecipeEditMode() { setRecipeViewMode('view'); }
 
 async function saveRecipeEdits() {
   const newName = document.getElementById('recipe-edit-name').value.trim() || recipeCurrentMeal;
+  const prepTime = document.getElementById('recipe-edit-prep').value.trim();
+  const cookTime = document.getElementById('recipe-edit-cook').value.trim();
   const description = document.getElementById('recipe-edit-desc').value.trim();
   const ingredients = document.getElementById('recipe-edit-ingredients').value.split('\n').map(s => s.trim()).filter(Boolean);
   const steps = document.getElementById('recipe-edit-steps').value.split('\n').map(s => s.trim()).filter(Boolean);
@@ -928,7 +950,7 @@ async function saveRecipeEdits() {
     document.getElementById('recipe-title').textContent = '🍽️ ' + newName;
   }
 
-  recipesData[recipeCurrentMeal] = { description, ingredients, steps };
+  recipesData[recipeCurrentMeal] = { prepTime, cookTime, description, ingredients, steps };
   await saveFamilyData('recipes', recipesData);
   setRecipeViewMode('view');
   renderRecipeView(recipesData[recipeCurrentMeal]);
@@ -936,12 +958,18 @@ async function saveRecipeEdits() {
 
 function openSwapRecipeMode() {
   const names = Object.keys(recipesData).sort();
-  document.getElementById('recipe-swap-list').innerHTML = names.map(name =>
-    `<div class="recipe-swap-item" onclick="swapToRecipe('${name.replace(/'/g,"\\'")}')">
-      <div>${name}</div>
-      <div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px">${(recipesData[name].description||'').slice(0,60)}…</div>
-    </div>`
-  ).join('');
+  document.getElementById('recipe-swap-list').innerHTML = names.map(name => {
+    const r = recipesData[name] || {};
+    const times = [r.prepTime ? `⏱ ${r.prepTime}` : '', r.cookTime ? `🍳 ${r.cookTime}` : ''].filter(Boolean).join('  ·  ');
+    const desc = (r.description || '').length > 80 ? r.description.slice(0, 80) + '…' : (r.description || '');
+    return `<div class="recipe-swap-item" onclick="swapToRecipe('${name.replace(/'/g,"\\'")}')">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <span>${name}</span>
+        ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
+      </div>
+      ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
+    </div>`;
+  }).join('');
   setRecipeViewMode('swap');
 }
 
