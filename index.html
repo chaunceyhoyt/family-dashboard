@@ -46,24 +46,24 @@
     #week-picker { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; }
 
     /* ── WEEKLY STRIP ── */
-    #weekly-strip { flex-shrink: 0; background: linear-gradient(180deg, #0c1525 0%, #111e35 100%); border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: calc(env(safe-area-inset-top) + 8px) 8px 10px; }
+    #weekly-strip { flex-shrink: 0; background: linear-gradient(180deg, #0c1525 0%, #111e35 100%); border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: calc(env(safe-area-inset-top) + 8px) 8px 10px; }
     #weekly-strip::-webkit-scrollbar { display: none; }
-    .day-col { flex: 1 0 110px; display: flex; flex-direction: column; align-items: stretch; gap: 5px; padding: 10px 8px; border-radius: 12px; border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; min-width: 110px; }
-    .day-col.today { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.07); }
-    .day-col-top { display: flex; align-items: center; justify-content: space-between; }
-    .day-col-name { font-size: 13px; font-weight: 700; color: var(--text2,#cbd5e1); text-transform: uppercase; letter-spacing: 0.6px; }
-    .day-col-date { font-size: 28px; font-weight: 800; line-height: 1; text-align: center; }
+    .day-col { flex: 1 0 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: background 0.15s, border-color 0.15s; min-width: 0; }
+    .day-col.today { border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.08); }
+    .day-col-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1px; }
+    .day-col-name { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .day-col.today .day-col-name { color: var(--accent); }
+    .day-col-date { font-size: 26px; font-weight: 800; line-height: 1; text-align: center; color: var(--text); margin-bottom: 2px; }
     .day-col.today .day-col-date { color: var(--accent); }
-    .day-weather { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; color: var(--text2,#cbd5e1); font-weight: 600; }
-    .day-weather-icon { font-size: 20px; }
-    .day-events { display: flex; flex-direction: column; gap: 3px; }
-    .dinner-slot { margin-top: auto !important; }
-    .day-ev-chip { font-size: 12px; padding: 3px 7px; border-radius: 5px; background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.32); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bfdbfe; font-weight: 600; }
-    .dinner-slot { min-height: 42px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
+    .day-weather { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 3px; }
+    .day-weather-icon { font-size: 16px; }
+    .day-events { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+    .day-ev-chip { font-size: 11px; padding: 3px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #93c5fd; font-weight: 600; }
+    .dinner-slot { margin-top: 4px; height: 40px; flex-shrink: 0; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.13); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
     .dinner-slot.drag-over { background: rgba(16,185,129,0.12); border-color: var(--success); border-style: solid; }
-    .dinner-chip { width: 100%; min-height: 42px; border-radius: 8px; display: flex; align-items: center; gap: 4px; padding: 5px 7px; text-align: center; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.32); font-size: 11px; font-weight: 700; color: #6ee7b7; line-height: 1.3; user-select: none; transition: opacity 0.15s; cursor: pointer; }
+    .dinner-chip { width: 100%; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 4px; padding: 0 7px; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.3); font-size: 11px; font-weight: 700; color: #6ee7b7; user-select: none; transition: opacity 0.15s; cursor: pointer; overflow: hidden; }
     .dinner-chip.dragging { opacity: 0.3; }
-    .dinner-chip.today-meal { background: rgba(16,185,129,0.3); border-color: #6ee7b7; box-shadow: 0 0 0 2px rgba(110,231,183,0.35); color: #fff; font-size: 12px; }
+    .dinner-chip.today-meal { background: rgba(16,185,129,0.28); border-color: #6ee7b7; box-shadow: 0 0 0 2px rgba(110,231,183,0.3); color: #fff; }
     .recipe-modal-box { max-height: 88vh; overflow-y: auto; padding-bottom: 16px; }
     .recipe-section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
     .recipe-ingredient { font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; align-items: baseline; }
@@ -76,19 +76,18 @@
     .recipe-two-col { display: grid; grid-template-columns: 7fr 3fr; gap: 0 14px; }
     .recipe-col-left { max-height: 45vh; overflow-y: auto; }
     .recipe-col-right { border-left: 1px solid rgba(255,255,255,0.07); padding-left: 14px; max-height: 45vh; overflow-y: auto; }
-    /* Portrait: taller weekly strip */
+    /* Portrait: taller weekly strip, compact home grid */
     @media (orientation: portrait) {
-      #weekly-strip { padding-top: calc(env(safe-area-inset-top) + 12px); padding-bottom: 14px; }
-      .day-col { padding: 12px 8px; gap: 7px; min-width: 90px; flex: 1 0 90px; }
-      .day-col-name { font-size: 14px; }
-      .day-col-date { font-size: 32px; }
-      .day-weather { font-size: 15px; }
-      .day-weather-icon { font-size: 22px; }
-      .day-ev-chip { font-size: 13px; padding: 4px 7px; }
-      .dinner-slot { min-height: 46px; }
-      .dinner-chip { min-height: 46px; font-size: 12px; }
-      .dinner-chip.today-meal { font-size: 13px; }
-      .dinner-add-btn { height: 46px; font-size: 24px; }
+      #weekly-strip { padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 12px; }
+      .day-col { padding: 10px 6px; gap: 4px; }
+      .day-col-name { font-size: 12px; }
+      .day-col-date { font-size: 28px; }
+      .day-weather { font-size: 12px; }
+      .day-weather-icon { font-size: 17px; }
+      .day-ev-chip { font-size: 11px; padding: 3px 6px; }
+      .dinner-slot { height: 38px; }
+      .dinner-chip { height: 38px; font-size: 11px; }
+      .dinner-add-btn { height: 38px; font-size: 22px; }
     }
     /* Landscape: side-by-side, each column scrolls independently */
     @media (orientation: landscape) {
@@ -97,7 +96,7 @@
       .recipe-col-left { max-height: 42vh; overflow-y: auto; }
       .recipe-col-right { border-left: 1px solid rgba(255,255,255,0.07); padding-left: 16px; max-height: 42vh; overflow-y: auto; }
     }
-    .dinner-chip-label { flex: 1; }
+    .dinner-chip-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .dinner-drag-handle { font-size: 12px; opacity: 0.45; cursor: grab; touch-action: none; padding: 2px; flex-shrink: 0; }
     .dinner-add-btn { background: none; border: none; color: rgba(255,255,255,0.2); font-size: 20px; cursor: pointer; width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; transition: color 0.15s; }
     .dinner-add-btn:active { color: var(--text-muted); }
@@ -312,18 +311,17 @@
       .week-cal-btn { width: 42px; height: 42px; font-size: 21px; }
 
       /* Weekly strip */
-      .day-col { min-width: 130px; padding: 12px 10px; gap: 7px; }
-      .day-col-name { font-size: 13px; }
+      .day-col { padding: 12px 10px; gap: 5px; }
+      .day-col-name { font-size: 12px; }
       .day-col-date { font-size: 30px; }
-      .day-weather { font-size: 14px; gap: 5px; }
-      .day-weather-icon { font-size: 20px; }
-      .day-ev-chip { font-size: 13px; padding: 4px 8px; }
-      .dinner-slot { min-height: 50px; }
-      .dinner-chip { min-height: 50px; font-size: 13px; padding: 6px 8px; }
-      .dinner-chip.today-meal { font-size: 14px; }
-      .dinner-add-btn { height: 50px; font-size: 26px; }
-      .dinner-drag-handle { font-size: 16px; }
-      .day-col-mic { font-size: 17px; }
+      .day-weather { font-size: 13px; gap: 5px; }
+      .day-weather-icon { font-size: 18px; }
+      .day-ev-chip { font-size: 12px; padding: 4px 7px; }
+      .dinner-slot { height: 46px; }
+      .dinner-chip { height: 46px; font-size: 12px; }
+      .dinner-add-btn { height: 46px; font-size: 24px; }
+      .dinner-drag-handle { font-size: 14px; }
+      .day-col-mic { font-size: 15px; }
 
       /* Bottom nav */
       .nav-btn { font-size: 17px; gap: 12px; padding: 10px 14px; }
@@ -898,7 +896,11 @@ function renderStrip() {
   strip.innerHTML = weekDays.map((d, i) => {
     const w = weatherDays[i], evs = calEventsByDay[i] || [], meal = dinners[isoDate(d)] || '';
     const todayCls = isToday(d) ? ' today' : '';
-    const chips = evs.slice(0,3).map(ev => `<div class="day-ev-chip">${ev.start?.dateTime ? formatTime(ev.start.dateTime)+' ' : ''}${ev.summary||'Event'}</div>`).join('');
+    const chips = evs.slice(0,3).map(ev => {
+      const t = ev.start?.dateTime ? formatTime(ev.start.dateTime) : '';
+      const name = ev.summary || 'Event';
+      return `<div class="day-ev-chip" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</div>`;
+    }).join('');
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
     const dinnerHtml = meal
       ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
