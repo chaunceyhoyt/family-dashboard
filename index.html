@@ -181,6 +181,7 @@
     .user-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
     .user-row-avatar { font-size:24px; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .user-row-name { flex:1; font-size:14px; font-weight:600; color:var(--text); }
+    .user-edit-btn { font-size:12px; font-weight:700; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--accent); border-radius:7px; padding:4px 10px; cursor:pointer; }
     .user-remove-btn { font-size:12px; font-weight:700; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:7px; padding:4px 10px; cursor:pointer; }
 
     /* ── EVENT CARDS ── */
@@ -719,16 +720,17 @@
   <div class="modal-box" style="max-width:380px;max-height:90vh;overflow-y:auto">
     <div class="modal-box-title">Manage Users</div>
     <div id="manage-users-list"></div>
-    <div id="manage-users-add-form" style="display:none;margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px">
-      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">Add New User</div>
-      <input class="modal-field" id="new-user-name" type="text" placeholder="Name" style="margin-bottom:10px">
+    <!-- Shared add/edit form -->
+    <div id="manage-users-edit-form" style="display:none;margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px">
+      <div id="manage-users-edit-title" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">Edit User</div>
+      <input class="modal-field" id="edit-user-name" type="text" placeholder="Name" style="margin-bottom:10px">
       <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Icon</div>
-      <div class="icon-grid" id="new-user-icon-grid"></div>
+      <div class="icon-grid" id="edit-user-icon-grid"></div>
       <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Color</div>
-      <div class="color-grid" id="new-user-color-grid"></div>
+      <div class="color-grid" id="edit-user-color-grid"></div>
       <div class="modal-btns" style="margin-top:8px">
-        <button class="btn-secondary" onclick="cancelAddUser()">Cancel</button>
-        <button class="btn-primary" onclick="confirmAddUser()">Add User</button>
+        <button class="btn-secondary" onclick="cancelEditUser()">Cancel</button>
+        <button class="btn-primary" id="edit-user-confirm-btn" onclick="confirmEditUser()">Save</button>
       </div>
     </div>
     <div id="manage-users-bottom" style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;display:flex;justify-content:space-between">
@@ -844,6 +846,8 @@ let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = 
 let tasks = [];
 let taskPoints = {};
 let taskWeek = '';
+let HOUSE = { label: 'House', emoji: '🏠', color: '#1e293b' };
+let editingUserKey = null, newUserSelectedIcon = '', newUserSelectedColor = '';
 let activeDinnerDate = null;
 let drag = { active: false, sourceDate: null, mealText: '' };
 let touchChip = null;
@@ -955,6 +959,7 @@ async function loadFamilyData() {
     for (const row of data) {
       if (row.key === 'grocery') grocery = row.value || [];
       else if (row.key === 'dinners') dinners = row.value || {};
+      else if (row.key === 'house_config') Object.assign(HOUSE, row.value || {});
       else if (row.key === 'recipes') recipesData = row.value || {};
       else if (row.key === 'people_config') {
         const cfg = row.value || {};
@@ -1939,7 +1944,7 @@ function deadlineLabel(deadline) {
 }
 
 function renderTasks() {
-  const cols = [{ key: null, label: 'House', emoji: '🏠', color: '#374151' }];
+  const cols = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji, color: HOUSE.color }];
   Object.entries(PEOPLE).forEach(function(entry) {
     cols.push({ key: entry[0], label: entry[1].label, emoji: entry[1].emoji, color: entry[1].color });
   });
@@ -2049,7 +2054,7 @@ function deleteTask(id) {
 // ── TASK ADD MODAL ────────────────────────────────────────────────────────────
 function openTaskAddModal() {
   var sel = document.getElementById('task-add-assignee');
-  sel.innerHTML = '<option value="null">🏠 House</option>' +
+  sel.innerHTML = '<option value="null">' + HOUSE.emoji + ' ' + HOUSE.label + '</option>' +
     Object.entries(PEOPLE).map(function(e) {
       return '<option value="' + e[0] + '">' + e[1].emoji + ' ' + e[1].label + '</option>';
     }).join('');
@@ -2079,8 +2084,6 @@ function confirmAddTask() {
 }
 
 // ── MANAGE USERS MODAL ────────────────────────────────────────────────────────
-var newUserSelectedIcon = '😊';
-var newUserSelectedColor = PERSON_COLORS[0];
 
 function openManageUsersModal() {
   renderManageUsersList();
@@ -2092,51 +2095,100 @@ function closeManageUsersModal() {
   document.getElementById('manage-users-dim').classList.remove('open');
 }
 function renderManageUsersList() {
-  document.getElementById('manage-users-list').innerHTML = Object.entries(PEOPLE).map(function(entry) {
-    var k = entry[0], p = entry[1];
+  const houseRow = '<div class="user-row">' +
+    '<div class="user-row-avatar" style="background:' + HOUSE.color + '">' + HOUSE.emoji + '</div>' +
+    '<div class="user-row-name">' + HOUSE.label + '</div>' +
+    '<button class="user-edit-btn" onclick="showEditUserForm(\'__house__\')">Edit</button>' +
+  '</div>';
+  const peopleRows = Object.entries(PEOPLE).map(function(entry) {
+    const k = entry[0], p = entry[1];
     return '<div class="user-row">' +
       '<div class="user-row-avatar" style="background:' + p.color + '">' + p.emoji + '</div>' +
       '<div class="user-row-name">' + p.label + '</div>' +
+      '<button class="user-edit-btn" onclick="showEditUserForm(\'' + k + '\')">Edit</button>' +
       '<button class="user-remove-btn" onclick="removeUser(\'' + k + '\')">Remove</button>' +
     '</div>';
   }).join('');
+  document.getElementById('manage-users-list').innerHTML = houseRow + peopleRows;
 }
-function showAddUserForm() {
-  newUserSelectedIcon = PERSON_ICONS[0];
-  newUserSelectedColor = PERSON_COLORS[0];
-  document.getElementById('new-user-name').value = '';
-  document.getElementById('new-user-icon-grid').innerHTML = PERSON_ICONS.map(function(ic) {
-    return '<div class="icon-opt' + (ic === newUserSelectedIcon ? ' selected' : '') + '" onclick="selectNewUserIcon(\'' + ic + '\')">' + ic + '</div>';
+function showEditUserForm(key) {
+  editingUserKey = key;
+  const isHouse = key === '__house__';
+  const src = isHouse ? HOUSE : PEOPLE[key];
+  newUserSelectedIcon = src.emoji;
+  newUserSelectedColor = src.color;
+  document.getElementById('manage-users-edit-title').textContent = isHouse ? 'Edit House' : 'Edit User';
+  document.getElementById('edit-user-name').value = src.label;
+  document.getElementById('edit-user-icon-grid').innerHTML = PERSON_ICONS.map(function(ic) {
+    return '<div class="icon-opt' + (ic === newUserSelectedIcon ? ' selected' : '') + '" onclick="selectEditUserIcon(\'' + ic + '\')">' + ic + '</div>';
   }).join('');
-  document.getElementById('new-user-color-grid').innerHTML = PERSON_COLORS.map(function(c) {
-    return '<div class="color-swatch' + (c === newUserSelectedColor ? ' selected' : '') + '" style="background:' + c + '" data-color="' + c + '" onclick="selectNewUserColor(\'' + c + '\')"></div>';
+  document.getElementById('edit-user-color-grid').innerHTML = PERSON_COLORS.map(function(c) {
+    return '<div class="color-swatch' + (c === newUserSelectedColor ? ' selected' : '') + '" style="background:' + c + '" data-color="' + c + '" onclick="selectEditUserColor(\'' + c + '\')"></div>';
   }).join('');
-  document.getElementById('manage-users-add-form').style.display = 'block';
+  document.getElementById('edit-user-confirm-btn').onclick = confirmEditUser;
+  document.getElementById('manage-users-edit-form').style.display = 'block';
   document.getElementById('manage-users-bottom').style.display = 'none';
 }
-function cancelAddUser() {
-  document.getElementById('manage-users-add-form').style.display = 'none';
+function cancelEditUser() {
+  document.getElementById('manage-users-edit-form').style.display = 'none';
   document.getElementById('manage-users-bottom').style.display = 'flex';
 }
-function selectNewUserIcon(icon) {
+function selectEditUserIcon(icon) {
   newUserSelectedIcon = icon;
-  document.querySelectorAll('#new-user-icon-grid .icon-opt').forEach(function(el) { el.classList.toggle('selected', el.textContent === icon); });
+  document.querySelectorAll('#edit-user-icon-grid .icon-opt').forEach(function(el) { el.classList.toggle('selected', el.textContent === icon); });
 }
-function selectNewUserColor(color) {
+function selectEditUserColor(color) {
   newUserSelectedColor = color;
-  document.querySelectorAll('#new-user-color-grid .color-swatch').forEach(function(el) { el.classList.toggle('selected', el.dataset.color === color); });
+  document.querySelectorAll('#edit-user-color-grid .color-swatch').forEach(function(el) { el.classList.toggle('selected', el.dataset.color === color); });
 }
-async function confirmAddUser() {
-  var name = document.getElementById('new-user-name').value.trim();
+async function confirmEditUser() {
+  const name = document.getElementById('edit-user-name').value.trim();
   if (!name) return;
-  var key = 'user_' + uid();
-  PEOPLE[key] = { label: name, emoji: newUserSelectedIcon, color: newUserSelectedColor };
-  var cfg = {};
-  Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
-  await saveFamilyData('people_config', cfg);
-  cancelAddUser();
+  if (editingUserKey === '__house__') {
+    HOUSE.label = name; HOUSE.emoji = newUserSelectedIcon; HOUSE.color = newUserSelectedColor;
+    await saveFamilyData('house_config', HOUSE);
+  } else {
+    PEOPLE[editingUserKey].label = name;
+    PEOPLE[editingUserKey].emoji = newUserSelectedIcon;
+    PEOPLE[editingUserKey].color = newUserSelectedColor;
+    const cfg = {};
+    Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
+    await saveFamilyData('people_config', cfg);
+  }
+  cancelEditUser();
   renderManageUsersList();
   renderNavBadges();
+  if (currentPage === 'tasks') renderTasks();
+}
+function showAddUserForm() {
+  editingUserKey = null;
+  newUserSelectedIcon = PERSON_ICONS[0];
+  newUserSelectedColor = PERSON_COLORS[0];
+  document.getElementById('manage-users-edit-title').textContent = 'Add New User';
+  document.getElementById('edit-user-name').value = '';
+  document.getElementById('edit-user-icon-grid').innerHTML = PERSON_ICONS.map(function(ic) {
+    return '<div class="icon-opt' + (ic === newUserSelectedIcon ? ' selected' : '') + '" onclick="selectEditUserIcon(\'' + ic + '\')">' + ic + '</div>';
+  }).join('');
+  document.getElementById('edit-user-color-grid').innerHTML = PERSON_COLORS.map(function(c) {
+    return '<div class="color-swatch' + (c === newUserSelectedColor ? ' selected' : '') + '" style="background:' + c + '" data-color="' + c + '" onclick="selectEditUserColor(\'' + c + '\')"></div>';
+  }).join('');
+  document.getElementById('manage-users-edit-form').style.display = 'block';
+  document.getElementById('manage-users-bottom').style.display = 'none';
+  document.getElementById('edit-user-confirm-btn').onclick = confirmAddUser;
+}
+function cancelAddUser() { cancelEditUser(); }
+async function confirmAddUser() {
+  const name = document.getElementById('edit-user-name').value.trim();
+  if (!name) return;
+  const key = 'user_' + uid();
+  PEOPLE[key] = { label: name, emoji: newUserSelectedIcon, color: newUserSelectedColor };
+  const cfg = {};
+  Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
+  await saveFamilyData('people_config', cfg);
+  cancelEditUser();
+  renderManageUsersList();
+  renderNavBadges();
+  if (currentPage === 'tasks') renderTasks();
 }
 async function removeUser(key) {
   if (!confirm('Remove ' + (PEOPLE[key]?.label || key) + '? Their tasks will be moved to House.')) return;
