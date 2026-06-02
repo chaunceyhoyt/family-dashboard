@@ -61,7 +61,7 @@
     .day-events { display: flex; flex-direction: column; gap: 3px; overflow: hidden; height: 26px; }
     /* Strip wrapper */
     #strip-wrapper { flex-shrink: 0; display: flex; flex-direction: column; }
-    #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 32px); }
     /* Expanded strip */
     #strip-wrapper.expanded #weekly-strip { flex: 1; overflow-y: auto; align-items: flex-start; }
     #strip-wrapper.expanded .day-col { flex: 1 0 0; }
