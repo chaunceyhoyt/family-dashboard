@@ -60,9 +60,11 @@
     .day-ev-chip { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bfdbfe; }
     .dinner-slot { margin-top: 2px; min-height: 38px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
     .dinner-slot.drag-over { background: rgba(16,185,129,0.12); border-color: var(--success); border-style: solid; }
-    .dinner-chip { width: 100%; min-height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 4px 6px; text-align: center; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.28); font-size: 10px; font-weight: 700; color: #6ee7b7; line-height: 1.3; cursor: grab; user-select: none; touch-action: none; transition: opacity 0.15s; }
-    .dinner-chip.dragging { opacity: 0.3; cursor: grabbing; }
+    .dinner-chip { width: 100%; min-height: 38px; border-radius: 8px; display: flex; align-items: center; gap: 4px; padding: 4px 6px; text-align: center; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.28); font-size: 10px; font-weight: 700; color: #6ee7b7; line-height: 1.3; user-select: none; transition: opacity 0.15s; cursor: pointer; }
+    .dinner-chip.dragging { opacity: 0.3; }
     .dinner-chip.today-meal { background: rgba(16,185,129,0.28); border-color: #6ee7b7; box-shadow: 0 0 0 2px rgba(110,231,183,0.35); color: #fff; font-size: 11px; }
+    .dinner-chip-label { flex: 1; }
+    .dinner-drag-handle { font-size: 12px; opacity: 0.45; cursor: grab; touch-action: none; padding: 2px; flex-shrink: 0; }
     .dinner-add-btn { background: none; border: none; color: rgba(255,255,255,0.2); font-size: 20px; cursor: pointer; width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; transition: color 0.15s; }
     .dinner-add-btn:active { color: var(--text-muted); }
     .day-col-mic { background: none; border: none; color: rgba(255,255,255,0.2); font-size: 13px; cursor: pointer; padding: 2px; -webkit-tap-highlight-color: transparent; transition: color 0.15s; line-height: 1; }
@@ -625,7 +627,7 @@ function renderStrip() {
     const chips = evs.slice(0,2).map(ev => `<div class="day-ev-chip">${ev.start?.dateTime ? formatTime(ev.start.dateTime)+' ' : ''}${ev.summary||'Event'}</div>`).join('');
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
     const dinnerHtml = meal
-      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}">${meal}</div>`
+      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
       : `<button class="dinner-add-btn" onclick="openDinnerModal('${isoDate(d)}')">+</button>`;
     return `<div class="day-col${todayCls}">
       <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
@@ -638,11 +640,16 @@ function renderStrip() {
 
   strip.querySelectorAll('.dinner-chip').forEach(chip => {
     const date = chip.dataset.date, meal = chip.dataset.meal;
-    chip.draggable = true;
-    chip.addEventListener('dragstart', e => { drag.sourceDate=date; drag.mealText=meal; chip.classList.add('dragging'); e.dataTransfer.setData('text/plain',date); e.dataTransfer.effectAllowed='move'; });
-    chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
-    chip.addEventListener('click', () => openRecipeModal(date, meal));
-    chip.addEventListener('touchstart', e => touchDragStart(e, date, meal), { passive: false });
+    // Tapping the chip label opens recipe modal
+    chip.addEventListener('click', e => { if (!e.target.classList.contains('dinner-drag-handle')) openRecipeModal(date, meal); });
+    // Drag handle wires up desktop drag and touch drag
+    const handle = chip.querySelector('.dinner-drag-handle');
+    if (handle) {
+      handle.addEventListener('mousedown', () => { chip.draggable = true; });
+      chip.addEventListener('dragstart', e => { drag.sourceDate=date; drag.mealText=meal; chip.classList.add('dragging'); e.dataTransfer.setData('text/plain',date); e.dataTransfer.effectAllowed='move'; });
+      chip.addEventListener('dragend', () => { chip.classList.remove('dragging'); chip.draggable = false; });
+      handle.addEventListener('touchstart', e => touchDragStart(e, chip, date, meal), { passive: false });
+    }
   });
   strip.querySelectorAll('.dinner-slot').forEach(slot => {
     const date = slot.dataset.date;
@@ -655,9 +662,9 @@ function renderStrip() {
 // ── TOUCH DRAG ────────────────────────────────────────────────────────────────
 const ghost = document.getElementById('drag-ghost');
 
-function touchDragStart(e, date, meal) {
+function touchDragStart(e, chip, date, meal) {
   e.preventDefault(); drag.active=true; drag.sourceDate=date; drag.mealText=meal;
-  touchChip=e.currentTarget; touchChip.classList.add('dragging');
+  touchChip=chip; touchChip.classList.add('dragging');
   ghost.textContent=meal; ghost.style.display='block';
   const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
 }
