@@ -57,7 +57,10 @@
     .day-col.today .day-col-date { color: var(--accent); }
     .day-weather { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px; }
     .day-weather-icon { font-size: 22px; }
-    .day-events { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+    .day-events-wrap { flex: 1; position: relative; min-height: 0; display: flex; flex-direction: column; }
+    .day-events { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; scrollbar-width: none; max-height: 58px; }
+    .day-events::-webkit-scrollbar { display: none; }
+    .day-events-more { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--accent); line-height: 1; pointer-events: none; background: linear-gradient(transparent, #111e35 60%); padding-top: 10px; }
     .day-ev-chip { font-size: 11px; padding: 3px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .dinner-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; opacity: 0.7; }
     .dinner-slot { margin-top: 4px; min-height: 44px; flex-shrink: 0; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.13); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
@@ -924,11 +927,12 @@ function renderStrip() {
   strip.innerHTML = weekDays.map((d, i) => {
     const w = weatherDays[i], evs = calEventsByDay[i] || [], meal = dinners[isoDate(d)] || '';
     const todayCls = isToday(d) ? ' today' : '';
-    const chips = evs.slice(0,3).map(ev => {
+    const chips = evs.map(ev => {
       const t = ev.start?.dateTime ? formatTime(ev.start.dateTime) : '';
       const name = ev.summary || 'Event';
       return `<div class="day-ev-chip" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</div>`;
     }).join('');
+    const moreIndicator = evs.length > 2 ? `<div class="day-events-more">▾</div>` : '';
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
     const dinnerHtml = meal
       ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
@@ -937,7 +941,7 @@ function renderStrip() {
       <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
       <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
       <div class="day-weather"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
-      <div class="day-events">${chips}</div>
+      <div class="day-events-wrap"><div class="day-events">${chips}</div>${moreIndicator}</div>
       <div class="dinner-label">🍽 Dinner</div>
       <div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div>
     </div>`;
@@ -955,6 +959,14 @@ function renderStrip() {
       chip.addEventListener('dragend', () => { chip.classList.remove('dragging'); chip.draggable = false; });
       handle.addEventListener('touchstart', e => touchDragStart(e, chip, date, meal), { passive: false });
     }
+  });
+  strip.querySelectorAll('.day-events').forEach(el => {
+    const arrow = el.parentElement?.querySelector('.day-events-more');
+    if (!arrow) return;
+    el.addEventListener('scroll', () => {
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+      arrow.style.opacity = atBottom ? '0' : '1';
+    }, { passive: true });
   });
   strip.querySelectorAll('.dinner-slot').forEach(slot => {
     const date = slot.dataset.date;
