@@ -1223,11 +1223,11 @@ function addGrocery() {
   document.getElementById('grocery-input')?.focus();
 }
 function toggleGrocery(id) {
-  const item = grocery.find(g => g.id===id); if (!item) return;
+  const item = grocery.find(g => String(g.id)===String(id)); if (!item) return;
   item.done = !item.done; saveFamilyData('grocery', grocery); renderHome();
 }
 function deleteGrocery(id) {
-  grocery = grocery.filter(g => g.id!==id); saveFamilyData('grocery', grocery); renderHome();
+  grocery = grocery.filter(g => String(g.id)!==String(id)); saveFamilyData('grocery', grocery); renderHome();
 }
 
 // ── GROCERY VOICE ─────────────────────────────────────────────────────────────
