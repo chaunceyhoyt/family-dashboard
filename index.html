@@ -63,7 +63,8 @@
     .dinner-chip { width: 100%; min-height: 38px; border-radius: 8px; display: flex; align-items: center; gap: 4px; padding: 4px 6px; text-align: center; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.28); font-size: 10px; font-weight: 700; color: #6ee7b7; line-height: 1.3; user-select: none; transition: opacity 0.15s; cursor: pointer; }
     .dinner-chip.dragging { opacity: 0.3; }
     .dinner-chip.today-meal { background: rgba(16,185,129,0.28); border-color: #6ee7b7; box-shadow: 0 0 0 2px rgba(110,231,183,0.35); color: #fff; font-size: 11px; }
-    .recipe-modal-box { max-width: 480px; max-height: 88vh; overflow-y: auto; padding-bottom: 16px; }
+    .recipe-modal-box { width: min(92vw, 640px); max-height: 88vh; overflow-y: auto; padding-bottom: 16px; }
+    @media (orientation: landscape) { .recipe-modal-box { width: min(92vw, 900px); } }
     .recipe-section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
     .recipe-ingredient { font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; align-items: baseline; }
     .recipe-ingredient::before { content: "•"; color: var(--accent); flex-shrink: 0; }
