@@ -355,6 +355,42 @@
     .gv-cancel-btn  { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
 
     /* ── DRAG GHOST ── */
+    /* ── COOK MODE ── */
+    #cook-overlay { position: fixed; inset: 0; z-index: 600; background: #060d18; display: none; flex-direction: column; }
+    #cook-overlay.open { display: flex; }
+    #cook-header { flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 14px) 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); background: #0c1525; }
+    #cook-close { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 15px; font-weight: 700; padding: 8px 14px; border-radius: 10px; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+    #cook-meal-name { flex: 1; font-size: 18px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #cook-step-counter { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 8px; }
+    #cook-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 28px 20px; display: flex; flex-direction: column; }
+    #cook-page-title { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; flex-shrink: 0; }
+    #cook-page-content { flex: 1; }
+    /* Ingredients page */
+    .cook-ing-list { display: flex; flex-direction: column; gap: 10px; }
+    .cook-ing-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface); border-radius: 14px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.15s; }
+    .cook-ing-item.checked { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+    .cook-ing-check { width: 26px; height: 26px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: background 0.15s, border-color 0.15s; }
+    .cook-ing-item.checked .cook-ing-check { background: var(--success); border-color: var(--success); }
+    .cook-ing-text { font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .cook-ing-item.checked .cook-ing-text { color: var(--text-muted); text-decoration: line-through; }
+    /* Step page */
+    .cook-step-num { font-size: 64px; font-weight: 900; color: rgba(59,130,246,0.15); line-height: 1; margin-bottom: 14px; }
+    .cook-step-text { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1.55; }
+    /* Footer */
+    #cook-footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px calc(env(safe-area-inset-bottom) + 16px); border-top: 1px solid rgba(255,255,255,0.08); background: #0c1525; gap: 16px; }
+    #cook-prev, #cook-next { font-size: 17px; font-weight: 800; padding: 14px 28px; border-radius: 14px; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s, background 0.15s; }
+    #cook-prev { background: var(--surface2); color: var(--text-muted); }
+    #cook-next { background: var(--accent); color: #fff; }
+    #cook-prev:disabled, #cook-next:disabled { opacity: 0.25; cursor: default; }
+    #cook-dots { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .cook-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.18); transition: background 0.2s, transform 0.2s; flex-shrink: 0; }
+    .cook-dot.active { background: var(--accent); transform: scale(1.4); }
+    @media (min-width: 960px) {
+      #cook-body { padding: 40px 60px 30px; }
+      .cook-step-text { font-size: 30px; }
+      .cook-ing-text { font-size: 22px; }
+      #cook-prev, #cook-next { font-size: 19px; padding: 16px 36px; }
+    }
     #drag-ghost { position: fixed; pointer-events: none; z-index: 9999; background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.5); border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; color: #6ee7b7; transform: rotate(3deg); display: none; }
 
     /* ── TABLET (SM-P580 landscape ≥ 960px) ── */
@@ -534,6 +570,7 @@
         <button onclick="openSwapRecipeMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Swap</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
         <button onclick="clearDinnerFromRecipeModal()" style="background:var(--surface2);border:none;color:#f87171;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑</button>
+        <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
       </div>
 
       <div id="recipe-view-times" style="display:flex;gap:14px;margin-bottom:10px"></div>
@@ -608,6 +645,24 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- COOK MODE OVERLAY -->
+<div id="cook-overlay">
+  <div id="cook-header">
+    <button id="cook-close" onclick="closeCookMode()">✕ Exit</button>
+    <div id="cook-meal-name"></div>
+    <div id="cook-step-counter"></div>
+  </div>
+  <div id="cook-body">
+    <div id="cook-page-title"></div>
+    <div id="cook-page-content"></div>
+  </div>
+  <div id="cook-footer">
+    <button id="cook-prev" onclick="cookPrev()">← Back</button>
+    <div id="cook-dots"></div>
+    <button id="cook-next" onclick="cookNext()">Next →</button>
   </div>
 </div>
 
@@ -1452,6 +1507,90 @@ async function deleteRecipeFromDB(name) {
 function closeRecipeModal(e) { if (e.target === document.getElementById('recipe-dim')) closeRecipeModalDirect(); }
 function closeRecipeModalDirect() { document.getElementById('recipe-dim').classList.remove('open'); }
 
+// ── COOK MODE ─────────────────────────────────────────────────────────────────
+let cookPages = [], cookPageIdx = 0;
+
+async function openCookMode(dateStr, meal) {
+  const recipe = await fetchRecipe(meal);
+  const ingredients = recipe.ingredients || [];
+  const steps = recipe.steps || [];
+  // Build pages: [ingredients, ...steps]
+  cookPages = ['__ingredients__'].concat(steps);
+  cookPageIdx = 0;
+  document.getElementById('cook-meal-name').textContent = meal;
+  renderCookPage(recipe, ingredients);
+  document.getElementById('cook-overlay').classList.add('open');
+}
+
+function renderCookPage(recipe, ingredients) {
+  const total = cookPages.length;
+  const idx = cookPageIdx;
+  const page = cookPages[idx];
+  document.getElementById('cook-step-counter').textContent = (idx + 1) + ' / ' + total;
+
+  // Dots
+  document.getElementById('cook-dots').innerHTML = cookPages.map((_, i) =>
+    '<div class="cook-dot' + (i === idx ? ' active' : '') + '"></div>'
+  ).join('');
+
+  // Prev/next buttons
+  document.getElementById('cook-prev').disabled = idx === 0;
+  document.getElementById('cook-next').textContent = idx === total - 1 ? 'Done ✓' : 'Next →';
+
+  if (page === '__ingredients__') {
+    document.getElementById('cook-page-title').textContent = '🧾 Ingredients';
+    const ings = (recipe || {}).ingredients || [];
+    if (!ings.length) {
+      document.getElementById('cook-page-content').innerHTML = '<div style="color:var(--text-muted);font-size:18px">No ingredients listed.</div>';
+    } else {
+      document.getElementById('cook-page-content').innerHTML =
+        '<div class="cook-ing-list">' +
+        ings.map((ing, i) =>
+          '<div class="cook-ing-item" id="cook-ing-' + i + '" onclick="toggleCookIng(' + i + ')">' +
+            '<div class="cook-ing-check"></div>' +
+            '<div class="cook-ing-text">' + ing + '</div>' +
+          '</div>'
+        ).join('') +
+        '</div>';
+    }
+  } else {
+    const stepNum = idx; // step 1 = index 1
+    document.getElementById('cook-page-title').textContent = 'Step ' + stepNum + ' of ' + (total - 1);
+    document.getElementById('cook-page-content').innerHTML =
+      '<div class="cook-step-num">0' + stepNum + '</div>' +
+      '<div class="cook-step-text">' + page + '</div>';
+  }
+}
+
+function cookNext() {
+  if (cookPageIdx >= cookPages.length - 1) { closeCookMode(); return; }
+  // Preserve recipe & ingredients ref via closure not needed — re-fetch from recipesData
+  cookPageIdx++;
+  const meal = document.getElementById('cook-meal-name').textContent;
+  const recipe = recipesData[meal] || {};
+  renderCookPage(recipe, recipe.ingredients || []);
+  document.getElementById('cook-body').scrollTop = 0;
+}
+
+function cookPrev() {
+  if (cookPageIdx <= 0) return;
+  cookPageIdx--;
+  const meal = document.getElementById('cook-meal-name').textContent;
+  const recipe = recipesData[meal] || {};
+  renderCookPage(recipe, recipe.ingredients || []);
+  document.getElementById('cook-body').scrollTop = 0;
+}
+
+function toggleCookIng(idx) {
+  const el = document.getElementById('cook-ing-' + idx);
+  if (el) el.classList.toggle('checked');
+}
+
+function closeCookMode() {
+  document.getElementById('cook-overlay').classList.remove('open');
+  cookPages = []; cookPageIdx = 0;
+}
+
 function selectAllIngredients(checked) {
   document.querySelectorAll('.recipe-ing-check').forEach(cb => cb.checked = checked);
 }
@@ -1567,11 +1706,12 @@ function renderHome() {
 
   // Today's dinner
   const todayMeal = dinners[todayStr] || '';
-  const dinnerBar = '<div style="flex-shrink:0;padding:10px 14px;background:linear-gradient(180deg,#0d1a2e,#0c1525);border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px">' +
-    '<span style="font-size:18px">🍽️</span>' +
+  const dinnerBar = '<div style="flex-shrink:0;padding:10px 14px;background:linear-gradient(180deg,#0d1a2e,#0c1525);border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px' + (todayMeal ? ';cursor:pointer' : '') + '"' + (todayMeal ? ' onclick="openCookMode(\'' + todayStr + '\',\'' + todayMeal.replace(/'/g,"\\'") + '\')"' : '') + '>' +
+    '<span style="font-size:20px">🍽️</span>' +
     '<span style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;flex-shrink:0">Tonight</span>' +
     (todayMeal
-      ? '<span style="font-size:15px;font-weight:700;color:#6ee7b7;flex:1">' + todayMeal + '</span>'
+      ? '<span style="font-size:16px;font-weight:700;color:#6ee7b7;flex:1">' + todayMeal + '</span>' +
+        '<span style="font-size:13px;color:rgba(110,231,183,0.6);flex-shrink:0">👨‍🍳 Start cooking →</span>'
       : '<span style="font-size:13px;color:var(--text-muted);flex:1">No dinner planned</span>') +
   '</div>';
 
