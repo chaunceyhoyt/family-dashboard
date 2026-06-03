@@ -357,7 +357,7 @@
 
     /* ── DRAG GHOST ── */
     /* Home dinner bar */
-    .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:14px 20px calc(env(safe-area-inset-bottom) + 14px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:14px 20px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .home-dinner-bar:active { background:#091220; }
     /* ── COOK MODE ── */
     #cook-overlay { position: fixed; inset: 0; z-index: 600; background: #060d18; display: none; flex-direction: column; }
@@ -1741,7 +1741,7 @@ function renderHome() {
       '</div>' +
 
       // Events + Tasks columns
-      '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0">' +
+      '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
         '<div class="home-col">' +
           '<div class="col-header">📅 Today\'s Events</div>' +
           '<div class="home-col-body">' + eventsHtml + '</div>' +
