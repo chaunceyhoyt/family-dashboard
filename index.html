@@ -357,7 +357,7 @@
 
     /* ── DRAG GHOST ── */
     /* Home dinner bar */
-    .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:22px 24px calc(var(--nav-h) + env(safe-area-inset-bottom) + 22px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:28px 28px calc(var(--nav-h) + env(safe-area-inset-bottom) + 28px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .home-dinner-bar:active { background:#091220; }
     /* ── COOK MODE ── */
     #cook-overlay { position: fixed; inset: 0; z-index: 600; background: #060d18; display: none; flex-direction: column; }
@@ -1710,19 +1710,19 @@ function renderHome() {
   const todayMeal = dinners[todayStr] || '';
   const dinnerSection = todayMeal
     ? '<div class="home-dinner-bar" onclick="openCookMode(\'' + todayStr + '\',\'' + todayMeal.replace(/'/g,"\\'") + '\')">' +
-        '<div style="display:flex;align-items:center;gap:16px">' +
-          '<span style="font-size:44px">🍽️</span>' +
+        '<div style="display:flex;align-items:center;gap:20px">' +
+          '<span style="font-size:64px">🍽️</span>' +
           '<div>' +
-            '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Tonight\'s Dinner</div>' +
-            '<div style="font-size:26px;font-weight:800;color:#6ee7b7;line-height:1.2">' + todayMeal + '</div>' +
+            '<div style="font-size:16px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Tonight\'s Dinner</div>' +
+            '<div style="font-size:36px;font-weight:800;color:#6ee7b7;line-height:1.2">' + todayMeal + '</div>' +
           '</div>' +
         '</div>' +
-        '<span style="font-size:17px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' +
+        '<span style="font-size:20px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' +
       '</div>'
     : '<div class="home-dinner-bar" style="opacity:0.5">' +
-        '<div style="display:flex;align-items:center;gap:16px">' +
-          '<span style="font-size:44px">🍽️</span>' +
-          '<div style="font-size:20px;font-weight:700;color:var(--text-muted)">No dinner planned tonight</div>' +
+        '<div style="display:flex;align-items:center;gap:20px">' +
+          '<span style="font-size:64px">🍽️</span>' +
+          '<div style="font-size:26px;font-weight:700;color:var(--text-muted)">No dinner planned tonight</div>' +
         '</div>' +
       '</div>';
 
@@ -1735,8 +1735,7 @@ function renderHome() {
 
       // Date/time hero
       '<div style="flex-shrink:0;text-align:center;padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.07)">' +
-        '<div style="font-size:52px;font-weight:900;color:var(--text);line-height:1;letter-spacing:-1px">' + timeStr + '</div>' +
-        '<div style="font-size:17px;font-weight:600;color:var(--text-muted);margin-top:4px">' + dateLabel + '</div>' +
+        '<div style="font-size:28px;font-weight:800;color:var(--text);line-height:1.2">' + dateLabel + ' &nbsp;·&nbsp; ' + timeStr + '</div>' +
         (signInBtn ? '<div style="margin-top:10px">' + signInBtn + '</div>' : '') +
       '</div>' +
 
