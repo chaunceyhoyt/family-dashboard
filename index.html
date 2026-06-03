@@ -480,6 +480,9 @@
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
       <div class="nav-home-icon">🏠</div><span>Home</span>
     </button>
+    <button class="nav-btn" id="nav-schedule" onclick="showPage('schedule')">
+      <div class="nav-home-icon">📅</div><span>Schedule</span>
+    </button>
     <button class="nav-btn" id="nav-tasks" onclick="showPage('tasks')">
       <div class="nav-home-icon">✅</div><span>Tasks</span>
     </button>
@@ -938,18 +941,18 @@ async function signIn() {
   });
 }
 async function signOut() { localStorage.removeItem('gcal_token'); sessionStorage.removeItem('gcal_token'); await sb.auth.signOut(); }
-async function signOutCalendar() { localStorage.removeItem('gcal_token'); sessionStorage.removeItem('gcal_token'); gcalToken = null; upcomingFamilyEvents = []; renderHome(); renderStrip(); }
+async function signOutCalendar() { localStorage.removeItem('gcal_token'); sessionStorage.removeItem('gcal_token'); gcalToken = null; upcomingFamilyEvents = []; showPage(currentPage); renderStrip(); }
 async function reloadCalendar() {
   if (!gcalToken) { signIn(); return; }
   upcomingFamilyEvents = [];
-  renderHome();
+  showPage(currentPage);
   try {
     upcomingFamilyEvents = await fetchUpcomingFamilyEvents(gcalToken);
   } catch(e) {
-    if (e.message === 'gcal_401') { gcalToken = null; renderHome(); return; }
+    if (e.message === 'gcal_401') { gcalToken = null; showPage(currentPage); return; }
     upcomingFamilyEvents = null;
   }
-  renderHome();
+  showPage(currentPage);
 }
 
 // ── SUPABASE FAMILY DATA ──────────────────────────────────────────────────────
@@ -1464,7 +1467,7 @@ async function addDinnerIngredientsToGrocery() {
       grocery.push({ id: Date.now() + Math.random(), text, done: false });
   }
   await saveFamilyData('grocery', grocery);
-  if (currentPage === 'home') renderHome();
+  if (currentPage === 'home') renderHome(); else if (currentPage === 'schedule') renderSchedule();
   btn.textContent = '✓ Added!';
   const status = document.getElementById('recipe-status');
   status.textContent = `${selected.length} ingredient${selected.length !== 1 ? 's' : ''} added to your grocery list.`;
@@ -1476,15 +1479,123 @@ function showPage(page) {
   currentPage = page;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
   const ca = document.getElementById('content-area');
-  ca.classList.toggle('home-mode', page==='home');
+  ca.classList.toggle('home-mode', page==='home' || page==='schedule');
   if (page==='home') renderHome();
+  else if (page==='schedule') renderSchedule();
   else if (page==='tasks') renderTasks();
   else if (page==='grocery') renderGrocery();
   else renderPerson(page);
 }
 
-// ── HOME PAGE — 3 COLUMNS ─────────────────────────────────────────────────────
+// ── HOME PAGE — TODAY AT A GLANCE ────────────────────────────────────────────
 function renderHome() {
+  const todayStr = isoDate(new Date());
+
+  // Today's events from Google Calendar
+  const todayEvs = (upcomingFamilyEvents || []).filter(ev => {
+    const d = ev.start?.dateTime || ev.start?.date || '';
+    return d.startsWith(todayStr);
+  });
+  let eventsHtml = '';
+  if (!gcalToken) {
+    eventsHtml = '<div class="card"><div class="empty-state"><div class="empty-icon">🔐</div>Sign in to see events</div></div>';
+  } else if (!todayEvs.length) {
+    eventsHtml = '<div class="empty-state" style="padding:20px 14px"><div class="empty-icon">🎉</div>Nothing scheduled today</div>';
+  } else {
+    eventsHtml = todayEvs.map(ev => {
+      const title = ev.summary || 'Event';
+      const time = ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day';
+      const color = eventColor(title);
+      const emoji = eventEmoji(title);
+      const link = ev.htmlLink || '#';
+      return '<a class="ev-card" href="' + link + '" target="_blank">' +
+        '<div class="ev-card-icon" style="background:linear-gradient(160deg,' + color + '44,' + color + '22)">' + emoji + '</div>' +
+        '<div class="ev-card-body">' +
+          '<div class="ev-card-title">' + title + '</div>' +
+          '<div class="ev-card-when"><span class="ev-card-time">' + time + '</span></div>' +
+          (ev.location ? '<div class="ev-card-loc">📍 ' + ev.location + '</div>' : '') +
+        '</div>' +
+      '</a>';
+    }).join('');
+  }
+
+  // Today's tasks grouped by person
+  const todayTasks = tasks.filter(t => {
+    if (!t.deadline) return true; // no deadline = always relevant
+    return true; // show all tasks; could filter by today's deadline later
+  });
+  const personKeys = Object.keys(PEOPLE);
+  let tasksHtml = '';
+  if (!todayTasks.length) {
+    tasksHtml = '<div class="empty-state" style="padding:20px 14px"><div class="empty-icon">✅</div>No tasks</div>';
+  } else {
+    // House tasks first, then per person
+    const groups = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji, color: HOUSE.color }]
+      .concat(personKeys.map(k => ({ key: k, label: PEOPLE[k].label, emoji: PEOPLE[k].emoji, color: PEOPLE[k].color })));
+    tasksHtml = groups.map(g => {
+      const items = todayTasks.filter(t => (t.assignee || null) === g.key);
+      if (!items.length) return '';
+      const pts = g.key ? (taskPoints[g.key] || 0) : null;
+      const header = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;margin-top:10px">' +
+        '<span style="font-size:18px">' + g.emoji + '</span>' +
+        '<span style="font-size:13px;font-weight:700;color:var(--text);flex:1">' + g.label + '</span>' +
+        (pts !== null ? '<span style="font-size:12px;font-weight:800;color:#fbbf24;background:rgba(251,191,36,0.12);border-radius:6px;padding:1px 7px">' + pts + ' pts</span>' : '') +
+      '</div>';
+      const cards = items.map(t => {
+        const overdue = t.deadline && new Date(t.deadline) < new Date();
+        return '<div class="task-card" style="margin-bottom:6px">' +
+          '<div class="task-card-top">' +
+            '<span class="task-card-title">' + t.title + '</span>' +
+            '<span class="task-card-pts">+' + (t.points||0) + '</span>' +
+          '</div>' +
+          (t.desc ? '<div class="task-card-desc">' + t.desc + '</div>' : '') +
+          '<div class="task-card-meta">' +
+            (t.deadline ? '<span class="task-card-deadline' + (overdue ? ' overdue' : '') + '">' + (overdue ? '⚠️ Overdue' : '⏰ ' + formatTime(t.deadline)) + '</span>' : '') +
+            '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\');renderHome()">✓ Done</button>' +
+            '<button class="task-del-btn" onclick="deleteTask(\'' + t.id + '\');renderHome()">×</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      return header + cards;
+    }).join('');
+    if (!tasksHtml.trim()) tasksHtml = '<div class="empty-state" style="padding:20px 14px"><div class="empty-icon">✅</div>No tasks</div>';
+  }
+
+  // Today's dinner
+  const todayMeal = dinners[todayStr] || '';
+  const dinnerBar = '<div style="flex-shrink:0;padding:10px 14px;background:linear-gradient(180deg,#0d1a2e,#0c1525);border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px">' +
+    '<span style="font-size:18px">🍽️</span>' +
+    '<span style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;flex-shrink:0">Tonight</span>' +
+    (todayMeal
+      ? '<span style="font-size:15px;font-weight:700;color:#6ee7b7;flex:1">' + todayMeal + '</span>'
+      : '<span style="font-size:13px;color:var(--text-muted);flex:1">No dinner planned</span>') +
+  '</div>';
+
+  const calBtns = gcalToken
+    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>'
+    : '<button onclick="signIn()" title="Sign in" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
+
+  document.getElementById('content-area').innerHTML =
+    '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
+      '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0">' +
+        '<div class="home-col">' +
+          '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
+            '<span>📅 Today\'s Events</span>' +
+            '<div style="display:flex;gap:5px">' + calBtns + '</div>' +
+          '</div>' +
+          '<div class="home-col-body">' + eventsHtml + '</div>' +
+        '</div>' +
+        '<div class="home-col">' +
+          '<div class="col-header">✅ Today\'s Tasks</div>' +
+          '<div class="home-col-body">' + tasksHtml + '</div>' +
+        '</div>' +
+      '</div>' +
+      dinnerBar +
+    '</div>';
+}
+
+// ── SCHEDULE PAGE — UPCOMING EVENTS + BRIEFING ────────────────────────────────
+function renderSchedule() {
   // ── COL 1: Upcoming Family Events (Google Calendar, next 20) ──
   let col1 = '';
   if (!gcalToken) {
@@ -1602,6 +1713,7 @@ function renderGrocery() {
 function reRenderCurrentPage() {
   if (currentPage === 'grocery') renderGrocery();
   else if (currentPage === 'home') renderHome();
+  else if (currentPage === 'schedule') renderSchedule();
 }
 
 // ── GROCERY CRUD ──────────────────────────────────────────────────────────────
