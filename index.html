@@ -73,6 +73,7 @@
     #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, #111e35 0%, #0d1a2e 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
     #strip-wrapper.page-home { display: none; }
     #strip-toggle-bar.page-home { display: none; }
+    #week-nav.page-home { display: none; }
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
     /* Toggle bar */
     #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 2px; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 0.25s; }
@@ -355,6 +356,9 @@
     .gv-cancel-btn  { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
 
     /* ── DRAG GHOST ── */
+    /* Home dinner bar */
+    .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:14px 20px calc(env(safe-area-inset-bottom) + 14px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .home-dinner-bar:active { background:#091220; }
     /* ── COOK MODE ── */
     #cook-overlay { position: fixed; inset: 0; z-index: 600; background: #060d18; display: none; flex-direction: column; }
     #cook-overlay.open { display: flex; }
@@ -1623,27 +1627,35 @@ function showPage(page) {
   const isHome = page === 'home';
   document.getElementById('strip-wrapper').classList.toggle('page-home', isHome);
   document.getElementById('strip-toggle-bar').classList.toggle('page-home', isHome);
-  if (page==='home') renderHome();
-  else if (page==='schedule') renderSchedule();
-  else if (page==='tasks') renderTasks();
-  else if (page==='grocery') renderGrocery();
-  else renderPerson(page);
+  document.getElementById('week-nav').classList.toggle('page-home', isHome);
+  if (page==='home') { startHomeClock(); renderHome(); }
+  else { stopHomeClock(); if (page==='schedule') renderSchedule(); else if (page==='tasks') renderTasks(); else if (page==='grocery') renderGrocery(); else renderPerson(page); }
 }
+
+// ── HOME CLOCK ───────────────────────────────────────────────────────────────
+let homeClockTimer = null;
+function startHomeClock() {
+  stopHomeClock();
+  homeClockTimer = setInterval(() => { if (currentPage === 'home') renderHome(); }, 60000);
+}
+function stopHomeClock() { clearInterval(homeClockTimer); homeClockTimer = null; }
 
 // ── HOME PAGE — TODAY AT A GLANCE ────────────────────────────────────────────
 function renderHome() {
-  const todayStr = isoDate(new Date());
+  const now = new Date();
+  const todayStr = isoDate(now);
 
-  // Today's events from Google Calendar
-  const todayEvs = (upcomingFamilyEvents || []).filter(ev => {
-    const d = ev.start?.dateTime || ev.start?.date || '';
-    return d.startsWith(todayStr);
-  });
+  // Date/time header
+  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const dateLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  // Today's events
+  const todayEvs = (upcomingFamilyEvents || []).filter(ev => (ev.start?.dateTime || ev.start?.date || '').startsWith(todayStr));
   let eventsHtml = '';
   if (!gcalToken) {
-    eventsHtml = '<div class="card"><div class="empty-state"><div class="empty-icon">🔐</div>Sign in to see events</div></div>';
+    eventsHtml = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">🔐</div>Sign in to see events</div>';
   } else if (!todayEvs.length) {
-    eventsHtml = '<div class="empty-state" style="padding:20px 14px"><div class="empty-icon">🎉</div>Nothing scheduled today</div>';
+    eventsHtml = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">🎉</div>Nothing scheduled today</div>';
   } else {
     eventsHtml = todayEvs.map(ev => {
       const title = ev.summary || 'Event';
@@ -1663,70 +1675,75 @@ function renderHome() {
   }
 
   // Today's tasks grouped by person
-  const todayTasks = tasks.filter(t => {
-    if (!t.deadline) return true; // no deadline = always relevant
-    return true; // show all tasks; could filter by today's deadline later
-  });
-  const personKeys = Object.keys(PEOPLE);
-  let tasksHtml = '';
-  if (!todayTasks.length) {
-    tasksHtml = '<div class="empty-state" style="padding:20px 14px"><div class="empty-icon">✅</div>No tasks</div>';
-  } else {
-    // House tasks first, then per person
-    const groups = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji, color: HOUSE.color }]
-      .concat(personKeys.map(k => ({ key: k, label: PEOPLE[k].label, emoji: PEOPLE[k].emoji, color: PEOPLE[k].color })));
-    tasksHtml = groups.map(g => {
-      const items = todayTasks.filter(t => (t.assignee || null) === g.key);
-      if (!items.length) return '';
-      const pts = g.key ? (taskPoints[g.key] || 0) : null;
-      const header = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;margin-top:10px">' +
-        '<span style="font-size:18px">' + g.emoji + '</span>' +
-        '<span style="font-size:13px;font-weight:700;color:var(--text);flex:1">' + g.label + '</span>' +
-        (pts !== null ? '<span style="font-size:12px;font-weight:800;color:#fbbf24;background:rgba(251,191,36,0.12);border-radius:6px;padding:1px 7px">' + pts + ' pts</span>' : '') +
+  const todayTasks = tasks;
+  const groups = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji }]
+    .concat(Object.keys(PEOPLE).map(k => ({ key: k, label: PEOPLE[k].label, emoji: PEOPLE[k].emoji })));
+  let tasksHtml = groups.map(g => {
+    const items = todayTasks.filter(t => (t.assignee || null) === g.key);
+    if (!items.length) return '';
+    const pts = g.key ? (taskPoints[g.key] || 0) : null;
+    const header = '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px">' +
+      '<span style="font-size:20px">' + g.emoji + '</span>' +
+      '<span style="font-size:14px;font-weight:700;color:var(--text);flex:1">' + g.label + '</span>' +
+      (pts !== null ? '<span style="font-size:12px;font-weight:800;color:#fbbf24;background:rgba(251,191,36,0.12);border-radius:6px;padding:2px 8px">' + pts + ' pts</span>' : '') +
+    '</div>';
+    const cards = items.map(t => {
+      const overdue = t.deadline && new Date(t.deadline) < new Date();
+      return '<div class="task-card" style="margin-bottom:8px">' +
+        '<div class="task-card-top">' +
+          '<span class="task-card-title">' + t.title + '</span>' +
+          '<span class="task-card-pts">+' + (t.points||0) + '</span>' +
+        '</div>' +
+        (t.desc ? '<div class="task-card-desc">' + t.desc + '</div>' : '') +
+        '<div class="task-card-meta">' +
+          (t.deadline ? '<span class="task-card-deadline' + (overdue ? ' overdue' : '') + '">' + (overdue ? '⚠️ Overdue' : '⏰ ' + formatTime(t.deadline)) + '</span>' : '') +
+          '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\');renderHome()">✓ Done</button>' +
+          '<button class="task-del-btn" onclick="deleteTask(\'' + t.id + '\');renderHome()">×</button>' +
+        '</div>' +
       '</div>';
-      const cards = items.map(t => {
-        const overdue = t.deadline && new Date(t.deadline) < new Date();
-        return '<div class="task-card" style="margin-bottom:6px">' +
-          '<div class="task-card-top">' +
-            '<span class="task-card-title">' + t.title + '</span>' +
-            '<span class="task-card-pts">+' + (t.points||0) + '</span>' +
-          '</div>' +
-          (t.desc ? '<div class="task-card-desc">' + t.desc + '</div>' : '') +
-          '<div class="task-card-meta">' +
-            (t.deadline ? '<span class="task-card-deadline' + (overdue ? ' overdue' : '') + '">' + (overdue ? '⚠️ Overdue' : '⏰ ' + formatTime(t.deadline)) + '</span>' : '') +
-            '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\');renderHome()">✓ Done</button>' +
-            '<button class="task-del-btn" onclick="deleteTask(\'' + t.id + '\');renderHome()">×</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-      return header + cards;
     }).join('');
-    if (!tasksHtml.trim()) tasksHtml = '<div class="empty-state" style="padding:20px 14px"><div class="empty-icon">✅</div>No tasks</div>';
-  }
+    return header + cards;
+  }).join('');
+  if (!tasksHtml.trim()) tasksHtml = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">✅</div>No tasks</div>';
 
-  // Today's dinner
+  // Tonight's dinner
   const todayMeal = dinners[todayStr] || '';
-  const dinnerBar = '<div style="flex-shrink:0;padding:10px 14px;background:linear-gradient(180deg,#0d1a2e,#0c1525);border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px' + (todayMeal ? ';cursor:pointer' : '') + '"' + (todayMeal ? ' onclick="openCookMode(\'' + todayStr + '\',\'' + todayMeal.replace(/'/g,"\\'") + '\')"' : '') + '>' +
-    '<span style="font-size:20px">🍽️</span>' +
-    '<span style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;flex-shrink:0">Tonight</span>' +
-    (todayMeal
-      ? '<span style="font-size:16px;font-weight:700;color:#6ee7b7;flex:1">' + todayMeal + '</span>' +
-        '<span style="font-size:13px;color:rgba(110,231,183,0.6);flex-shrink:0">👨‍🍳 Start cooking →</span>'
-      : '<span style="font-size:13px;color:var(--text-muted);flex:1">No dinner planned</span>') +
-  '</div>';
+  const dinnerSection = todayMeal
+    ? '<div class="home-dinner-bar" onclick="openCookMode(\'' + todayStr + '\',\'' + todayMeal.replace(/'/g,"\\'") + '\')">' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<span style="font-size:26px">🍽️</span>' +
+          '<div>' +
+            '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px">Tonight\'s Dinner</div>' +
+            '<div style="font-size:18px;font-weight:800;color:#6ee7b7">' + todayMeal + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<span style="font-size:13px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' +
+      '</div>'
+    : '<div class="home-dinner-bar" style="opacity:0.5">' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<span style="font-size:26px">🍽️</span>' +
+          '<div style="font-size:15px;font-weight:700;color:var(--text-muted)">No dinner planned tonight</div>' +
+        '</div>' +
+      '</div>';
 
-  const calBtns = gcalToken
-    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>'
-    : '<button onclick="signIn()" title="Sign in" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
+  const signInBtn = !gcalToken
+    ? '<button onclick="signIn()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:13px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer">🔑 Sign in for events</button>'
+    : '';
 
   document.getElementById('content-area').innerHTML =
-    '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
+    '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
+
+      // Date/time hero
+      '<div style="flex-shrink:0;text-align:center;padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.07)">' +
+        '<div style="font-size:52px;font-weight:900;color:var(--text);line-height:1;letter-spacing:-1px">' + timeStr + '</div>' +
+        '<div style="font-size:17px;font-weight:600;color:var(--text-muted);margin-top:4px">' + dateLabel + '</div>' +
+        (signInBtn ? '<div style="margin-top:10px">' + signInBtn + '</div>' : '') +
+      '</div>' +
+
+      // Events + Tasks columns
       '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0">' +
         '<div class="home-col">' +
-          '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
-            '<span>📅 Today\'s Events</span>' +
-            '<div style="display:flex;gap:5px">' + calBtns + '</div>' +
-          '</div>' +
+          '<div class="col-header">📅 Today\'s Events</div>' +
           '<div class="home-col-body">' + eventsHtml + '</div>' +
         '</div>' +
         '<div class="home-col">' +
@@ -1734,7 +1751,9 @@ function renderHome() {
           '<div class="home-col-body">' + tasksHtml + '</div>' +
         '</div>' +
       '</div>' +
-      dinnerBar +
+
+      // Dinner bar
+      dinnerSection +
     '</div>';
 }
 
