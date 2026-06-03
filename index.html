@@ -357,7 +357,7 @@
 
     /* ── DRAG GHOST ── */
     /* Home dinner bar */
-    .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:14px 20px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:22px 24px calc(var(--nav-h) + env(safe-area-inset-bottom) + 22px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .home-dinner-bar:active { background:#091220; }
     /* ── COOK MODE ── */
     #cook-overlay { position: fixed; inset: 0; z-index: 600; background: #060d18; display: none; flex-direction: column; }
@@ -1710,19 +1710,19 @@ function renderHome() {
   const todayMeal = dinners[todayStr] || '';
   const dinnerSection = todayMeal
     ? '<div class="home-dinner-bar" onclick="openCookMode(\'' + todayStr + '\',\'' + todayMeal.replace(/'/g,"\\'") + '\')">' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<span style="font-size:26px">🍽️</span>' +
+        '<div style="display:flex;align-items:center;gap:16px">' +
+          '<span style="font-size:44px">🍽️</span>' +
           '<div>' +
-            '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px">Tonight\'s Dinner</div>' +
-            '<div style="font-size:18px;font-weight:800;color:#6ee7b7">' + todayMeal + '</div>' +
+            '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Tonight\'s Dinner</div>' +
+            '<div style="font-size:26px;font-weight:800;color:#6ee7b7;line-height:1.2">' + todayMeal + '</div>' +
           '</div>' +
         '</div>' +
-        '<span style="font-size:13px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' +
+        '<span style="font-size:17px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' +
       '</div>'
     : '<div class="home-dinner-bar" style="opacity:0.5">' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<span style="font-size:26px">🍽️</span>' +
-          '<div style="font-size:15px;font-weight:700;color:var(--text-muted)">No dinner planned tonight</div>' +
+        '<div style="display:flex;align-items:center;gap:16px">' +
+          '<span style="font-size:44px">🍽️</span>' +
+          '<div style="font-size:20px;font-weight:700;color:var(--text-muted)">No dinner planned tonight</div>' +
         '</div>' +
       '</div>';
 
