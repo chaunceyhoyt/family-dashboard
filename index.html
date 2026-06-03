@@ -1634,9 +1634,17 @@ function showPage(page) {
 
 // ── HOME CLOCK ───────────────────────────────────────────────────────────────
 let homeClockTimer = null;
+function tickHomeClock() {
+  const el = document.getElementById('home-datetime');
+  if (!el || currentPage !== 'home') return;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const dateLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  el.textContent = dateLabel + '  ·  ' + timeStr;
+}
 function startHomeClock() {
   stopHomeClock();
-  homeClockTimer = setInterval(() => { if (currentPage === 'home') renderHome(); }, 60000);
+  homeClockTimer = setInterval(tickHomeClock, 10000);
 }
 function stopHomeClock() { clearInterval(homeClockTimer); homeClockTimer = null; }
 
@@ -1735,7 +1743,7 @@ function renderHome() {
 
       // Date/time hero
       '<div style="flex-shrink:0;text-align:center;padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.07)">' +
-        '<div style="font-size:28px;font-weight:800;color:var(--text);line-height:1.2">' + dateLabel + ' &nbsp;·&nbsp; ' + timeStr + '</div>' +
+        '<div id="home-datetime" style="font-size:28px;font-weight:800;color:var(--text);line-height:1.2">' + dateLabel + ' &nbsp;·&nbsp; ' + timeStr + '</div>' +
         (signInBtn ? '<div style="margin-top:10px">' + signInBtn + '</div>' : '') +
       '</div>' +
 
