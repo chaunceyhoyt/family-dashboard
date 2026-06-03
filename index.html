@@ -1628,34 +1628,18 @@ function showPage(page) {
   document.getElementById('strip-wrapper').classList.toggle('page-home', isHome);
   document.getElementById('strip-toggle-bar').classList.toggle('page-home', isHome);
   document.getElementById('week-nav').classList.toggle('page-home', isHome);
-  if (page==='home') { startHomeClock(); renderHome(); }
-  else { stopHomeClock(); if (page==='schedule') renderSchedule(); else if (page==='tasks') renderTasks(); else if (page==='grocery') renderGrocery(); else renderPerson(page); }
+  if (page==='home') renderHome();
+  else if (page==='schedule') renderSchedule();
+  else if (page==='tasks') renderTasks();
+  else if (page==='grocery') renderGrocery();
+  else renderPerson(page);
 }
 
 // ── HOME CLOCK ───────────────────────────────────────────────────────────────
-let homeClockTimer = null;
-function tickHomeClock() {
-  const el = document.getElementById('home-datetime');
-  if (!el || currentPage !== 'home') return;
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  const dateLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-  el.textContent = dateLabel + '  ·  ' + timeStr;
-}
-function startHomeClock() {
-  stopHomeClock();
-  homeClockTimer = setInterval(tickHomeClock, 10000);
-}
-function stopHomeClock() { clearInterval(homeClockTimer); homeClockTimer = null; }
-
+// (removed — was causing intermittent DOM rebuilds that swallowed taps)
 // ── HOME PAGE — TODAY AT A GLANCE ────────────────────────────────────────────
 function renderHome() {
-  const now = new Date();
-  const todayStr = isoDate(now);
-
-  // Date/time header
-  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  const dateLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const todayStr = isoDate(new Date());
 
   // Today's events
   const todayEvs = (upcomingFamilyEvents || []).filter(ev => (ev.start?.dateTime || ev.start?.date || '').startsWith(todayStr));
@@ -1741,16 +1725,10 @@ function renderHome() {
   document.getElementById('content-area').innerHTML =
     '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
 
-      // Date/time hero
-      '<div style="flex-shrink:0;text-align:center;padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.07)">' +
-        '<div id="home-datetime" style="font-size:28px;font-weight:800;color:var(--text);line-height:1.2">' + dateLabel + ' &nbsp;·&nbsp; ' + timeStr + '</div>' +
-        (signInBtn ? '<div style="margin-top:10px">' + signInBtn + '</div>' : '') +
-      '</div>' +
-
       // Events + Tasks columns
       '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
         '<div class="home-col">' +
-          '<div class="col-header">📅 Today\'s Events</div>' +
+          '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>📅 Today\'s Events</span>' + signInBtn + '</div>' +
           '<div class="home-col-body">' + eventsHtml + '</div>' +
         '</div>' +
         '<div class="home-col">' +
