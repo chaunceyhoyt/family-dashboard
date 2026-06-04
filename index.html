@@ -128,8 +128,10 @@
     .day-col-mic:active { color: var(--accent); }
 
     /* ── CONTENT AREA ── */
-    #content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); }
-    #content-area.home-mode { overflow: hidden; padding: 0; display: flex; flex-direction: column; }
+    #content-area { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+    #pages-rail { display: flex; flex-direction: row; width: 400%; height: 100%; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); will-change: transform; }
+    .page-panel { width: 25%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-shrink: 0; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); box-sizing: border-box; }
+    .page-panel.panel-flex { overflow: hidden; padding: 0; display: flex; flex-direction: column; }
 
     /* ── BOTTOM NAV ── */
     #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid rgba(255,255,255,0.07); display: flex; align-items: stretch; z-index: 200; gap: 4px; padding-left: 6px; padding-right: 6px; }
@@ -516,7 +518,14 @@
     <div id="dinner-row"></div>
   </div>
   <div id="strip-toggle-bar" onclick="toggleStrip()"><span>▾</span></div>
-  <div id="content-area"><div class="spinner"></div></div>
+  <div id="content-area">
+    <div id="pages-rail">
+      <div class="page-panel" id="page-home"></div>
+      <div class="page-panel" id="page-schedule"></div>
+      <div class="page-panel" id="page-tasks"></div>
+      <div class="page-panel" id="page-grocery"></div>
+    </div>
+  </div>
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
       <div class="nav-home-icon">🏠</div><span>Home</span>
@@ -1624,20 +1633,21 @@ async function addDinnerIngredientsToGrocery() {
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
+const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3 };
+
 function showPage(page) {
   currentPage = page;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
-  const ca = document.getElementById('content-area');
-  ca.classList.toggle('home-mode', page==='home' || page==='schedule');
   const isHome = page === 'home';
   document.getElementById('strip-wrapper').classList.toggle('page-home', isHome);
   document.getElementById('strip-toggle-bar').classList.toggle('page-home', isHome);
   document.getElementById('week-nav').classList.toggle('page-home', isHome);
-  if (page==='home') renderHome();
-  else if (page==='schedule') renderSchedule();
-  else if (page==='tasks') renderTasks();
-  else if (page==='grocery') renderGrocery();
-  else renderPerson(page);
+  // Slide rail to the correct panel
+  const idx = PAGE_INDEX[page] ?? 0;
+  document.getElementById('pages-rail').style.transform = 'translateX(-' + (idx * 25) + '%)';
+  // panel-flex controls overflow:hidden needed for home/schedule column layouts
+  document.getElementById('page-home').classList.toggle('panel-flex', true);
+  document.getElementById('page-schedule').classList.toggle('panel-flex', true);
 }
 
 // ── HOME CLOCK ───────────────────────────────────────────────────────────────
@@ -1727,8 +1737,15 @@ function renderHome() {
     ? '<button onclick="signIn()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:13px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer">🔑 Sign in for events</button>'
     : '';
 
-  document.getElementById('content-area').innerHTML =
+  const now = new Date();
+  const dateTimeLabel = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
+    ' · ' + now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+
+  document.getElementById('page-home').innerHTML =
     '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
+
+      // Date/time header
+      '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px">' + dateTimeLabel + '</div>' +
 
       // Events + Tasks columns
       '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
@@ -1814,7 +1831,7 @@ function renderSchedule() {
       '<button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
     : '<button onclick="signIn()" title="Sign in to see events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
 
-  document.getElementById('content-area').innerHTML =
+  document.getElementById('page-schedule').innerHTML =
     '<div class="home-grid" style="grid-template-columns:1fr 1fr">' +
       '<div class="home-col">' +
         '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
@@ -1840,7 +1857,7 @@ function renderGrocery() {
       '</div>').join('')
     : '<div class="empty-state" style="padding:16px 14px;font-size:13px">Nothing on the list yet</div>';
 
-  document.getElementById('content-area').innerHTML =
+  document.getElementById('page-grocery').innerHTML =
     '<div style="padding:14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;height:100%;box-sizing:border-box;">' +
       '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">' +
         '<span>🛒 Grocery List</span>' +
@@ -2278,7 +2295,7 @@ function renderTasks() {
     '</div>';
   }
 
-  document.getElementById('content-area').innerHTML =
+  document.getElementById('page-tasks').innerHTML =
     '<div id="tasks-page-wrap">' +
       '<div class="tasks-page-header">' +
         '<div class="tasks-page-title">🏆 Family Tasks</div>' +
@@ -2513,7 +2530,9 @@ async function removeUser(key) {
 async function init() {
   weekDays=getWeekDays(); weatherDays=Array(7).fill(null); calEventsByDay=Array(7).fill([]);
   document.getElementById('week-label').textContent=weekLabel();
-  renderStrip(); showPage(currentPage);
+  renderStrip();
+  renderHome(); renderSchedule(); renderTasks(); renderGrocery();
+  showPage(currentPage);
 
   const [wRes,evRes,upRes,,brRes]=await Promise.allSettled([
     fetchWeekWeather(weekDays),
@@ -2534,7 +2553,9 @@ async function init() {
   else { upcomingFamilyEvents=null; } // null = fetch failed (vs [] = genuinely empty)
   if(brRes.status==='fulfilled') briefingData=brRes.value;
 
-  renderStrip(); showPage(currentPage); renderNavBadges();
+  renderStrip();
+  renderHome(); renderSchedule(); renderTasks(); renderGrocery();
+  showPage(currentPage); renderNavBadges();
 }
 
 // ── KROGER ───────────────────────────────────────────────────────────────────
