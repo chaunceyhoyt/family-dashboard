@@ -16,7 +16,19 @@
       --accent: #3b82f6; --text: #f1f5f9; --text-muted: #94a3b8;
       --urgent: #ef4444; --warning: #f59e0b; --success: #10b981;
       --radius: 12px; --nav-h: 68px;
+      --header-bg-start: #0c1525; --header-bg-end: #0f1a2e;
     }
+
+    /* ── PAGE DATE/TIME HEADER ── */
+    .page-datetime-header {
+      flex-shrink: 0; padding: 16px 18px 6px;
+      font-size: 24px; font-weight: 700; color: var(--text-muted);
+      letter-spacing: -0.3px; text-align: center;
+    }
+
+    /* ── THEME TOAST ── */
+    #theme-toast { position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 700; padding: 9px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 9999; white-space: nowrap; }
+    #theme-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     html, body { height: 100%; overflow: hidden; font-size: 16px; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 1rem; }
@@ -35,7 +47,7 @@
     #dashboard { display: none; flex-direction: column; height: 100%; }
 
     /* ── WEEK NAV BAR ── */
-    #week-nav { flex-shrink: 0; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+    #week-nav { flex-shrink: 0; background: var(--header-bg-start, #0c1525); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
     .week-nav-arrow { background: var(--surface2); border: none; color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 19px; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; flex-shrink: 0; transition: background 0.15s; }
     .week-nav-arrow:active { background: var(--surface3); }
     #week-label { flex: 1; font-size: 17px; font-weight: 700; text-align: center; color: var(--text); letter-spacing: -0.2px; }
@@ -46,7 +58,7 @@
     #week-picker { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; }
 
     /* ── WEEKLY STRIP ── */
-    #weekly-strip { flex-shrink: 0; background: linear-gradient(180deg, #0c1525 0%, #111e35 100%); border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: calc(env(safe-area-inset-top) + 8px) 8px 10px; }
+    #weekly-strip { flex-shrink: 0; background: linear-gradient(180deg, var(--header-bg-start, #0c1525) 0%, var(--header-bg-end, #111e35) 100%); border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: calc(env(safe-area-inset-top) + 8px) 8px 10px; }
     #weekly-strip::-webkit-scrollbar { display: none; }
     .day-col { flex: 1 0 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: background 0.15s, border-color 0.15s; min-width: 0; }
     .day-col.today { border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.08); }
@@ -70,13 +82,13 @@
     #strip-wrapper.expanded .day-events { overflow: visible; }
     #strip-wrapper.expanded .day-more-indicator { display: none; }
     /* Dinner row — sits below weekly strip, always aligned */
-    #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, #111e35 0%, #0d1a2e 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, var(--header-bg-end, #111e35) 0%, var(--header-bg-start, #0d1a2e) 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
     #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery { display: none; }
     #strip-toggle-bar.page-home, #strip-toggle-bar.page-tasks, #strip-toggle-bar.page-grocery { display: none; }
     #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery { display: none; }
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
     /* Toggle bar */
-    #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 2px; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 0.25s; }
+    #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 2px; background: var(--header-bg-start, #0c1525); border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 0.25s; }
     #strip-toggle-bar span { font-size: 28px; color: rgba(255,255,255,0.45); line-height: 1; transition: transform 0.25s; }
     #strip-toggle-bar.expanded span { transform: rotate(180deg); }
     #strip-toggle-bar.expanded { position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 201; border-top: 1px solid rgba(255,255,255,0.07); border-bottom: none; }
@@ -493,6 +505,7 @@
 <body>
 
 <!-- LOGIN -->
+<div id="theme-toast"></div>
 <div id="login-screen">
   <div class="login-icon">🏠</div>
   <div class="login-title">Browning Family</div>
@@ -1747,7 +1760,7 @@ function renderHome() {
     '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
 
       // Date/time header
-      '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px;text-align:center">' + dateTimeLabel + '</div>' +
+      '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
 
       // Events + Tasks columns
       '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
@@ -1864,7 +1877,7 @@ function renderGrocery() {
     ' · ' + grocNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
   document.getElementById('page-grocery').innerHTML =
-    '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px;text-align:center">' + grocDateTimeLabel + '</div>' +
+    '<div class="page-datetime-header">' + grocDateTimeLabel + '</div>' +
     '<div style="padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;flex:1;min-height:0;box-sizing:border-box;">' +
       '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">' +
         '<span>🛒 Grocery List</span>' +
@@ -2307,7 +2320,7 @@ function renderTasks() {
     ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
   document.getElementById('page-tasks').innerHTML =
-    '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px;text-align:center">' + taskDateTimeLabel + '</div>' +
+    '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
     '<div id="tasks-page-wrap">' +
       '<div class="tasks-page-header">' +
         '<div class="tasks-page-title">🏆 Family Tasks</div>' +
@@ -2523,6 +2536,111 @@ async function removeUser(key) {
   renderNavBadges();
   if (currentPage === 'tasks') renderTasks();
 }
+
+// ── COLOR SCHEMES ─────────────────────────────────────────────────────────────
+const COLOR_SCHEMES = [
+  {
+    name: '🌊 Midnight Navy',
+    bg:'#0f172a', surface:'#1e293b', surface2:'#273548', surface3:'#2d3f55',
+    accent:'#3b82f6', text:'#f1f5f9', muted:'#94a3b8',
+    success:'#10b981', urgent:'#ef4444', warning:'#f59e0b',
+    headerStart:'#0c1525', headerEnd:'#0f1a2e'
+  },
+  {
+    name: '🏡 Modern Farmhouse',
+    bg:'#1a1714', surface:'#2a2420', surface2:'#342e29', surface3:'#3e3832',
+    accent:'#c9a96e', text:'#f5f0e8', muted:'#a8947a',
+    success:'#7db96a', urgent:'#c0392b', warning:'#d4902a',
+    headerStart:'#130f0d', headerEnd:'#1a1714'
+  },
+  {
+    name: '🪵 Mid Century Modern',
+    bg:'#1c1509', surface:'#2b1f0f', surface2:'#372819', surface3:'#423221',
+    accent:'#d4a017', text:'#f2e8d0', muted:'#a08860',
+    success:'#6aaa64', urgent:'#cc4a2a', warning:'#d4a017',
+    headerStart:'#130e04', headerEnd:'#1c1509'
+  },
+  {
+    name: '🌿 Navy & Teal',
+    bg:'#0d1f2d', surface:'#152638', surface2:'#1c3045', surface3:'#243a54',
+    accent:'#2dd4bf', text:'#e8f4f8', muted:'#7aabbc',
+    success:'#2dd4bf', urgent:'#e76f51', warning:'#f4a261',
+    headerStart:'#091520', headerEnd:'#0d1f2d'
+  },
+  {
+    name: '🪨 GE Slate',
+    bg:'#171b1e', surface:'#232a2f', surface2:'#2d363c', surface3:'#37424a',
+    accent:'#7eb8d4', text:'#dde4e8', muted:'#7a9aaa',
+    success:'#52b788', urgent:'#e07a5f', warning:'#e9c46a',
+    headerStart:'#101316', headerEnd:'#171b1e'
+  },
+  {
+    name: '🧱 Whitewashed Brick',
+    bg:'#1e1916', surface:'#2e2520', surface2:'#39302a', surface3:'#443b34',
+    accent:'#c1440e', text:'#f4ede4', muted:'#a08878',
+    success:'#7ab648', urgent:'#e63946', warning:'#e09c2a',
+    headerStart:'#160f0d', headerEnd:'#1e1916'
+  },
+  {
+    name: '🪞 Marble & Silver',
+    bg:'#131518', surface:'#1e2126', surface2:'#272c32', surface3:'#30363e',
+    accent:'#a8c4d8', text:'#e8edf2', muted:'#7a90a2',
+    success:'#4db89a', urgent:'#e05252', warning:'#d4a96a',
+    headerStart:'#0d0f11', headerEnd:'#131518'
+  },
+  {
+    name: '🌊 Coastal Fog',
+    bg:'#111c22', surface:'#1a2a34', surface2:'#22343f', surface3:'#2a3e4a',
+    accent:'#60b8d4', text:'#e4eef2', muted:'#6e96a8',
+    success:'#4db87a', urgent:'#e07050', warning:'#d4a75a',
+    headerStart:'#0b1318', headerEnd:'#111c22'
+  },
+  {
+    name: '🌲 Forest & Copper',
+    bg:'#0d1a12', surface:'#152618', surface2:'#1c3020', surface3:'#233a28',
+    accent:'#b87333', text:'#e4f0e6', muted:'#6a9872',
+    success:'#56ab7a', urgent:'#e07050', warning:'#c8922a',
+    headerStart:'#07110a', headerEnd:'#0d1a12'
+  }
+];
+
+let currentSchemeIdx = parseInt(localStorage.getItem('colorScheme') || '0', 10);
+
+function applyScheme(idx, announce) {
+  const s = COLOR_SCHEMES[idx];
+  const r = document.documentElement.style;
+  r.setProperty('--bg', s.bg);
+  r.setProperty('--surface', s.surface);
+  r.setProperty('--surface2', s.surface2);
+  r.setProperty('--surface3', s.surface3);
+  r.setProperty('--accent', s.accent);
+  r.setProperty('--text', s.text);
+  r.setProperty('--text-muted', s.muted);
+  r.setProperty('--success', s.success);
+  r.setProperty('--urgent', s.urgent);
+  r.setProperty('--warning', s.warning);
+  r.setProperty('--header-bg-start', s.headerStart);
+  r.setProperty('--header-bg-end', s.headerEnd);
+  document.body.style.background = s.bg;
+  if (announce) {
+    const toast = document.getElementById('theme-toast');
+    toast.textContent = s.name;
+    toast.classList.add('show');
+    clearTimeout(applyScheme._t);
+    applyScheme._t = setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= 9 && !e.target.matches('input,textarea,[contenteditable]')) {
+    currentSchemeIdx = n - 1;
+    localStorage.setItem('colorScheme', currentSchemeIdx);
+    applyScheme(currentSchemeIdx, true);
+  }
+});
+
+applyScheme(currentSchemeIdx, false);
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 // If this page loaded inside the Kroger OAuth popup, hand the code back and close
