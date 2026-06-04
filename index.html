@@ -17,6 +17,7 @@
       --urgent: #ef4444; --warning: #f59e0b; --success: #10b981;
       --radius: 12px; --nav-h: 68px;
       --header-bg-start: #0c1525; --header-bg-end: #0f1a2e;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     /* ── PAGE DATE/TIME HEADER ── */
@@ -27,11 +28,32 @@
     }
 
     /* ── THEME TOAST ── */
-    #theme-toast { position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 700; padding: 9px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 9999; white-space: nowrap; }
+    #theme-toast { position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 700; padding: 9px 18px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.12); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 9999; white-space: nowrap; }
     #theme-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── LIGHT THEME OVERRIDES ── */
+    body.light { color-scheme: light; }
+    body.light #bottom-nav { border-top: 1px solid rgba(0,0,0,0.10); }
+    body.light .nav-btn { border-color: rgba(0,0,0,0.10); }
+    body.light .nav-btn.active { background: rgba(30,58,138,0.08); border-color: rgba(30,58,138,0.3); }
+    body.light .day-col { border-color: rgba(0,0,0,0.08); }
+    body.light .day-col.today { border-color: rgba(30,58,138,0.4); background: rgba(30,58,138,0.06); }
+    body.light #weekly-strip { border-bottom: 1px solid rgba(0,0,0,0.08); }
+    body.light #week-nav { border-bottom: 1px solid rgba(0,0,0,0.08); }
+    body.light #dinner-row { border-bottom: 1px solid rgba(0,0,0,0.08); }
+    body.light #strip-toggle-bar { border-bottom: 1px solid rgba(0,0,0,0.08); }
+    body.light .card { border-color: rgba(0,0,0,0.08); }
+    body.light .modal-box { border-color: rgba(0,0,0,0.10); }
+    body.light .ev-card { border-color: rgba(0,0,0,0.08); }
+    body.light .dinner-slot { border-color: rgba(0,0,0,0.14); }
+    body.light .dinner-chip { background: rgba(22,101,52,0.10); border-color: rgba(22,101,52,0.25); color: #166534; }
+    body.light .dinner-chip.today-meal { background: rgba(22,101,52,0.18); border-color: #166534; color: #14532d; }
+    body.light .home-dinner-bar { background: linear-gradient(180deg, var(--header-bg-start), var(--header-bg-end)); border-top: 2px solid rgba(22,101,52,0.2); }
+    body.light .task-card { border-color: rgba(0,0,0,0.08); }
+    body.light .list-item { border-bottom-color: rgba(0,0,0,0.06); }
+
     html, body { height: 100%; overflow: hidden; font-size: 16px; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 1rem; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 1rem; }
 
     /* ── LOGIN ── */
     #login-screen { position: fixed; inset: 0; background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; padding: 32px; text-align: center; }
@@ -552,6 +574,7 @@
     <button class="nav-btn" id="nav-grocery" onclick="showPage('grocery')">
       <div class="nav-home-icon">🛒</div><span>Grocery</span>
     </button>
+    <button id="theme-toggle-btn" onclick="cycleTheme()" style="flex:0 0 auto;width:48px;background:none;border:1px solid rgba(128,128,128,0.2);border-radius:12px;margin:6px 0;font-size:22px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:background 0.15s">☀️</button>
   </div>
 </div>
 
@@ -2538,73 +2561,42 @@ async function removeUser(key) {
 }
 
 // ── COLOR SCHEMES ─────────────────────────────────────────────────────────────
+// ── COLOR SCHEMES ─────────────────────────────────────────────────────────────
+// Each scheme: { name, light, font, ...css vars }
+// light:false = dark bg; font:'serif' uses Georgia stack
 const COLOR_SCHEMES = [
   {
-    name: '🌊 Midnight Navy',
+    name: '🌑 Dark',  light: false, font: false,
     bg:'#0f172a', surface:'#1e293b', surface2:'#273548', surface3:'#2d3f55',
     accent:'#3b82f6', text:'#f1f5f9', muted:'#94a3b8',
     success:'#10b981', urgent:'#ef4444', warning:'#f59e0b',
-    headerStart:'#0c1525', headerEnd:'#0f1a2e'
+    headerStart:'#0c1525', headerEnd:'#111e35'
   },
   {
-    name: '🏡 Modern Farmhouse',
-    bg:'#1a1714', surface:'#2a2420', surface2:'#342e29', surface3:'#3e3832',
-    accent:'#c9a96e', text:'#f5f0e8', muted:'#a8947a',
-    success:'#7db96a', urgent:'#c0392b', warning:'#d4902a',
-    headerStart:'#130f0d', headerEnd:'#1a1714'
+    name: '☀️ Light', light: true, font: false,
+    bg:'#f5f0e8', surface:'#ede7db', surface2:'#e3dcd0', surface3:'#d8d0c3',
+    accent:'#1e3a8a', text:'#1a1614', muted:'#6b5d50',
+    success:'#166534', urgent:'#991b1b', warning:'#92400e',
+    headerStart:'#dfd8cc', headerEnd:'#e8e1d5'
   },
   {
-    name: '🪵 Mid Century Modern',
-    bg:'#1c1509', surface:'#2b1f0f', surface2:'#372819', surface3:'#423221',
-    accent:'#d4a017', text:'#f2e8d0', muted:'#a08860',
-    success:'#6aaa64', urgent:'#cc4a2a', warning:'#d4a017',
-    headerStart:'#130e04', headerEnd:'#1c1509'
+    name: '🌑 Dark — Serif', light: false, font: true,
+    bg:'#0f172a', surface:'#1e293b', surface2:'#273548', surface3:'#2d3f55',
+    accent:'#3b82f6', text:'#f1f5f9', muted:'#94a3b8',
+    success:'#10b981', urgent:'#ef4444', warning:'#f59e0b',
+    headerStart:'#0c1525', headerEnd:'#111e35'
   },
   {
-    name: '🌿 Navy & Teal',
-    bg:'#0d1f2d', surface:'#152638', surface2:'#1c3045', surface3:'#243a54',
-    accent:'#2dd4bf', text:'#e8f4f8', muted:'#7aabbc',
-    success:'#2dd4bf', urgent:'#e76f51', warning:'#f4a261',
-    headerStart:'#091520', headerEnd:'#0d1f2d'
-  },
-  {
-    name: '🪨 GE Slate',
-    bg:'#171b1e', surface:'#232a2f', surface2:'#2d363c', surface3:'#37424a',
-    accent:'#7eb8d4', text:'#dde4e8', muted:'#7a9aaa',
-    success:'#52b788', urgent:'#e07a5f', warning:'#e9c46a',
-    headerStart:'#101316', headerEnd:'#171b1e'
-  },
-  {
-    name: '🧱 Whitewashed Brick',
-    bg:'#1e1916', surface:'#2e2520', surface2:'#39302a', surface3:'#443b34',
-    accent:'#c1440e', text:'#f4ede4', muted:'#a08878',
-    success:'#7ab648', urgent:'#e63946', warning:'#e09c2a',
-    headerStart:'#160f0d', headerEnd:'#1e1916'
-  },
-  {
-    name: '🪞 Marble & Silver',
-    bg:'#131518', surface:'#1e2126', surface2:'#272c32', surface3:'#30363e',
-    accent:'#a8c4d8', text:'#e8edf2', muted:'#7a90a2',
-    success:'#4db89a', urgent:'#e05252', warning:'#d4a96a',
-    headerStart:'#0d0f11', headerEnd:'#131518'
-  },
-  {
-    name: '🌊 Coastal Fog',
-    bg:'#111c22', surface:'#1a2a34', surface2:'#22343f', surface3:'#2a3e4a',
-    accent:'#60b8d4', text:'#e4eef2', muted:'#6e96a8',
-    success:'#4db87a', urgent:'#e07050', warning:'#d4a75a',
-    headerStart:'#0b1318', headerEnd:'#111c22'
-  },
-  {
-    name: '🌲 Forest & Copper',
-    bg:'#0d1a12', surface:'#152618', surface2:'#1c3020', surface3:'#233a28',
-    accent:'#b87333', text:'#e4f0e6', muted:'#6a9872',
-    success:'#56ab7a', urgent:'#e07050', warning:'#c8922a',
-    headerStart:'#07110a', headerEnd:'#0d1a12'
+    name: '☀️ Light — Serif', light: true, font: true,
+    bg:'#f5f0e8', surface:'#ede7db', surface2:'#e3dcd0', surface3:'#d8d0c3',
+    accent:'#1e3a8a', text:'#1a1614', muted:'#6b5d50',
+    success:'#166534', urgent:'#991b1b', warning:'#92400e',
+    headerStart:'#dfd8cc', headerEnd:'#e8e1d5'
   }
 ];
 
 let currentSchemeIdx = parseInt(localStorage.getItem('colorScheme') || '0', 10);
+if (currentSchemeIdx >= COLOR_SCHEMES.length) currentSchemeIdx = 0;
 
 function applyScheme(idx, announce) {
   const s = COLOR_SCHEMES[idx];
@@ -2621,7 +2613,14 @@ function applyScheme(idx, announce) {
   r.setProperty('--warning', s.warning);
   r.setProperty('--header-bg-start', s.headerStart);
   r.setProperty('--header-bg-end', s.headerEnd);
+  r.setProperty('--font', s.font
+    ? "Georgia,'Palatino Linotype',Palatino,serif"
+    : "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
   document.body.style.background = s.bg;
+  document.body.classList.toggle('light', !!s.light);
+  // update theme-toggle button label
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = s.light ? '🌑' : '☀️';
   if (announce) {
     const toast = document.getElementById('theme-toast');
     toast.textContent = s.name;
@@ -2631,12 +2630,15 @@ function applyScheme(idx, announce) {
   }
 }
 
+function cycleTheme() {
+  currentSchemeIdx = (currentSchemeIdx + 1) % COLOR_SCHEMES.length;
+  localStorage.setItem('colorScheme', currentSchemeIdx);
+  applyScheme(currentSchemeIdx, true);
+}
+
 document.addEventListener('keydown', function(e) {
-  const n = parseInt(e.key, 10);
-  if (n >= 1 && n <= 9 && !e.target.matches('input,textarea,[contenteditable]')) {
-    currentSchemeIdx = n - 1;
-    localStorage.setItem('colorScheme', currentSchemeIdx);
-    applyScheme(currentSchemeIdx, true);
+  if (e.key === 't' && !e.target.matches('input,textarea,[contenteditable]')) {
+    cycleTheme();
   }
 });
 
