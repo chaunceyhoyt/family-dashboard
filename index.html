@@ -1320,15 +1320,18 @@ function touchDragStart(e, chip, date, meal) {
   touchChip=chip; touchChip.classList.add('dragging');
   ghost.textContent=meal; ghost.style.display='block';
   const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
+  // Only attach global listeners during an active drag so they never block normal scrolling/taps
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onTouchEnd);
 }
-document.addEventListener('touchmove', e => {
+function onTouchMove(e) {
   if (!drag.active) return; e.preventDefault();
   const t=e.touches[0]; ghost.style.left=(t.clientX-40)+'px'; ghost.style.top=(t.clientY-20)+'px';
   document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
   const el=document.elementFromPoint(t.clientX,t.clientY); const slot=el?.closest('.dinner-slot');
   if(slot&&slot.dataset.date!==drag.sourceDate) slot.classList.add('drag-over');
-}, { passive: false });
-document.addEventListener('touchend', e => {
+}
+function onTouchEnd(e) {
   if (!drag.active) return; ghost.style.display='none';
   if (touchChip) { touchChip.classList.remove('dragging'); touchChip=null; }
   document.querySelectorAll('.dinner-slot').forEach(s=>s.classList.remove('drag-over'));
@@ -1336,7 +1339,9 @@ document.addEventListener('touchend', e => {
   const slot=el?.closest('.dinner-slot'); const target=slot?.dataset.date;
   if(target&&target!==drag.sourceDate) swapDinners(drag.sourceDate,target);
   drag.active=false;
-});
+  document.removeEventListener('touchmove', onTouchMove);
+  document.removeEventListener('touchend', onTouchEnd);
+}
 
 // ── DINNER CRUD ───────────────────────────────────────────────────────────────
 function swapDinners(dateA, dateB) {
