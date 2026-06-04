@@ -71,9 +71,9 @@
     #strip-wrapper.expanded .day-more-indicator { display: none; }
     /* Dinner row — sits below weekly strip, always aligned */
     #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, #111e35 0%, #0d1a2e 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    #strip-wrapper.page-home { display: none; }
-    #strip-toggle-bar.page-home { display: none; }
-    #week-nav.page-home { display: none; }
+    #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery { display: none; }
+    #strip-toggle-bar.page-home, #strip-toggle-bar.page-tasks, #strip-toggle-bar.page-grocery { display: none; }
+    #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery { display: none; }
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
     /* Toggle bar */
     #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 2px; background: #0c1525; border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 0.25s; }
@@ -1638,10 +1638,12 @@ const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3 };
 function showPage(page) {
   currentPage = page;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
-  const isHome = page === 'home';
-  document.getElementById('strip-wrapper').classList.toggle('page-home', isHome);
-  document.getElementById('strip-toggle-bar').classList.toggle('page-home', isHome);
-  document.getElementById('week-nav').classList.toggle('page-home', isHome);
+  const hideStrip = page === 'home' || page === 'tasks' || page === 'grocery';
+  ['strip-wrapper', 'strip-toggle-bar', 'week-nav'].forEach(id => {
+    const el = document.getElementById(id);
+    ['page-home','page-tasks','page-grocery'].forEach(c => el.classList.remove(c));
+    if (hideStrip) el.classList.add('page-' + page);
+  });
   // Slide rail to the correct panel
   const idx = PAGE_INDEX[page] ?? 0;
   document.getElementById('pages-rail').style.transform = 'translateX(-' + (idx * 25) + '%)';
