@@ -1747,7 +1747,7 @@ function renderHome() {
     '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
 
       // Date/time header
-      '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px">' + dateTimeLabel + '</div>' +
+      '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px;text-align:center">' + dateTimeLabel + '</div>' +
 
       // Events + Tasks columns
       '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
@@ -1859,8 +1859,13 @@ function renderGrocery() {
       '</div>').join('')
     : '<div class="empty-state" style="padding:16px 14px;font-size:13px">Nothing on the list yet</div>';
 
+  const grocNow = new Date();
+  const grocDateTimeLabel = grocNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
+    ' · ' + grocNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+
   document.getElementById('page-grocery').innerHTML =
-    '<div style="padding:14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;height:100%;box-sizing:border-box;">' +
+    '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px;text-align:center">' + grocDateTimeLabel + '</div>' +
+    '<div style="padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;flex:1;min-height:0;box-sizing:border-box;">' +
       '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">' +
         '<span>🛒 Grocery List</span>' +
         '<button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">' + (krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger') + '</button>' +
@@ -2297,7 +2302,12 @@ function renderTasks() {
     '</div>';
   }
 
+  const taskNow = new Date();
+  const taskDateTimeLabel = taskNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
+    ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+
   document.getElementById('page-tasks').innerHTML =
+    '<div style="flex-shrink:0;padding:14px 18px 4px;font-size:20px;font-weight:700;color:var(--text-muted);letter-spacing:-0.3px;text-align:center">' + taskDateTimeLabel + '</div>' +
     '<div id="tasks-page-wrap">' +
       '<div class="tasks-page-header">' +
         '<div class="tasks-page-title">🏆 Family Tasks</div>' +
