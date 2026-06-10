@@ -563,10 +563,10 @@
   </div>
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
-      <div class="nav-home-icon">🏠</div><span>Home</span>
+      <div class="nav-home-icon">☀️</div><span>Today</span>
     </button>
     <button class="nav-btn" id="nav-schedule" onclick="showPage('schedule')">
-      <div class="nav-home-icon">📅</div><span>Schedule</span>
+      <div class="nav-home-icon">📅</div><span>Week</span>
     </button>
     <button class="nav-btn" id="nav-tasks" onclick="showPage('tasks')">
       <div class="nav-home-icon">✅</div><span>Tasks</span>
@@ -1661,7 +1661,7 @@ async function addDinnerIngredientsToGrocery() {
       grocery.push({ id: Date.now() + Math.random(), text, done: false });
   }
   await saveFamilyData('grocery', grocery);
-  if (currentPage === 'home') renderHome(); else if (currentPage === 'schedule') renderSchedule();
+  if (currentPage === 'home') renderHome(); else if (currentPage === 'schedule') renderSchedule(); else if (currentPage === 'grocery') renderGrocery();
   btn.textContent = '✓ Added!';
   const status = document.getElementById('recipe-status');
   status.textContent = `${selected.length} ingredient${selected.length !== 1 ? 's' : ''} added to your grocery list.`;
@@ -1688,9 +1688,7 @@ function showPage(page) {
   document.getElementById('page-schedule').classList.toggle('panel-flex', true);
 }
 
-// ── HOME CLOCK ───────────────────────────────────────────────────────────────
-// (removed — was causing intermittent DOM rebuilds that swallowed taps)
-// ── HOME PAGE — TODAY AT A GLANCE ────────────────────────────────────────────
+// ── TODAY PAGE ────────────────────────────────────────────────────────────────
 function renderHome() {
   const todayStr = isoDate(new Date());
 
@@ -1719,37 +1717,36 @@ function renderHome() {
     }).join('');
   }
 
-  // Today's tasks grouped by person
-  const todayTasks = tasks;
-  const groups = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji }]
+  // Tasks: always show every person + House, "No Tasks Today" when empty
+  const allGroups = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji }]
     .concat(Object.keys(PEOPLE).map(k => ({ key: k, label: PEOPLE[k].label, emoji: PEOPLE[k].emoji })));
-  let tasksHtml = groups.map(g => {
-    const items = todayTasks.filter(t => (t.assignee || null) === g.key);
-    if (!items.length) return '';
+  const tasksHtml = allGroups.map(g => {
+    const items = tasks.filter(t => (t.assignee || null) === g.key);
     const pts = g.key ? (taskPoints[g.key] || 0) : null;
-    const header = '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px">' +
+    const header = '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 5px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.06)">' +
       '<span style="font-size:20px">' + g.emoji + '</span>' +
       '<span style="font-size:14px;font-weight:700;color:var(--text);flex:1">' + g.label + '</span>' +
       (pts !== null ? '<span style="font-size:12px;font-weight:800;color:#fbbf24;background:rgba(251,191,36,0.12);border-radius:6px;padding:2px 8px">' + pts + ' pts</span>' : '') +
     '</div>';
-    const cards = items.map(t => {
-      const overdue = t.deadline && new Date(t.deadline) < new Date();
-      return '<div class="task-card" style="margin-bottom:8px">' +
-        '<div class="task-card-top">' +
-          '<span class="task-card-title">' + t.title + '</span>' +
-          '<span class="task-card-pts">+' + (t.points||0) + '</span>' +
-        '</div>' +
-        (t.desc ? '<div class="task-card-desc">' + t.desc + '</div>' : '') +
-        '<div class="task-card-meta">' +
-          (t.deadline ? '<span class="task-card-deadline' + (overdue ? ' overdue' : '') + '">' + (overdue ? '⚠️ Overdue' : '⏰ ' + formatTime(t.deadline)) + '</span>' : '') +
-          '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\');renderHome()">✓ Done</button>' +
-          '<button class="task-del-btn" onclick="deleteTask(\'' + t.id + '\');renderHome()">×</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-    return header + cards;
+    const body = items.length
+      ? items.map(t => {
+          const overdue = t.deadline && new Date(t.deadline) < new Date();
+          return '<div class="task-card" style="margin-bottom:7px">' +
+            '<div class="task-card-top">' +
+              '<span class="task-card-title">' + t.title + '</span>' +
+              '<span class="task-card-pts">+' + (t.points||0) + '</span>' +
+            '</div>' +
+            (t.desc ? '<div class="task-card-desc">' + t.desc + '</div>' : '') +
+            '<div class="task-card-meta">' +
+              (t.deadline ? '<span class="task-card-deadline' + (overdue?' overdue':'') + '">' + (overdue?'⚠️ Overdue':'⏰ '+formatTime(t.deadline)) + '</span>' : '') +
+              '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\');renderHome()">✓ Done</button>' +
+              '<button class="task-del-btn" onclick="deleteTask(\'' + t.id + '\');renderHome()">×</button>' +
+            '</div>' +
+          '</div>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--text-muted);padding:6px 0 10px;font-style:italic">No tasks today</div>';
+    return header + body;
   }).join('');
-  if (!tasksHtml.trim()) tasksHtml = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">✅</div>No tasks</div>';
 
   // Tonight's dinner
   const todayMeal = dinners[todayStr] || '';
@@ -1772,7 +1769,7 @@ function renderHome() {
       '</div>';
 
   const signInBtn = !gcalToken
-    ? '<button onclick="signIn()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:13px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer">🔑 Sign in for events</button>'
+    ? '<button onclick="signIn()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:13px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer">🔑 Sign in</button>'
     : '';
 
   const now = new Date();
@@ -1781,11 +1778,7 @@ function renderHome() {
 
   document.getElementById('page-home').innerHTML =
     '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
-
-      // Date/time header
       '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
-
-      // Events + Tasks columns
       '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
         '<div class="home-col">' +
           '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>📅 Today\'s Events</span>' + signInBtn + '</div>' +
@@ -1796,22 +1789,20 @@ function renderHome() {
           '<div class="home-col-body">' + tasksHtml + '</div>' +
         '</div>' +
       '</div>' +
-
-      // Dinner bar
       dinnerSection +
     '</div>';
 }
 
-// ── SCHEDULE PAGE — UPCOMING EVENTS + BRIEFING ────────────────────────────────
+// ── WEEK PAGE — UPCOMING CALENDAR + LOCAL EVENTS ─────────────────────────────
 function renderSchedule() {
-  // ── COL 1: Upcoming Family Events (Google Calendar, next 20) ──
+  // ── COL 1: Upcoming Family Events ──
   let col1 = '';
   if (!gcalToken) {
-    col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">🔐</div>Sign in to see events</div></div>`;
+    col1 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔐</div>Sign in to see events</div>';
   } else if (upcomingFamilyEvents === null) {
-    col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">⚠️</div>Couldn't load events — try signing out and back in</div></div>`;
+    col1 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">⚠️</div>Couldn\'t load events</div>';
   } else if (!upcomingFamilyEvents.length) {
-    col1 = `<div class="card"><div class="empty-state"><div class="empty-icon">📅</div>No upcoming events</div></div>`;
+    col1 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📅</div>No upcoming events</div>';
   } else {
     col1 = upcomingFamilyEvents.map(ev => {
       const title = ev.summary || 'Event';
@@ -1837,37 +1828,37 @@ function renderSchedule() {
     }).join('');
   }
 
-  // ── COL 2: Upcoming Local Events (from briefings) ──
+  // ── COL 2: Local Events / Briefing sections ──
   let col2 = '';
-  const allItems = [];
   if (briefingData?.content?.sections?.length) {
-    briefingData.content.sections.filter(s => s.id !== 'weather' && s.items?.length).forEach(s => {
-      s.items.forEach(item => allItems.push(item));
-    });
-  }
-  if (allItems.length) {
-    col2 = allItems.map(item => {
-      const dot = ({urgent:'urgent',action:'warning',success:'success',info:'info'})[item.type]||'';
-      return `<div class="local-item">
-        ${item.time ? `<div class="local-item-time">${item.time}</div>` : ''}
-        <div class="local-item-dot-row">
-          <div class="local-dot ${dot}"></div>
-          <div>
-            <div class="local-item-text">${item.text}</div>
-            ${item.detail ? `<div class="local-item-detail">${item.detail}</div>` : ''}
-            ${item.link ? `<a class="local-item-link" href="${item.link}" target="_blank">↗ ${item.link_label||'Open'}</a>` : ''}
-          </div>
-        </div>
+    col2 = briefingData.content.sections.filter(s => s.items?.length).map(s => {
+      const sectionIcons = { weather:'🌤️', local:'📍', sports:'🏆', news:'📰' };
+      const icon = sectionIcons[s.id] || '📋';
+      const items = s.items.map(item => {
+        // items may be plain strings or objects
+        const text = typeof item === 'string' ? item : (item.text || '');
+        const detail = typeof item === 'object' ? (item.detail || '') : '';
+        const link = typeof item === 'object' ? (item.link || '') : '';
+        const linkLabel = typeof item === 'object' ? (item.link_label || 'Open') : 'Open';
+        return `<div class="local-item">
+          <div class="local-item-text">${text}</div>
+          ${detail ? `<div class="local-item-detail">${detail}</div>` : ''}
+          ${link ? `<a class="local-item-link" href="${link}" target="_blank">↗ ${linkLabel}</a>` : ''}
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:14px">
+        <div class="col-header" style="margin-bottom:8px">${icon} ${s.title}</div>
+        ${items}
       </div>`;
     }).join('');
   } else {
-    col2 = `<div class="card"><div class="empty-state"><div class="empty-icon">📭</div>No briefing yet today</div></div>`;
+    col2 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📭</div>No briefing yet — run your daily routine to populate this</div>';
   }
 
   const calBtns = gcalToken
-    ? '<button onclick="reloadCalendar()" title="Reload events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
-      '<button onclick="signOutCalendar()" title="Sign out of calendar" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
-    : '<button onclick="signIn()" title="Sign in to see events" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
+    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
+      '<button onclick="signOutCalendar()" title="Sign out" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
+    : '<button onclick="signIn()" title="Sign in" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
 
   document.getElementById('page-schedule').innerHTML =
     '<div class="home-grid" style="grid-template-columns:1fr 1fr">' +
@@ -1879,7 +1870,7 @@ function renderSchedule() {
         '<div class="home-col-body">' + col1 + '</div>' +
       '</div>' +
       '<div class="home-col">' +
-        '<div class="col-header">📋 Today\'s Briefing</div>' +
+        '<div class="col-header">🏙️ Local Events &amp; News</div>' +
         '<div class="home-col-body">' + col2 + '</div>' +
       '</div>' +
     '</div>';
