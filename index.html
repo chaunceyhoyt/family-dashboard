@@ -235,6 +235,15 @@
     .ev-card-loc   { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; margin-top: 3px; }
 
     /* Non-linked briefing items in local events */
+    /* Local event cards (Week page) */
+    .local-ev-card { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; transition:background 0.15s; -webkit-tap-highlight-color:transparent; }
+    .local-ev-card:active { background:var(--surface2); }
+    .local-ev-icon { font-size:24px; flex-shrink:0; width:36px; text-align:center; }
+    .local-ev-body { flex:1; min-width:0; }
+    .local-ev-title { font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .local-ev-meta { font-size:11px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .local-ev-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
+    body.light .local-ev-card { border-color:rgba(0,0,0,0.08); }
     .local-item { background: var(--surface); border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); padding: 10px 12px; }
     .local-item-dot-row { display: flex; align-items: flex-start; gap: 8px; }
     .local-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
@@ -873,6 +882,26 @@
   </div>
 </div>
 
+<!-- LOCAL EVENT DETAIL MODAL -->
+<div class="dim" id="local-event-dim" onclick="if(event.target===this)closeLocalEventModal()">
+  <div class="modal-box" style="max-width:400px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px">
+      <div>
+        <div id="le-category" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);margin-bottom:4px"></div>
+        <div id="le-title" class="modal-box-title" style="margin-bottom:0"></div>
+      </div>
+      <button onclick="closeLocalEventModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;flex-shrink:0;padding:0;line-height:1">×</button>
+    </div>
+    <div id="le-meta" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
+    <div id="le-desc" style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:18px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="le-add-cal-btn" onclick="addLocalEventToCalendar()" class="btn-primary" style="flex:1">📅 Add to Calendar</button>
+      <a id="le-link-btn" href="#" target="_blank" class="btn-secondary" style="flex:1;text-align:center;text-decoration:none;display:none">↗ More Info</a>
+    </div>
+    <div id="le-cal-status" style="font-size:12px;margin-top:10px;text-align:center;min-height:16px"></div>
+  </div>
+</div>
+
 <!-- KROGER OVERLAY -->
 <div id="kroger-overlay">
   <div class="kroger-logo">🛒</div>
@@ -951,7 +980,7 @@ let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocat
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
-let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {};
+let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {}, localEvents = [];
 let tasks = [];
 let taskPoints = {};
 let taskWeek = '';
@@ -1090,6 +1119,7 @@ async function loadFamilyData() {
           taskWeek = stored.week || cw;
         }
       }
+      else if (row.key === 'local_events') localEvents = row.value || [];
       else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
     }
   } catch(e) { console.error('family_data error', e); }
@@ -1828,31 +1858,31 @@ function renderSchedule() {
     }).join('');
   }
 
-  // ── COL 2: Local Events / Briefing sections ──
+  // ── COL 2: Local Events ──
+  const catIcon = { concert:'🎵', market:'🥦', festival:'🎉', sports:'🏆', arts:'🎨', food:'🍽️', community:'🏘️', outdoor:'🌿', other:'📍' };
   let col2 = '';
-  if (briefingData?.content?.sections?.length) {
-    col2 = briefingData.content.sections.filter(s => s.items?.length).map(s => {
-      const sectionIcons = { weather:'🌤️', local:'📍', sports:'🏆', news:'📰' };
-      const icon = sectionIcons[s.id] || '📋';
-      const items = s.items.map(item => {
-        // items may be plain strings or objects
-        const text = typeof item === 'string' ? item : (item.text || '');
-        const detail = typeof item === 'object' ? (item.detail || '') : '';
-        const link = typeof item === 'object' ? (item.link || '') : '';
-        const linkLabel = typeof item === 'object' ? (item.link_label || 'Open') : 'Open';
-        return `<div class="local-item">
-          <div class="local-item-text">${text}</div>
-          ${detail ? `<div class="local-item-detail">${detail}</div>` : ''}
-          ${link ? `<a class="local-item-link" href="${link}" target="_blank">↗ ${linkLabel}</a>` : ''}
-        </div>`;
-      }).join('');
-      return `<div style="margin-bottom:14px">
-        <div class="col-header" style="margin-bottom:8px">${icon} ${s.title}</div>
-        ${items}
-      </div>`;
-    }).join('');
+  if (localEvents.length) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const upcoming = localEvents
+      .filter(e => e.date && new Date(e.date + 'T00:00:00') >= today)
+      .sort((a,b) => a.date.localeCompare(b.date));
+    col2 = upcoming.length
+      ? upcoming.map((ev, i) => {
+          const icon = catIcon[ev.category] || '📍';
+          const d = new Date(ev.date + 'T00:00:00');
+          const dateLabel = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+          return `<div class="local-ev-card" onclick="openLocalEventModal(${i})">
+            <div class="local-ev-icon">${icon}</div>
+            <div class="local-ev-body">
+              <div class="local-ev-title">${ev.title}</div>
+              <div class="local-ev-meta">${dateLabel}${ev.time ? ' · ' + ev.time : ''}${ev.location ? ' · ' + ev.location : ''}</div>
+            </div>
+            <div class="local-ev-arrow">›</div>
+          </div>`;
+        }).join('')
+      : '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🎉</div>No upcoming local events</div>';
   } else {
-    col2 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📭</div>No briefing yet — run your daily routine to populate this</div>';
+    col2 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📭</div>No local events yet — run your daily routine to populate this</div>';
   }
 
   const calBtns = gcalToken
@@ -1870,7 +1900,7 @@ function renderSchedule() {
         '<div class="home-col-body">' + col1 + '</div>' +
       '</div>' +
       '<div class="home-col">' +
-        '<div class="col-header">🏙️ Local Events &amp; News</div>' +
+        '<div class="col-header">📍 Local Events</div>' +
         '<div class="home-col-body">' + col2 + '</div>' +
       '</div>' +
     '</div>';
@@ -2441,6 +2471,87 @@ function openManageUsersModal() {
 }
 function closeManageUsersModal() {
   document.getElementById('manage-users-dim').classList.remove('open');
+}
+
+// ── LOCAL EVENT MODAL ─────────────────────────────────────────────────────────
+let _activeLocalEvent = null;
+function openLocalEventModal(idx) {
+  const ev = localEvents.filter(e => {
+    const d = new Date(e.date + 'T00:00:00'); const t = new Date(); t.setHours(0,0,0,0); return d >= t;
+  }).sort((a,b) => a.date.localeCompare(b.date))[idx];
+  if (!ev) return;
+  _activeLocalEvent = ev;
+  const catLabel = ev.category ? ev.category.charAt(0).toUpperCase() + ev.category.slice(1) : 'Local Event';
+  document.getElementById('le-category').textContent = catLabel;
+  document.getElementById('le-title').textContent = ev.title;
+  const d = new Date(ev.date + 'T00:00:00');
+  const dateLabel = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  let metaHtml = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">📆 <span>${dateLabel}</span></div>`;
+  if (ev.time) metaHtml += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">🕐 <span>${ev.time}</span></div>`;
+  if (ev.location) metaHtml += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">📍 <span>${ev.location}</span></div>`;
+  document.getElementById('le-meta').innerHTML = metaHtml;
+  document.getElementById('le-desc').textContent = ev.description || '';
+  document.getElementById('le-desc').style.display = ev.description ? '' : 'none';
+  const linkBtn = document.getElementById('le-link-btn');
+  if (ev.link) { linkBtn.href = ev.link; linkBtn.style.display = ''; } else { linkBtn.style.display = 'none'; }
+  document.getElementById('le-cal-status').textContent = '';
+  document.getElementById('le-add-cal-btn').disabled = false;
+  document.getElementById('le-add-cal-btn').textContent = '📅 Add to Calendar';
+  document.getElementById('local-event-dim').classList.add('open');
+}
+function closeLocalEventModal() {
+  document.getElementById('local-event-dim').classList.remove('open');
+  _activeLocalEvent = null;
+}
+async function addLocalEventToCalendar() {
+  if (!_activeLocalEvent) return;
+  if (!gcalToken) {
+    document.getElementById('le-cal-status').textContent = '⚠️ Sign in to Google Calendar first';
+    document.getElementById('le-cal-status').style.color = 'var(--urgent)';
+    return;
+  }
+  const ev = _activeLocalEvent;
+  const btn = document.getElementById('le-add-cal-btn');
+  const status = document.getElementById('le-cal-status');
+  btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    const gcalEv = { summary: ev.title };
+    if (ev.location) gcalEv.location = ev.location;
+    if (ev.description) gcalEv.description = ev.description;
+    if (ev.time && ev.time.includes(':')) {
+      // parse "7:00 PM" style times
+      const parseTime = s => {
+        const m = s.trim().match(/^(\d+):(\d+)\s*(AM|PM)?$/i);
+        if (!m) return null;
+        let h = parseInt(m[1]), min = m[2];
+        if (m[3] && m[3].toUpperCase() === 'PM' && h < 12) h += 12;
+        if (m[3] && m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+        return String(h).padStart(2,'0') + ':' + min;
+      };
+      const parts = ev.time.split(/[-–]/);
+      const startT = parseTime(parts[0]) || '10:00';
+      const endT = parseTime(parts[1]) || (startT.split(':')[0] < 22 ? (parseInt(startT)+1).toString().padStart(2,'0') + ':' + startT.split(':')[1] : '23:00');
+      gcalEv.start = { dateTime: `${ev.date}T${startT}:00`, timeZone: 'America/New_York' };
+      gcalEv.end   = { dateTime: `${ev.date}T${endT}:00`,   timeZone: 'America/New_York' };
+    } else {
+      const next = new Date(ev.date + 'T00:00:00'); next.setDate(next.getDate()+1);
+      gcalEv.start = { date: ev.date };
+      gcalEv.end   = { date: isoDate(next) };
+    }
+    const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + gcalToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(gcalEv)
+    });
+    if (!r.ok) throw new Error((await r.json()).error?.message || r.status);
+    btn.textContent = '✓ Added!';
+    status.textContent = 'Event added to your Google Calendar';
+    status.style.color = 'var(--success)';
+  } catch(err) {
+    btn.disabled = false; btn.textContent = '📅 Add to Calendar';
+    status.textContent = '⚠️ ' + err.message;
+    status.style.color = 'var(--urgent)';
+  }
 }
 function renderManageUsersList() {
   const houseRow = '<div class="user-row">' +
