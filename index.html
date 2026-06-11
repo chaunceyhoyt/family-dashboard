@@ -130,6 +130,11 @@
     .recipe-step-num { font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(59,130,246,0.15); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .recipe-swap-item { padding: 10px 12px; border-radius: 8px; background: var(--surface2); margin-bottom: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
     .recipe-swap-item:active { background: rgba(59,130,246,0.2); }
+    .recipe-tag { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:var(--text-muted); margin:1px; }
+    .filter-tag-chip { font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,0.15); background:var(--surface2); color:var(--text-muted); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:all 0.15s; white-space:nowrap; }
+    .filter-tag-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    body.light .recipe-tag { background:rgba(0,0,0,0.06); border-color:rgba(0,0,0,0.12); }
+    body.light .filter-tag-chip { background:var(--surface2); border-color:rgba(0,0,0,0.15); }
     /* Portrait: steps left (70%), ingredients right (30%) */
     .recipe-two-col { display: grid; grid-template-columns: 7fr 3fr; gap: 0 14px; }
     .recipe-col-left { max-height: 45vh; overflow-y: auto; }
@@ -631,7 +636,10 @@
         <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
       </div>
 
-      <div style="margin-bottom:8px"><span id="recipe-category-badge" style="display:none;font-size:11px;font-weight:700;background:rgba(59,130,246,0.15);color:var(--accent);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:2px 10px;letter-spacing:0.4px"></span></div>
+      <div style="margin-bottom:8px;display:flex;flex-wrap:wrap;align-items:center;gap:5px">
+        <span id="recipe-category-badge" style="display:none;font-size:11px;font-weight:700;background:rgba(59,130,246,0.15);color:var(--accent);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:2px 10px;letter-spacing:0.4px"></span>
+        <div id="recipe-view-tags"></div>
+      </div>
       <div id="recipe-view-times" style="display:flex;gap:14px;margin-bottom:10px"></div>
       <div class="recipe-section-label">About</div>
       <div id="recipe-view-desc" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px"></div>
@@ -671,6 +679,9 @@
       <label class="recipe-section-label">Category</label>
       <input id="recipe-edit-category" class="modal-field" type="text" placeholder="e.g. Top Recipes, Quick Meals, Weeknight…" style="font-size:13px;margin-bottom:16px">
 
+      <label class="recipe-section-label">Tags <span style="font-weight:400;color:var(--text-muted)">(comma-separated)</span></label>
+      <input id="recipe-edit-tags" class="modal-field" type="text" placeholder="e.g. quick, kid-friendly, beef, pasta…" style="font-size:13px;margin-bottom:16px">
+
       <div style="display:flex;gap:10px">
         <div style="flex:1">
           <label class="recipe-section-label">Prep Time</label>
@@ -699,12 +710,16 @@
 
     <!-- Choose Recipe mode -->
     <div id="recipe-swap-mode" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
         <div class="modal-box-title" style="margin:0">Choose Recipe</div>
         <button onclick="openAddNewRecipeMode()" style="background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Add New</button>
       </div>
-      <div id="recipe-swap-list" style="max-height:55vh;overflow-y:auto"></div>
-      <div class="modal-btns" style="margin-top:12px">
+      <!-- Ingredient search -->
+      <input id="recipe-filter-ingredient" class="modal-field" type="text" placeholder="🔍 Search by name or ingredient…" style="font-size:13px;margin-bottom:8px" oninput="renderSwapList()">
+      <!-- Tag chips -->
+      <div id="recipe-filter-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
+      <div id="recipe-swap-list" style="max-height:46vh;overflow-y:auto"></div>
+      <div class="modal-btns" style="margin-top:10px">
         <button class="btn-secondary" onclick="closeSwapRecipeMode()">Cancel</button>
       </div>
     </div>
@@ -1468,11 +1483,12 @@ function setRecipeViewMode(show) {
 function renderRecipeView(recipe) {
   const { description, ingredients, steps, prepTime, cookTime, category } = recipe;
   recipeCurrentIngredients = ingredients || [];
-  // Category badge next to title
   const titleEl = document.getElementById('recipe-title');
   titleEl.textContent = '🍽️ ' + recipeCurrentMeal;
   const catBadge = document.getElementById('recipe-category-badge');
   if (catBadge) { catBadge.textContent = category || ''; catBadge.style.display = category ? '' : 'none'; }
+  const tagsEl = document.getElementById('recipe-view-tags');
+  if (tagsEl) tagsEl.innerHTML = (recipe.tags||[]).map(t => `<span class="recipe-tag">${t}</span>`).join('');
   const timesEl = document.getElementById('recipe-view-times');
   const timeParts = [];
   if (prepTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">⏱ <strong style="color:var(--text2)">Prep</strong> ${prepTime}</span>`);
@@ -1518,6 +1534,7 @@ function openRecipeEditMode() {
   const r = recipesData[recipeCurrentMeal] || {};
   document.getElementById('recipe-edit-name').value = recipeCurrentMeal;
   document.getElementById('recipe-edit-category').value = r.category || '';
+  document.getElementById('recipe-edit-tags').value = (r.tags || []).join(', ');
   document.getElementById('recipe-edit-prep').value = r.prepTime || '';
   document.getElementById('recipe-edit-cook').value = r.cookTime || '';
   document.getElementById('recipe-edit-desc').value = r.description || '';
@@ -1554,6 +1571,9 @@ async function saveRecipeEdits() {
   recipesData[newName] = { ...existing, prepTime, cookTime, description, ingredients, steps };
   if (category) recipesData[newName].category = category;
   else delete recipesData[newName].category;
+  const tags = document.getElementById('recipe-edit-tags').value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+  if (tags.length) recipesData[newName].tags = tags;
+  else delete recipesData[newName].tags;
   await saveFamilyData('recipes', recipesData);
 
   // If created from an empty slot, assign the dinner too
@@ -1570,27 +1590,80 @@ async function saveRecipeEdits() {
   renderRecipeView(recipesData[newName]);
 }
 
+let _activeFilterTags = new Set();
+
 function openSwapRecipeMode() {
-  // Group by category, uncategorized last
-  const names = Object.keys(recipesData).sort();
+  // Reset filters
+  _activeFilterTags = new Set();
+  document.getElementById('recipe-filter-ingredient').value = '';
+  // Build tag chip bar from all tags across all recipes
+  const allTags = [...new Set(
+    Object.values(recipesData).flatMap(r => r.tags || [])
+  )].sort();
+  document.getElementById('recipe-filter-tags').innerHTML = allTags.map(tag =>
+    `<button class="filter-tag-chip" onclick="toggleFilterTag('${tag.replace(/'/g,"\\'")}',this)">${tag}</button>`
+  ).join('');
+  renderSwapList();
+  setRecipeViewMode('swap');
+}
+
+function toggleFilterTag(tag, btn) {
+  if (_activeFilterTags.has(tag)) { _activeFilterTags.delete(tag); btn.classList.remove('active'); }
+  else { _activeFilterTags.add(tag); btn.classList.add('active'); }
+  renderSwapList();
+}
+
+function renderSwapList() {
+  const search = (document.getElementById('recipe-filter-ingredient')?.value || '').toLowerCase().trim();
+  const activeTags = _activeFilterTags;
+
+  // Filter recipes
+  const names = Object.keys(recipesData).sort().filter(name => {
+    const r = recipesData[name];
+    // Tag filter: recipe must have ALL active tags
+    if (activeTags.size > 0) {
+      const recipeTags = r.tags || [];
+      if (![...activeTags].every(t => recipeTags.includes(t))) return false;
+    }
+    // Text search: name, description, or any ingredient
+    if (search) {
+      const haystack = [
+        name,
+        r.description || '',
+        ...(r.ingredients || []),
+        ...(r.tags || [])
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+
+  if (!names.length) {
+    document.getElementById('recipe-swap-list').innerHTML =
+      '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔍</div>No recipes match</div>';
+    return;
+  }
+
+  // Group by category
   const groups = {};
   names.forEach(name => {
     const cat = recipesData[name]?.category || 'Uncategorized';
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(name);
   });
-  // Sort: Top Recipes first, then alpha, Uncategorized last
   const catOrder = Object.keys(groups).sort((a,b) => {
     if (a === 'Top Recipes') return -1; if (b === 'Top Recipes') return 1;
     if (a === 'Uncategorized') return 1; if (b === 'Uncategorized') return -1;
     return a.localeCompare(b);
   });
+
   document.getElementById('recipe-swap-list').innerHTML = catOrder.map(cat => {
     const header = `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);padding:8px 4px 4px;margin-top:4px">${cat}</div>`;
     const items = groups[cat].map(name => {
       const r = recipesData[name] || {};
-      const times = [r.prepTime ? `⏱ ${r.prepTime}` : '', r.cookTime ? `🍳 ${r.cookTime}` : ''].filter(Boolean).join('  ·  ');
-      const desc = (r.description || '').length > 80 ? r.description.slice(0, 80) + '…' : (r.description || '');
+      const times = [r.prepTime?`⏱ ${r.prepTime}`:'', r.cookTime?`🍳 ${r.cookTime}`:''].filter(Boolean).join(' · ');
+      const desc = (r.description||'').length > 72 ? r.description.slice(0,72)+'…' : (r.description||'');
+      const tagChips = (r.tags||[]).map(t=>`<span class="recipe-tag">${t}</span>`).join('');
       const safeName = name.replace(/'/g,"\\'");
       return `<div class="recipe-swap-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px">
         <div style="flex:1" onclick="swapToRecipe('${safeName}')">
@@ -1599,13 +1672,13 @@ function openSwapRecipeMode() {
             ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
           </div>
           ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
+          ${tagChips ? `<div style="margin-top:4px">${tagChips}</div>` : ''}
         </div>
         <button onclick="deleteRecipeFromDB('${safeName}')" style="flex-shrink:0;background:none;border:none;color:rgba(248,113,113,0.5);font-size:16px;cursor:pointer;padding:4px;line-height:1;-webkit-tap-highlight-color:transparent" title="Delete recipe">🗑</button>
       </div>`;
     }).join('');
     return header + items;
   }).join('');
-  setRecipeViewMode('swap');
 }
 
 function closeSwapRecipeMode() {
@@ -1619,6 +1692,7 @@ function openAddNewRecipeMode() {
   recipeCurrentMeal = '';
   document.getElementById('recipe-edit-name').value = '';
   document.getElementById('recipe-edit-category').value = '';
+  document.getElementById('recipe-edit-tags').value = '';
   document.getElementById('recipe-edit-prep').value = '';
   document.getElementById('recipe-edit-cook').value = '';
   document.getElementById('recipe-edit-desc').value = '';
