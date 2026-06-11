@@ -246,6 +246,7 @@
     .local-ev-icon { font-size:24px; flex-shrink:0; width:36px; text-align:center; }
     .local-ev-body { flex:1; min-width:0; }
     .local-ev-title { font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .local-ev-datetime { font-size:13px; font-weight:700; color:var(--accent); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .local-ev-meta { font-size:11px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .local-ev-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
     body.light .local-ev-card { border-color:rgba(0,0,0,0.08); }
@@ -2020,7 +2021,8 @@ function renderSchedule() {
             <div class="local-ev-icon">${icon}</div>
             <div class="local-ev-body">
               <div class="local-ev-title">${ev.title}</div>
-              <div class="local-ev-meta">${dateLabel}${ev.time ? ' · ' + ev.time : ''}${ev.location ? ' · ' + ev.location : ''}</div>
+              <div class="local-ev-datetime">${dateLabel}${ev.time ? '  ·  ' + ev.time : ''}</div>
+              ${ev.location ? `<div class="local-ev-meta">📍 ${ev.location}</div>` : ''}
             </div>
             <div class="local-ev-arrow">›</div>
           </div>`;
