@@ -625,7 +625,7 @@
     <div id="recipe-view-mode">
       <div style="display:flex;align-items:center;margin-bottom:6px;gap:8px">
         <div class="modal-box-title" id="recipe-title" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>
-        <button onclick="openSwapRecipeMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Swap</button>
+        <button onclick="openSwapRecipeMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Choose</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
         <button onclick="clearDinnerFromRecipeModal()" style="background:var(--surface2);border:none;color:#f87171;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑</button>
         <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
@@ -697,10 +697,12 @@
       </div>
     </div>
 
-    <!-- Swap mode -->
+    <!-- Choose Recipe mode -->
     <div id="recipe-swap-mode" style="display:none">
-      <div class="modal-box-title">Swap Recipe</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Choose a recipe to use for this dinner:</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px">
+        <div class="modal-box-title" style="margin:0">Choose Recipe</div>
+        <button onclick="openAddNewRecipeMode()" style="background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Add New</button>
+      </div>
       <div id="recipe-swap-list" style="max-height:55vh;overflow-y:auto"></div>
       <div class="modal-btns" style="margin-top:12px">
         <button class="btn-secondary" onclick="closeSwapRecipeMode()">Cancel</button>
@@ -1337,7 +1339,7 @@ function renderStrip() {
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
     const dinnerHtml = meal
       ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
-      : `<button class="dinner-add-btn" onclick="openDinnerModal('${isoDate(d)}')">+</button>`;
+      : `<button class="dinner-add-btn" onclick="openChooseRecipeForDate('${isoDate(d)}')">+</button>`;
     return `<div class="dinner-row-cell"><div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div></div>`;
   }).join('');
 
@@ -1435,6 +1437,13 @@ function openDinnerModal(dateStr) {
   document.getElementById('dinner-dim').classList.add('open');
   setTimeout(()=>document.getElementById('dinner-input').focus(),100);
 }
+function openChooseRecipeForDate(dateStr) {
+  // Open recipe modal directly on the Choose Recipe panel for an empty slot
+  recipeCurrentDate = dateStr;
+  recipeCurrentMeal = '';
+  document.getElementById('recipe-dim').classList.add('open');
+  openSwapRecipeMode();
+}
 function closeDinnerModal(e) { if(e.target===document.getElementById('dinner-dim')) closeDinnerModalDirect(); }
 function closeDinnerModalDirect() { document.getElementById('dinner-dim').classList.remove('open'); activeDinnerDate=null; }
 function saveDinner() {
@@ -1520,7 +1529,9 @@ function openRecipeEditMode() {
 function closeRecipeEditMode() { setRecipeViewMode('view'); }
 
 async function saveRecipeEdits() {
-  const newName = document.getElementById('recipe-edit-name').value.trim() || recipeCurrentMeal;
+  const newName = document.getElementById('recipe-edit-name').value.trim();
+  if (!newName) { alert('Please enter a meal name.'); return; }
+  const isNew = !recipeCurrentMeal;
   const category = document.getElementById('recipe-edit-category').value.trim();
   const prepTime = document.getElementById('recipe-edit-prep').value.trim();
   const cookTime = document.getElementById('recipe-edit-cook').value.trim();
@@ -1528,25 +1539,35 @@ async function saveRecipeEdits() {
   const ingredients = document.getElementById('recipe-edit-ingredients').value.split('\n').map(s => s.trim()).filter(Boolean);
   const steps = document.getElementById('recipe-edit-steps').value.split('\n').map(s => s.trim()).filter(Boolean);
 
-  // If meal name changed, update dinners and recipe key
-  if (newName !== recipeCurrentMeal) {
+  // Handle rename: remove old key, update dinner slot if it matched
+  if (!isNew && newName !== recipeCurrentMeal) {
     delete recipesData[recipeCurrentMeal];
     if (dinners[recipeCurrentDate] === recipeCurrentMeal) {
       dinners[recipeCurrentDate] = newName;
       saveFamilyData('dinners', dinners);
       renderStrip();
     }
-    recipeCurrentMeal = newName;
-    document.getElementById('recipe-title').textContent = '🍽️ ' + newName;
   }
 
-  const existing = recipesData[recipeCurrentMeal] || {};
-  recipesData[recipeCurrentMeal] = { ...existing, prepTime, cookTime, description, ingredients, steps };
-  if (category) recipesData[recipeCurrentMeal].category = category;
-  else delete recipesData[recipeCurrentMeal].category;
+  recipeCurrentMeal = newName;
+  const existing = isNew ? {} : (recipesData[newName] || {});
+  recipesData[newName] = { ...existing, prepTime, cookTime, description, ingredients, steps };
+  if (category) recipesData[newName].category = category;
+  else delete recipesData[newName].category;
   await saveFamilyData('recipes', recipesData);
+
+  // If created from an empty slot, assign the dinner too
+  if (isNew && recipeCurrentDate) {
+    dinners[recipeCurrentDate] = newName;
+    await saveFamilyData('dinners', dinners);
+    renderStrip();
+  }
+
+  document.getElementById('recipe-title').textContent = '🍽️ ' + newName;
+  // Reset edit panel title back to default
+  document.getElementById('recipe-edit-mode').querySelector('.modal-box-title').textContent = 'Edit Recipe';
   setRecipeViewMode('view');
-  renderRecipeView(recipesData[recipeCurrentMeal]);
+  renderRecipeView(recipesData[newName]);
 }
 
 function openSwapRecipeMode() {
@@ -1587,7 +1608,26 @@ function openSwapRecipeMode() {
   setRecipeViewMode('swap');
 }
 
-function closeSwapRecipeMode() { setRecipeViewMode('view'); }
+function closeSwapRecipeMode() {
+  // If opened from an empty slot (no current meal), close the whole modal
+  if (!recipeCurrentMeal) { document.getElementById('recipe-dim').classList.remove('open'); return; }
+  setRecipeViewMode('view');
+}
+
+function openAddNewRecipeMode() {
+  // Pre-fill edit panel with blank values for a brand new recipe
+  recipeCurrentMeal = '';
+  document.getElementById('recipe-edit-name').value = '';
+  document.getElementById('recipe-edit-category').value = '';
+  document.getElementById('recipe-edit-prep').value = '';
+  document.getElementById('recipe-edit-cook').value = '';
+  document.getElementById('recipe-edit-desc').value = '';
+  document.getElementById('recipe-edit-ingredients').value = '';
+  document.getElementById('recipe-edit-steps').value = '';
+  setRecipeViewMode('edit');
+  document.getElementById('recipe-edit-mode').querySelector('.modal-box-title').textContent = 'New Recipe';
+  setTimeout(() => document.getElementById('recipe-edit-name').focus(), 80);
+}
 
 function swapToRecipe(name) {
   recipeCurrentMeal = name;
