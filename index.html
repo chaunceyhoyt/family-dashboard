@@ -2020,9 +2020,11 @@ function renderSchedule() {
           return `<div class="local-ev-card" onclick="openLocalEventModal(${i})">
             <div class="local-ev-icon">${icon}</div>
             <div class="local-ev-body">
-              <div class="local-ev-title">${ev.title}</div>
-              <div class="local-ev-datetime">${dateLabel}${ev.time ? '  ·  ' + ev.time : ''}</div>
-              ${ev.location ? `<div class="local-ev-meta">📍 ${ev.location}</div>` : ''}
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+                <span class="local-ev-title">${ev.title}</span>
+                <span class="local-ev-datetime" style="flex-shrink:0">${dateLabel}${ev.time ? '  ·  ' + ev.time : ''}</span>
+              </div>
+              ${ev.description ? `<div class="local-ev-meta" style="white-space:normal;margin-top:3px">${ev.description}</div>` : ''}
             </div>
             <div class="local-ev-arrow">›</div>
           </div>`;
