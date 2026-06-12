@@ -630,8 +630,9 @@
     <!-- View mode -->
     <div id="recipe-view-mode">
       <div style="display:flex;align-items:center;margin-bottom:6px;gap:8px">
+        <button id="recipe-back-btn" onclick="backToMainRecipe()" style="display:none;background:none;border:none;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap;flex-shrink:0">← Back</button>
         <div class="modal-box-title" id="recipe-title" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>
-        <button onclick="openSwapRecipeMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Choose</button>
+        <button onclick="openSwapRecipeModeForContext()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Choose</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
         <button onclick="clearDinnerFromRecipeModal()" style="background:var(--surface2);border:none;color:#f87171;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑</button>
         <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
@@ -650,10 +651,6 @@
           <button onclick="toggleAddSide()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer">+ Add</button>
         </div>
         <div id="recipe-sides-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px"></div>
-        <div id="add-side-row" style="display:none;gap:6px;margin-top:4px">
-          <input id="add-side-input" class="modal-field" type="text" placeholder="Side dish name…" style="font-size:12px;padding:5px 10px;flex:1" onkeydown="if(event.key==='Enter')saveSide()">
-          <button onclick="saveSide()" style="background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;cursor:pointer">Add</button>
-        </div>
       </div>
 
       <div class="recipe-section-label">About</div>
@@ -726,7 +723,7 @@
     <!-- Choose Recipe mode -->
     <div id="recipe-swap-mode" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
-        <div class="modal-box-title" style="margin:0">Choose Recipe</div>
+        <div class="modal-box-title" id="recipe-swap-title" style="margin:0">Choose Recipe</div>
         <button onclick="openAddNewRecipeMode()" style="background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Add New</button>
       </div>
       <!-- Ingredient search -->
@@ -1521,26 +1518,17 @@ function renderSides() {
   const el = document.getElementById('recipe-sides-list');
   if (!el) return;
   el.innerHTML = entry.sides.length
-    ? entry.sides.map((s, i) => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--text2)">${s}<button onclick="removeSide(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:0;line-height:1">×</button></span>`).join('')
+    ? entry.sides.map((s, i) => {
+        const safeName = s.replace(/'/g, "\\'");
+        return `<span style="display:inline-flex;align-items:center;gap:0;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:20px;overflow:hidden">
+          <span onclick="openSideRecipeView('${safeName}',${i})" style="padding:3px 10px 3px 12px;font-size:12px;font-weight:600;color:#6ee7b7;cursor:pointer">${s}</span>
+          <button onclick="removeSide(${i})" style="background:none;border:none;border-left:1px solid rgba(16,185,129,0.3);color:rgba(110,231,183,0.6);cursor:pointer;font-size:13px;padding:3px 8px 3px 7px;line-height:1">×</button>
+        </span>`;
+      }).join('')
     : `<span style="font-size:12px;color:var(--text-muted);font-style:italic">No sides added</span>`;
 }
 function toggleAddSide() {
-  const row = document.getElementById('add-side-row');
-  const open = row.style.display === 'none';
-  row.style.display = open ? 'flex' : 'none';
-  if (open) setTimeout(() => document.getElementById('add-side-input').focus(), 50);
-}
-function saveSide() {
-  const val = document.getElementById('add-side-input').value.trim();
-  if (!val) return;
-  const entry = getDinnerEntry(recipeCurrentDate);
-  entry.sides.push(val);
-  setDinnerEntry(recipeCurrentDate, entry.main, entry.sides);
-  saveFamilyData('dinners', dinners);
-  renderStrip();
-  document.getElementById('add-side-input').value = '';
-  document.getElementById('add-side-row').style.display = 'none';
-  renderSides();
+  openSwapRecipeMode('side');
 }
 function removeSide(idx) {
   const entry = getDinnerEntry(recipeCurrentDate);
@@ -1569,7 +1557,7 @@ function renderRecipeView(recipe) {
   // Show sides only when viewing a specific dinner date
   const sidesSec = document.getElementById('recipe-sides-section');
   if (sidesSec) sidesSec.style.display = recipeCurrentDate ? '' : 'none';
-  if (recipeCurrentDate) { document.getElementById('add-side-row').style.display = 'none'; renderSides(); }
+  if (recipeCurrentDate) { renderSides(); }
   document.getElementById('recipe-view-desc').textContent = description || 'No description yet.';
   document.getElementById('recipe-view-ingredients').innerHTML = ingredients?.length
     ? ingredients.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
@@ -1666,24 +1654,41 @@ async function saveRecipeEdits() {
 }
 
 let _activeFilterTags = new Set();
+let _chooserMode = 'main'; // 'main' | 'side'
+let _categoryExpanded = {};
+let _sideViewPrev = null; // { meal, date, sides } for back nav
+let _sideViewIdx = -1; // index of side being viewed/swapped
 
-function openSwapRecipeMode() {
-  // Reset filters
+function openSwapRecipeMode(mode) {
+  _chooserMode = mode || 'main';
   _activeFilterTags = new Set();
   document.getElementById('recipe-filter-ingredient').value = '';
   const tagsEl = document.getElementById('recipe-filter-tags');
   if (tagsEl) { tagsEl.style.display = 'none'; }
   const arrowEl = document.getElementById('tag-filter-arrow');
   if (arrowEl) { arrowEl.style.transform = ''; }
-  // Build tag chip bar from all tags across all recipes
-  const allTags = [...new Set(
-    Object.values(recipesData).flatMap(r => r.tags || [])
-  )].sort();
-  document.getElementById('recipe-filter-tags').innerHTML = allTags.map(tag =>
-    `<button class="filter-tag-chip" onclick="toggleFilterTag('${tag.replace(/'/g,"\\'")}',this)">${tag}</button>`
-  ).join('');
+  // Set which categories are expanded: in side mode, expand Sides; in main mode, expand Top Recipes
+  const allCats = [...new Set(Object.values(recipesData).map(r => r.category || 'Uncategorized'))];
+  _categoryExpanded = {};
+  allCats.forEach(c => { _categoryExpanded[c] = (_chooserMode === 'side') ? c === 'Sides' : c === 'Top Recipes'; });
+  const titleEl = document.getElementById('recipe-swap-title');
+  if (titleEl) titleEl.textContent = _chooserMode === 'side' ? '🥗 Add a Side' : 'Choose Recipe';
   renderSwapList();
   setRecipeViewMode('swap');
+}
+
+function openSwapRecipeModeForContext() {
+  // When called from the Choose button in view mode: if viewing a side, swap that side; else swap main
+  if (_sideViewPrev !== null) {
+    openSwapRecipeMode('side');
+  } else {
+    openSwapRecipeMode('main');
+  }
+}
+
+function toggleCategory(cat) {
+  _categoryExpanded[cat] = !_categoryExpanded[cat];
+  renderSwapList();
 }
 
 function toggleTagFilter() {
@@ -1704,56 +1709,50 @@ function renderSwapList() {
   const search = (document.getElementById('recipe-filter-ingredient')?.value || '').toLowerCase().trim();
   const activeTags = _activeFilterTags;
 
-  // Filter recipes
   const names = Object.keys(recipesData).sort().filter(name => {
-    const r = recipesData[name];
-    // Tag filter: recipe must have ALL active tags
     if (activeTags.size > 0) {
-      const recipeTags = r.tags || [];
-      if (![...activeTags].every(t => recipeTags.includes(t))) return false;
+      const tags = recipesData[name]?.tags || [];
+      if (![...activeTags].every(t => tags.includes(t))) return false;
     }
-    // Text search: name, description, or any ingredient
     if (search) {
-      const haystack = [
-        name,
-        r.description || '',
-        ...(r.ingredients || []),
-        ...(r.tags || [])
-      ].join(' ').toLowerCase();
+      const r = recipesData[name] || {};
+      const haystack = [name, r.description||'', ...(r.ingredients||[]), ...(r.tags||[])].join(' ').toLowerCase();
       if (!haystack.includes(search)) return false;
     }
     return true;
   });
 
-  if (!names.length) {
-    document.getElementById('recipe-swap-list').innerHTML =
-      '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔍</div>No recipes match</div>';
-    return;
-  }
-
-  // Group by category
   const groups = {};
   names.forEach(name => {
     const cat = recipesData[name]?.category || 'Uncategorized';
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(name);
   });
-  const catOrder = Object.keys(groups).sort((a,b) => {
+  const catOrder = Object.keys(groups).sort((a, b) => {
+    if (a === 'Sides') return (_chooserMode === 'side') ? -1 : (b === 'Top Recipes' ? 1 : -1);
+    if (b === 'Sides') return (_chooserMode === 'side') ? 1 : (a === 'Top Recipes' ? -1 : 1);
     if (a === 'Top Recipes') return -1; if (b === 'Top Recipes') return 1;
     if (a === 'Uncategorized') return 1; if (b === 'Uncategorized') return -1;
     return a.localeCompare(b);
   });
 
   document.getElementById('recipe-swap-list').innerHTML = catOrder.map(cat => {
-    const header = `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);padding:8px 4px 4px;margin-top:4px">${cat}</div>`;
+    const isOpen = !!_categoryExpanded[cat];
+    const safeCat = cat.replace(/'/g, "\\'");
+    const header = `<div onclick="toggleCategory('${safeCat}')" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);padding:8px 4px 4px;margin-top:4px;cursor:pointer;user-select:none">
+      <span style="font-size:10px;transition:transform 0.15s;display:inline-block;transform:${isOpen ? 'rotate(90deg)' : ''}">▶</span>
+      ${cat} <span style="font-weight:400;opacity:0.6">(${groups[cat].length})</span>
+    </div>`;
+    if (!isOpen) return header;
     const items = groups[cat].map(name => {
       const r = recipesData[name] || {};
-      const times = [r.prepTime?`⏱ ${r.prepTime}`:'', r.cookTime?`🍳 ${r.cookTime}`:''].filter(Boolean).join(' · ');
-      const desc = (r.description||'').length > 72 ? r.description.slice(0,72)+'…' : (r.description||'');
-      const tagChips = (r.tags||[]).map(t=>`<span class="recipe-tag">${t}</span>`).join('');
-      const safeName = name.replace(/'/g,"\\'");
+      const times = [r.prepTime ? `⏱ ${r.prepTime}` : '', r.cookTime ? `🍳 ${r.cookTime}` : ''].filter(Boolean).join(' · ');
+      const desc = (r.description || '').length > 72 ? r.description.slice(0, 72) + '…' : (r.description || '');
+      const tagChips = (r.tags || []).map(t => `<span class="recipe-tag">${t}</span>`).join('');
+      const safeName = name.replace(/'/g, "\\'");
+      const action = _chooserMode === 'side' ? `addSideRecipe('${safeName}')` : `swapToRecipe('${safeName}')`;
       return `<div class="recipe-swap-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px">
-        <div style="flex:1" onclick="swapToRecipe('${safeName}')">
+        <div style="flex:1" onclick="${action}">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
             <span>${name}</span>
             ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
@@ -1774,6 +1773,45 @@ function closeSwapRecipeMode() {
   setRecipeViewMode('view');
 }
 
+function addSideRecipe(name) {
+  const entry = getDinnerEntry(recipeCurrentDate);
+  if (!entry.sides.includes(name)) {
+    entry.sides.push(name);
+    setDinnerEntry(recipeCurrentDate, entry.main, entry.sides);
+    saveFamilyData('dinners', dinners);
+    renderStrip();
+  }
+  // Go back to main recipe view
+  _sideViewPrev = null;
+  document.getElementById('recipe-back-btn').style.display = 'none';
+  document.getElementById('recipe-sides-section').style.display = '';
+  recipeCurrentMeal = getDinnerEntry(recipeCurrentDate).main;
+  setRecipeViewMode('view');
+  renderRecipeView(recipesData[recipeCurrentMeal] || {});
+}
+
+function openSideRecipeView(sideName, sideIdx) {
+  _sideViewPrev = { meal: recipeCurrentMeal, date: recipeCurrentDate };
+  _sideViewIdx = sideIdx;
+  document.getElementById('recipe-back-btn').style.display = '';
+  document.getElementById('recipe-sides-section').style.display = 'none';
+  recipeCurrentMeal = sideName;
+  setRecipeViewMode('view');
+  renderRecipeView(recipesData[sideName] || { description: 'No recipe details saved.' });
+}
+
+function backToMainRecipe() {
+  if (!_sideViewPrev) return;
+  recipeCurrentMeal = _sideViewPrev.meal;
+  recipeCurrentDate = _sideViewPrev.date;
+  _sideViewPrev = null;
+  _sideViewIdx = -1;
+  document.getElementById('recipe-back-btn').style.display = 'none';
+  document.getElementById('recipe-sides-section').style.display = '';
+  setRecipeViewMode('view');
+  renderRecipeView(recipesData[recipeCurrentMeal] || {});
+}
+
 function openAddNewRecipeMode() {
   // Pre-fill edit panel with blank values for a brand new recipe
   recipeCurrentMeal = '';
@@ -1791,6 +1829,22 @@ function openAddNewRecipeMode() {
 }
 
 function swapToRecipe(name) {
+  // If we're swapping a side (came from viewing a side), replace that side
+  if (_sideViewPrev !== null && _chooserMode === 'side' && _sideViewIdx >= 0) {
+    const entry = getDinnerEntry(recipeCurrentDate);
+    entry.sides[_sideViewIdx] = name;
+    setDinnerEntry(recipeCurrentDate, entry.main, entry.sides);
+    saveFamilyData('dinners', dinners);
+    renderStrip();
+    _sideViewPrev = null;
+    _sideViewIdx = -1;
+    document.getElementById('recipe-back-btn').style.display = 'none';
+    document.getElementById('recipe-sides-section').style.display = '';
+    recipeCurrentMeal = getDinnerEntry(recipeCurrentDate).main;
+    setRecipeViewMode('view');
+    renderRecipeView(recipesData[recipeCurrentMeal] || {});
+    return;
+  }
   recipeCurrentMeal = name;
   const existing = getDinnerEntry(recipeCurrentDate);
   setDinnerEntry(recipeCurrentDate, name, existing.sides);
