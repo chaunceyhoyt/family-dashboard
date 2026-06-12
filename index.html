@@ -3029,7 +3029,8 @@ function openLocalEventModal(idx) {
   document.getElementById('le-desc').textContent = ev.description || '';
   document.getElementById('le-desc').style.display = ev.description ? '' : 'none';
   const linkBtn = document.getElementById('le-link-btn');
-  if (ev.link) { linkBtn.href = ev.link; linkBtn.style.display = ''; } else { linkBtn.style.display = 'none'; }
+  const evLink = ev.link || ev.url || '';
+  if (evLink) { linkBtn.href = evLink; linkBtn.style.display = ''; } else { linkBtn.style.display = 'none'; }
   document.getElementById('le-cal-status').textContent = '';
   document.getElementById('le-add-cal-btn').disabled = false;
   document.getElementById('le-add-cal-btn').textContent = '📅 Add to Calendar';
