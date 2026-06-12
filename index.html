@@ -41,7 +41,6 @@
     body.light #weekly-strip { border-bottom: 1px solid rgba(0,0,0,0.08); }
     body.light #week-nav { border-bottom: 1px solid rgba(0,0,0,0.08); }
     body.light #dinner-row { border-bottom: 1px solid rgba(0,0,0,0.08); }
-    body.light #strip-toggle-bar { border-bottom: 1px solid rgba(0,0,0,0.08); }
     body.light .card { border-color: rgba(0,0,0,0.08); }
     body.light .modal-box { border-color: rgba(0,0,0,0.10); }
     body.light .ev-card { border-color: rgba(0,0,0,0.08); }
@@ -96,7 +95,7 @@
     .day-more-indicator { font-size: 16px; color: rgba(255,255,255,0.55); text-align: center; line-height: 1; flex-shrink: 0; display: block; margin-top: 1px; }
     /* Strip wrapper */
     #strip-wrapper { flex-shrink: 0; display: flex; flex-direction: column; }
-    #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 32px); }
+    #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
     /* Expanded strip */
     #strip-wrapper.expanded #weekly-strip { flex: 1; overflow-y: auto; align-items: flex-start; }
     #strip-wrapper.expanded .day-col { flex: 1 0 0; }
@@ -106,14 +105,9 @@
     /* Dinner row — sits below weekly strip, always aligned */
     #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, var(--header-bg-end, #111e35) 0%, var(--header-bg-start, #0d1a2e) 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
     #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery { display: none; }
-    #strip-toggle-bar.page-home, #strip-toggle-bar.page-tasks, #strip-toggle-bar.page-grocery { display: none; }
     #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery { display: none; }
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
-    /* Toggle bar */
-    #strip-toggle-bar { flex-shrink: 0; display: flex; justify-content: center; align-items: center; padding: 2px; background: var(--header-bg-start, #0c1525); border-bottom: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 0.25s; }
-    #strip-toggle-bar span { font-size: 28px; color: rgba(255,255,255,0.45); line-height: 1; transition: transform 0.25s; }
-    #strip-toggle-bar.expanded span { transform: rotate(180deg); }
-    #strip-toggle-bar.expanded { position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 201; border-top: 1px solid rgba(255,255,255,0.07); border-bottom: none; }
+    #strip-toggle-btn { transition: transform 0.25s; }
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
     .day-ev-chip:active { background: rgba(59,130,246,0.32); }
     .dinner-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; opacity: 0.7; }
@@ -562,13 +556,13 @@
     <button class="week-nav-arrow" onclick="changeWeek(1)">›</button>
     <button class="week-today-btn" onclick="jumpToToday()">Today</button>
     <button class="week-today-btn" onclick="fillWeekMeals()" title="Auto-fill empty dinner slots for this week" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c4b5fd">✨ Fill</button>
+    <button id="strip-toggle-btn" class="week-today-btn" onclick="toggleStrip()" title="Expand/collapse week strip" style="font-size:16px;padding:0 6px;min-width:28px">▾</button>
     <button class="week-cal-btn" title="Jump to date">📅<input type="date" id="week-picker" onchange="jumpToDate(this.value)"></button>
   </div>
   <div id="strip-wrapper">
     <div id="weekly-strip"></div>
     <div id="dinner-row"></div>
   </div>
-  <div id="strip-toggle-bar" onclick="toggleStrip()"><span>▾</span></div>
   <div id="content-area">
     <div id="pages-rail">
       <div class="page-panel" id="page-home"></div>
@@ -1423,17 +1417,18 @@ function renderStrip() {
 
 function toggleStrip() {
   const wrapper = document.getElementById('strip-wrapper');
-  const bar = document.getElementById('strip-toggle-bar');
+  const btn = document.getElementById('strip-toggle-btn');
   const content = document.getElementById('content-area');
   const expanded = wrapper.classList.toggle('expanded');
-  bar.classList.toggle('expanded', expanded);
+  if (btn) btn.style.transform = expanded ? 'rotate(180deg)' : '';
   content.style.display = expanded ? 'none' : '';
 }
 function collapseStrip() {
   const wrapper = document.getElementById('strip-wrapper');
   if (!wrapper.classList.contains('expanded')) return;
   wrapper.classList.remove('expanded');
-  document.getElementById('strip-toggle-bar').classList.remove('expanded');
+  const btn = document.getElementById('strip-toggle-btn');
+  if (btn) btn.style.transform = '';
   document.getElementById('content-area').style.display = '';
 }
 
@@ -2237,7 +2232,7 @@ function showPage(page) {
   localStorage.setItem('lastPage', page);
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
   const hideStrip = page === 'home' || page === 'tasks' || page === 'grocery';
-  ['strip-wrapper', 'strip-toggle-bar', 'week-nav'].forEach(id => {
+  ['strip-wrapper', 'week-nav'].forEach(id => {
     const el = document.getElementById(id);
     ['page-home','page-tasks','page-grocery'].forEach(c => el.classList.remove(c));
     if (hideStrip) el.classList.add('page-' + page);
