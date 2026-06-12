@@ -1945,9 +1945,10 @@ function renderHome() {
         '</div>' +
       '</div>';
 
-  const signInBtn = !gcalToken
-    ? '<button onclick="signIn()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:13px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer">🔑 Sign in</button>'
-    : '';
+  const homeCalBtns = gcalToken
+    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
+      '<button onclick="signOutCalendar()" title="Sign out" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
+    : '<button onclick="signIn()" title="Sign in" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
 
   const now = new Date();
   const dateTimeLabel = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
@@ -1958,7 +1959,7 @@ function renderHome() {
       '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
       '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
         '<div class="home-col">' +
-          '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>📅 Today\'s Events</span>' + signInBtn + '</div>' +
+          '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>📅 Today\'s Events</span><div style="display:flex;gap:5px">' + homeCalBtns + '</div></div>' +
           '<div class="home-col-body">' + eventsHtml + '</div>' +
         '</div>' +
         '<div class="home-col">' +
