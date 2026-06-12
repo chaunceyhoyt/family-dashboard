@@ -2248,6 +2248,10 @@ function showPage(page) {
   // panel-flex controls overflow:hidden needed for home/schedule column layouts
   document.getElementById('page-home').classList.toggle('panel-flex', true);
   document.getElementById('page-schedule').classList.toggle('panel-flex', true);
+  // Re-render on navigation so async-loaded data (localEvents, etc.) is always fresh
+  if (page === 'schedule') renderSchedule();
+  else if (page === 'home') renderHome();
+  else if (page === 'grocery') renderGrocery();
 }
 
 // ── TODAY PAGE ────────────────────────────────────────────────────────────────
