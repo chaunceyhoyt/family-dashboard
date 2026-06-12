@@ -717,8 +717,13 @@
       </div>
       <!-- Ingredient search -->
       <input id="recipe-filter-ingredient" class="modal-field" type="text" placeholder="🔍 Search by name or ingredient…" style="font-size:13px;margin-bottom:8px" oninput="renderSwapList()">
-      <!-- Tag chips -->
-      <div id="recipe-filter-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
+      <!-- Tag chips (collapsible) -->
+      <div style="margin-bottom:8px">
+        <button onclick="toggleTagFilter()" id="tag-filter-toggle" style="background:none;border:none;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px;letter-spacing:0.5px;text-transform:uppercase">
+          <span id="tag-filter-arrow" style="font-size:10px;transition:transform 0.2s">▶</span> Filter by Tag
+        </button>
+        <div id="recipe-filter-tags" style="display:none;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
+      </div>
       <div id="recipe-swap-list" style="max-height:46vh;overflow-y:auto"></div>
       <div class="modal-btns" style="margin-top:10px">
         <button class="btn-secondary" onclick="closeSwapRecipeMode()">Cancel</button>
@@ -1597,6 +1602,10 @@ function openSwapRecipeMode() {
   // Reset filters
   _activeFilterTags = new Set();
   document.getElementById('recipe-filter-ingredient').value = '';
+  const tagsEl = document.getElementById('recipe-filter-tags');
+  if (tagsEl) { tagsEl.style.display = 'none'; }
+  const arrowEl = document.getElementById('tag-filter-arrow');
+  if (arrowEl) { arrowEl.style.transform = ''; }
   // Build tag chip bar from all tags across all recipes
   const allTags = [...new Set(
     Object.values(recipesData).flatMap(r => r.tags || [])
@@ -1606,6 +1615,14 @@ function openSwapRecipeMode() {
   ).join('');
   renderSwapList();
   setRecipeViewMode('swap');
+}
+
+function toggleTagFilter() {
+  const tags = document.getElementById('recipe-filter-tags');
+  const arrow = document.getElementById('tag-filter-arrow');
+  const open = tags.style.display === 'none';
+  tags.style.display = open ? 'flex' : 'none';
+  arrow.style.transform = open ? 'rotate(90deg)' : '';
 }
 
 function toggleFilterTag(tag, btn) {
