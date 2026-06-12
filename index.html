@@ -642,6 +642,20 @@
         <div id="recipe-view-tags"></div>
       </div>
       <div id="recipe-view-times" style="display:flex;gap:14px;margin-bottom:10px"></div>
+
+      <!-- Sides section -->
+      <div id="recipe-sides-section" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div class="recipe-section-label" style="margin-bottom:0">Sides</div>
+          <button onclick="toggleAddSide()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer">+ Add</button>
+        </div>
+        <div id="recipe-sides-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px"></div>
+        <div id="add-side-row" style="display:none;gap:6px;margin-top:4px">
+          <input id="add-side-input" class="modal-field" type="text" placeholder="Side dish name…" style="font-size:12px;padding:5px 10px;flex:1" onkeydown="if(event.key==='Enter')saveSide()">
+          <button onclick="saveSide()" style="background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;cursor:pointer">Add</button>
+        </div>
+      </div>
+
       <div class="recipe-section-label">About</div>
       <div id="recipe-view-desc" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px"></div>
 
@@ -1356,10 +1370,13 @@ function renderStrip() {
 
   // Render dinner row separately so chips always align regardless of event count
   dinnerRow.innerHTML = weekDays.map((d) => {
-    const meal = dinners[isoDate(d)] || '';
+    const entry = getDinnerEntry(isoDate(d));
+    const meal = entry.main;
+    const hasSides = entry.sides.length > 0;
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
+    const sidesIndicator = hasSides ? `<span style="font-size:9px;opacity:0.6;margin-left:2px">+${entry.sides.length}</span>` : '';
     const dinnerHtml = meal
-      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}</span><span class="dinner-drag-handle">⠿</span></div>`
+      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}${sidesIndicator}</span><span class="dinner-drag-handle">⠿</span></div>`
       : `<button class="dinner-add-btn" onclick="openChooseRecipeForDate('${isoDate(d)}')">+</button>`;
     return `<div class="dinner-row-cell"><div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div></div>`;
   }).join('');
@@ -1445,10 +1462,23 @@ function onTouchEnd(e) {
   document.removeEventListener('touchend', onTouchEnd);
 }
 
+// ── DINNER HELPERS ────────────────────────────────────────────────────────────
+function getDinnerEntry(dateStr) {
+  const raw = dinners[dateStr];
+  if (!raw) return { main: '', sides: [] };
+  if (typeof raw === 'string') return { main: raw, sides: [] };
+  return { main: raw.main || '', sides: raw.sides || [] };
+}
+function setDinnerEntry(dateStr, main, sides) {
+  if (!main) { delete dinners[dateStr]; return; }
+  dinners[dateStr] = sides && sides.length ? { main, sides } : main;
+}
+
 // ── DINNER CRUD ───────────────────────────────────────────────────────────────
 function swapDinners(dateA, dateB) {
-  const tmp=dinners[dateA]||''; dinners[dateA]=dinners[dateB]||''; dinners[dateB]=tmp;
-  if(!dinners[dateA]) delete dinners[dateA]; if(!dinners[dateB]) delete dinners[dateB];
+  const a = dinners[dateA], b = dinners[dateB];
+  if (b) dinners[dateA] = b; else delete dinners[dateA];
+  if (a) dinners[dateB] = a; else delete dinners[dateB];
   saveFamilyData('dinners',dinners); renderStrip();
 }
 function openDinnerModal(dateStr) {
@@ -1486,6 +1516,41 @@ function setRecipeViewMode(show) {
   document.getElementById('recipe-swap-mode').style.display = show === 'swap' ? '' : 'none';
 }
 
+function renderSides() {
+  const entry = getDinnerEntry(recipeCurrentDate);
+  const el = document.getElementById('recipe-sides-list');
+  if (!el) return;
+  el.innerHTML = entry.sides.length
+    ? entry.sides.map((s, i) => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--text2)">${s}<button onclick="removeSide(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:0;line-height:1">×</button></span>`).join('')
+    : `<span style="font-size:12px;color:var(--text-muted);font-style:italic">No sides added</span>`;
+}
+function toggleAddSide() {
+  const row = document.getElementById('add-side-row');
+  const open = row.style.display === 'none';
+  row.style.display = open ? 'flex' : 'none';
+  if (open) setTimeout(() => document.getElementById('add-side-input').focus(), 50);
+}
+function saveSide() {
+  const val = document.getElementById('add-side-input').value.trim();
+  if (!val) return;
+  const entry = getDinnerEntry(recipeCurrentDate);
+  entry.sides.push(val);
+  setDinnerEntry(recipeCurrentDate, entry.main, entry.sides);
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+  document.getElementById('add-side-input').value = '';
+  document.getElementById('add-side-row').style.display = 'none';
+  renderSides();
+}
+function removeSide(idx) {
+  const entry = getDinnerEntry(recipeCurrentDate);
+  entry.sides.splice(idx, 1);
+  setDinnerEntry(recipeCurrentDate, entry.main, entry.sides);
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+  renderSides();
+}
+
 function renderRecipeView(recipe) {
   const { description, ingredients, steps, prepTime, cookTime, category } = recipe;
   recipeCurrentIngredients = ingredients || [];
@@ -1501,6 +1566,10 @@ function renderRecipeView(recipe) {
   if (cookTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">🍳 <strong style="color:var(--text2)">Cook</strong> ${cookTime}</span>`);
   timesEl.innerHTML = timeParts.join('');
   timesEl.style.display = timeParts.length ? 'flex' : 'none';
+  // Show sides only when viewing a specific dinner date
+  const sidesSec = document.getElementById('recipe-sides-section');
+  if (sidesSec) sidesSec.style.display = recipeCurrentDate ? '' : 'none';
+  if (recipeCurrentDate) { document.getElementById('add-side-row').style.display = 'none'; renderSides(); }
   document.getElementById('recipe-view-desc').textContent = description || 'No description yet.';
   document.getElementById('recipe-view-ingredients').innerHTML = ingredients?.length
     ? ingredients.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
@@ -1723,7 +1792,8 @@ function openAddNewRecipeMode() {
 
 function swapToRecipe(name) {
   recipeCurrentMeal = name;
-  dinners[recipeCurrentDate] = name;
+  const existing = getDinnerEntry(recipeCurrentDate);
+  setDinnerEntry(recipeCurrentDate, name, existing.sides);
   saveFamilyData('dinners', dinners);
   renderStrip();
   document.getElementById('recipe-title').textContent = '🍽️ ' + name;
