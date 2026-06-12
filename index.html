@@ -627,14 +627,31 @@
 <div class="dim" id="recipe-dim" onclick="closeRecipeModal(event)">
   <div class="modal-box recipe-modal-box">
 
+    <!-- Meal view mode -->
+    <div id="recipe-meal-mode" style="display:none">
+      <div style="display:flex;align-items:center;margin-bottom:14px;gap:8px">
+        <div class="modal-box-title" style="margin:0;flex:1" id="meal-date-label"></div>
+        <button onclick="closeRecipeModalDirect()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:13px;padding:5px 10px;border-radius:8px;cursor:pointer">✕ Close</button>
+      </div>
+      <div class="recipe-section-label">Entrée</div>
+      <div id="meal-entree-area" style="margin-bottom:18px"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div class="recipe-section-label" style="margin-bottom:0">Sides</div>
+        <button onclick="openSwapRecipeMode('side')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;cursor:pointer">+ Add Side</button>
+      </div>
+      <div id="meal-sides-area" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px"></div>
+      <div class="modal-btns">
+        <button class="btn-danger-text" onclick="clearDinnerFromRecipeModal()">Remove Meal</button>
+      </div>
+    </div>
+
     <!-- View mode -->
     <div id="recipe-view-mode">
       <div style="display:flex;align-items:center;margin-bottom:6px;gap:8px">
-        <button id="recipe-back-btn" onclick="backToMainRecipe()" style="display:none;background:none;border:none;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap;flex-shrink:0">← Back</button>
+        <button id="recipe-back-btn" onclick="backToMealMode()" style="display:none;background:none;border:none;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap;flex-shrink:0">← Meal</button>
         <div class="modal-box-title" id="recipe-title" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>
         <button onclick="openSwapRecipeModeForContext()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Choose</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
-        <button onclick="clearDinnerFromRecipeModal()" style="background:var(--surface2);border:none;color:#f87171;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑</button>
         <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
       </div>
 
@@ -643,15 +660,6 @@
         <div id="recipe-view-tags"></div>
       </div>
       <div id="recipe-view-times" style="display:flex;gap:14px;margin-bottom:10px"></div>
-
-      <!-- Sides section -->
-      <div id="recipe-sides-section" style="margin-bottom:14px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <div class="recipe-section-label" style="margin-bottom:0">Sides</div>
-          <button onclick="toggleAddSide()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer">+ Add</button>
-        </div>
-        <div id="recipe-sides-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px"></div>
-      </div>
 
       <div class="recipe-section-label">About</div>
       <div id="recipe-view-desc" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px"></div>
@@ -1508,6 +1516,7 @@ function clearDinner() {
 let recipeCurrentMeal = '', recipeCurrentIngredients = [], recipeCurrentDate = '';
 
 function setRecipeViewMode(show) {
+  document.getElementById('recipe-meal-mode').style.display = show === 'meal' ? '' : 'none';
   document.getElementById('recipe-view-mode').style.display = show === 'view' ? '' : 'none';
   document.getElementById('recipe-edit-mode').style.display = show === 'edit' ? '' : 'none';
   document.getElementById('recipe-swap-mode').style.display = show === 'swap' ? '' : 'none';
@@ -1536,7 +1545,7 @@ function removeSide(idx) {
   setDinnerEntry(recipeCurrentDate, entry.main, entry.sides);
   saveFamilyData('dinners', dinners);
   renderStrip();
-  renderSides();
+  openMealMode();
 }
 
 function renderRecipeView(recipe) {
@@ -1554,10 +1563,6 @@ function renderRecipeView(recipe) {
   if (cookTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">🍳 <strong style="color:var(--text2)">Cook</strong> ${cookTime}</span>`);
   timesEl.innerHTML = timeParts.join('');
   timesEl.style.display = timeParts.length ? 'flex' : 'none';
-  // Show sides only when viewing a specific dinner date
-  const sidesSec = document.getElementById('recipe-sides-section');
-  if (sidesSec) sidesSec.style.display = recipeCurrentDate ? '' : 'none';
-  if (recipeCurrentDate) { renderSides(); }
   document.getElementById('recipe-view-desc').textContent = description || 'No description yet.';
   document.getElementById('recipe-view-ingredients').innerHTML = ingredients?.length
     ? ingredients.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
@@ -1575,15 +1580,64 @@ async function openRecipeModal(dateStr, meal) {
   recipeCurrentMeal = meal;
   recipeCurrentDate = dateStr;
   recipeCurrentIngredients = [];
-  document.getElementById('recipe-title').textContent = '🍽️ ' + meal;
+  _sideViewPrev = null;
+  document.getElementById('recipe-back-btn').style.display = 'none';
+  document.getElementById('recipe-dim').classList.add('open');
+  openMealMode();
+}
+
+function openMealMode() {
+  setRecipeViewMode('meal');
+  const entry = getDinnerEntry(recipeCurrentDate);
+  const d = new Date(recipeCurrentDate + 'T12:00:00');
+  document.getElementById('meal-date-label').textContent =
+    d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  // Entree chip
+  const main = entry.main;
+  const safeMain = main.replace(/'/g, "\\'");
+  document.getElementById('meal-entree-area').innerHTML = main
+    ? `<div style="display:inline-flex;align-items:center;gap:0;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:12px;overflow:hidden;max-width:100%">
+        <span onclick="openRecipeFromMeal('${safeMain}',false,-1)" style="padding:8px 14px;font-size:14px;font-weight:700;color:#6ee7b7;cursor:pointer;flex:1">${main}</span>
+        <button onclick="openSwapRecipeMode('main')" style="background:none;border:none;border-left:1px solid rgba(16,185,129,0.3);color:rgba(110,231,183,0.7);cursor:pointer;font-size:12px;padding:8px 12px;white-space:nowrap">🔄 Swap</button>
+      </div>`
+    : `<button onclick="openSwapRecipeMode('main')" style="background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.2);color:var(--text-muted);font-size:13px;padding:8px 18px;border-radius:12px;cursor:pointer">+ Choose Entrée</button>`;
+
+  // Side chips
+  const sidesEl = document.getElementById('meal-sides-area');
+  sidesEl.innerHTML = entry.sides.length
+    ? entry.sides.map((s, i) => {
+        const safeSide = s.replace(/'/g, "\\'");
+        return `<span style="display:inline-flex;align-items:center;gap:0;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:20px;overflow:hidden">
+          <span onclick="openRecipeFromMeal('${safeSide}',true,${i})" style="padding:5px 12px 5px 14px;font-size:13px;font-weight:600;color:#6ee7b7;cursor:pointer">${s}</span>
+          <button onclick="removeSide(${i})" style="background:none;border:none;border-left:1px solid rgba(16,185,129,0.3);color:rgba(110,231,183,0.6);cursor:pointer;font-size:13px;padding:5px 10px;line-height:1">×</button>
+        </span>`;
+      }).join('')
+    : `<span style="font-size:12px;color:var(--text-muted);font-style:italic">No sides yet — tap + Add Side</span>`;
+}
+
+async function openRecipeFromMeal(name, isSide, sideIdx) {
+  _sideViewPrev = { meal: recipeCurrentMeal, date: recipeCurrentDate, isSide, sideIdx };
+  _sideViewIdx = sideIdx;
+  recipeCurrentMeal = name;
+  document.getElementById('recipe-back-btn').style.display = '';
+  document.getElementById('recipe-title').textContent = (isSide ? '🥗 ' : '🍽️ ') + name;
   setRecipeViewMode('view');
   document.getElementById('recipe-view-desc').textContent = 'Loading…';
   document.getElementById('recipe-view-ingredients').innerHTML = '';
   document.getElementById('recipe-view-steps').innerHTML = '';
-  document.getElementById('recipe-dim').classList.add('open');
-
-  const recipe = await fetchRecipe(meal);
+  const recipe = await fetchRecipe(name);
   renderRecipeView(recipe);
+}
+
+function backToMealMode() {
+  if (!_sideViewPrev) return;
+  recipeCurrentMeal = _sideViewPrev.meal;
+  recipeCurrentDate = _sideViewPrev.date;
+  _sideViewPrev = null;
+  _sideViewIdx = -1;
+  document.getElementById('recipe-back-btn').style.display = 'none';
+  openMealMode();
 }
 
 async function fetchRecipe(meal) {
@@ -1768,9 +1822,10 @@ function renderSwapList() {
 }
 
 function closeSwapRecipeMode() {
-  // If opened from an empty slot (no current meal), close the whole modal
-  if (!recipeCurrentMeal) { document.getElementById('recipe-dim').classList.remove('open'); return; }
-  setRecipeViewMode('view');
+  if (!recipeCurrentMeal && !recipeCurrentDate) { document.getElementById('recipe-dim').classList.remove('open'); return; }
+  if (recipeCurrentDate && getDinnerEntry(recipeCurrentDate).main) { openMealMode(); return; }
+  if (recipeCurrentMeal) { setRecipeViewMode('view'); return; }
+  document.getElementById('recipe-dim').classList.remove('open');
 }
 
 function addSideRecipe(name) {
@@ -1781,35 +1836,11 @@ function addSideRecipe(name) {
     saveFamilyData('dinners', dinners);
     renderStrip();
   }
-  // Go back to main recipe view
-  _sideViewPrev = null;
-  document.getElementById('recipe-back-btn').style.display = 'none';
-  document.getElementById('recipe-sides-section').style.display = '';
-  recipeCurrentMeal = getDinnerEntry(recipeCurrentDate).main;
-  setRecipeViewMode('view');
-  renderRecipeView(recipesData[recipeCurrentMeal] || {});
-}
-
-function openSideRecipeView(sideName, sideIdx) {
-  _sideViewPrev = { meal: recipeCurrentMeal, date: recipeCurrentDate };
-  _sideViewIdx = sideIdx;
-  document.getElementById('recipe-back-btn').style.display = '';
-  document.getElementById('recipe-sides-section').style.display = 'none';
-  recipeCurrentMeal = sideName;
-  setRecipeViewMode('view');
-  renderRecipeView(recipesData[sideName] || { description: 'No recipe details saved.' });
-}
-
-function backToMainRecipe() {
-  if (!_sideViewPrev) return;
-  recipeCurrentMeal = _sideViewPrev.meal;
-  recipeCurrentDate = _sideViewPrev.date;
   _sideViewPrev = null;
   _sideViewIdx = -1;
   document.getElementById('recipe-back-btn').style.display = 'none';
-  document.getElementById('recipe-sides-section').style.display = '';
-  setRecipeViewMode('view');
-  renderRecipeView(recipesData[recipeCurrentMeal] || {});
+  recipeCurrentMeal = getDinnerEntry(recipeCurrentDate).main;
+  openMealMode();
 }
 
 function openAddNewRecipeMode() {
@@ -1829,7 +1860,7 @@ function openAddNewRecipeMode() {
 }
 
 function swapToRecipe(name) {
-  // If we're swapping a side (came from viewing a side), replace that side
+  // Swapping a side: came from viewing a side recipe
   if (_sideViewPrev !== null && _chooserMode === 'side' && _sideViewIdx >= 0) {
     const entry = getDinnerEntry(recipeCurrentDate);
     entry.sides[_sideViewIdx] = name;
@@ -1839,20 +1870,17 @@ function swapToRecipe(name) {
     _sideViewPrev = null;
     _sideViewIdx = -1;
     document.getElementById('recipe-back-btn').style.display = 'none';
-    document.getElementById('recipe-sides-section').style.display = '';
     recipeCurrentMeal = getDinnerEntry(recipeCurrentDate).main;
-    setRecipeViewMode('view');
-    renderRecipeView(recipesData[recipeCurrentMeal] || {});
+    openMealMode();
     return;
   }
-  recipeCurrentMeal = name;
+  // Swapping main entrée
   const existing = getDinnerEntry(recipeCurrentDate);
   setDinnerEntry(recipeCurrentDate, name, existing.sides);
   saveFamilyData('dinners', dinners);
   renderStrip();
-  document.getElementById('recipe-title').textContent = '🍽️ ' + name;
-  setRecipeViewMode('view');
-  renderRecipeView(recipesData[name]);
+  recipeCurrentMeal = name;
+  openMealMode();
 }
 
 function clearDinnerFromRecipeModal() {
