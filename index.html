@@ -561,6 +561,7 @@
     <span id="week-label">Loading…</span>
     <button class="week-nav-arrow" onclick="changeWeek(1)">›</button>
     <button class="week-today-btn" onclick="jumpToToday()">Today</button>
+    <button class="week-today-btn" onclick="fillWeekMeals()" title="Auto-fill empty dinner slots for this week" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c4b5fd">✨ Fill</button>
     <button class="week-cal-btn" title="Jump to date">📅<input type="date" id="week-picker" onchange="jumpToDate(this.value)"></button>
   </div>
   <div id="strip-wrapper">
@@ -1486,6 +1487,119 @@ function swapDinners(dateA, dateB) {
   if (a) dinners[dateB] = a; else delete dinners[dateB];
   saveFamilyData('dinners',dinners); renderStrip();
 }
+// ── FOOD HOLIDAYS ─────────────────────────────────────────────────────────────
+const FOOD_HOLIDAYS = {
+  '01-01': { name: 'New Year\'s Day', keywords: ['black-eyed peas', 'pork', 'comfort'] },
+  '01-20': { name: 'National Cheese Lover\'s Day', keywords: ['cheese', 'mac', 'pizza', 'quesadilla'] },
+  '02-09': { name: 'National Pizza Day', keywords: ['pizza'] },
+  '02-14': { name: 'Valentine\'s Day', keywords: ['steak', 'pasta', 'salmon', 'shrimp', 'elegant'] },
+  '03-14': { name: 'National Pi Day 🥧', keywords: ['pie', 'pot pie', 'pizza'] },
+  '03-17': { name: 'St. Patrick\'s Day', keywords: ['irish', 'corned beef', 'potato', 'soup'] },
+  '04-12': { name: 'National Grilled Cheese Day', keywords: ['cheese', 'grilled'] },
+  '05-05': { name: 'Cinco de Mayo 🌮', keywords: ['taco', 'mexican', 'burrito', 'hispanic', 'enchilada', 'quesadilla'] },
+  '06-18': { name: 'National Sushi Day', keywords: ['sushi', 'asian', 'japanese'] },
+  '07-04': { name: 'Independence Day 🎆', keywords: ['bbq', 'burger', 'grill', 'hot dog', 'american'] },
+  '07-14': { name: 'National Mac & Cheese Day', keywords: ['mac', 'cheese', 'pasta'] },
+  '09-05': { name: 'National Cheese Pizza Day', keywords: ['pizza'] },
+  '10-04': { name: 'National Taco Day 🌮', keywords: ['taco', 'mexican', 'hispanic'] },
+  '11-01': { name: 'National Cook for Your Pets Day', keywords: ['chicken', 'simple'] },
+  '11-03': { name: 'National Sandwich Day', keywords: ['sandwich', 'burger', 'wrap'] },
+  '12-25': { name: 'Christmas 🎄', keywords: ['ham', 'turkey', 'roast', 'holiday', 'comfort'] },
+  '12-31': { name: 'New Year\'s Eve', keywords: ['steak', 'seafood', 'shrimp', 'elegant'] },
+};
+
+// National Burrito Day = first Thursday of April
+function getNationalBurritoDay(year) {
+  const d = new Date(year, 3, 1);
+  while (d.getDay() !== 4) d.setDate(d.getDate() + 1);
+  return `04-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getFoodHoliday(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const mmdd = dateStr.slice(5); // MM-DD
+  const year = d.getFullYear();
+  const burritoDay = getNationalBurritoDay(year);
+  if (mmdd === burritoDay) return { name: 'National Burrito Day 🌯', keywords: ['burrito', 'mexican', 'hispanic', 'taco'] };
+  return FOOD_HOLIDAYS[mmdd] || null;
+}
+
+function pickMealForDate(dateStr, alreadyPicked) {
+  // Get all dinner-appropriate recipes (exclude Sides, Cocktails)
+  const excluded = ['Sides', 'Cocktails'];
+  const pool = Object.keys(recipesData).filter(name => {
+    const cat = recipesData[name]?.category || '';
+    return !excluded.includes(cat) && !alreadyPicked.has(name);
+  });
+  if (!pool.length) return null;
+
+  // Check for food holiday match
+  const holiday = getFoodHoliday(dateStr);
+  if (holiday) {
+    const keywords = holiday.keywords;
+    const matches = pool.filter(name => {
+      const r = recipesData[name];
+      const haystack = [name, ...(r.tags || []), r.description || ''].join(' ').toLowerCase();
+      return keywords.some(kw => haystack.includes(kw));
+    });
+    if (matches.length) {
+      const pick = matches[Math.floor(Math.random() * matches.length)];
+      return { meal: pick, note: `🎉 ${holiday.name}` };
+    }
+  }
+
+  // Random pick from pool
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  return { meal: pick, note: null };
+}
+
+async function fillWeekMeals() {
+  // Make sure recipes are loaded
+  if (!Object.keys(recipesData).length) {
+    const { data } = await sb.from('family_data').select('value').eq('key','recipes').single();
+    if (data?.value) recipesData = data.value;
+  }
+  if (!Object.keys(recipesData).length) { alert('No recipes found. Add some recipes first!'); return; }
+
+  const emptyDays = weekDays.filter(d => !getDinnerEntry(isoDate(d)).main);
+  if (!emptyDays.length) {
+    alert('All days this week already have meals planned! ✅\n\nNavigate to next week and try again.');
+    return;
+  }
+
+  // Collect meals already planned this week to avoid repeats
+  const alreadyPicked = new Set(weekDays.map(d => getDinnerEntry(isoDate(d)).main).filter(Boolean));
+
+  // Build plan
+  const plan = [];
+  for (const d of emptyDays) {
+    const result = pickMealForDate(isoDate(d), alreadyPicked);
+    if (result) {
+      alreadyPicked.add(result.meal);
+      plan.push({ date: isoDate(d), ...result });
+    }
+  }
+
+  if (!plan.length) { alert('Not enough recipes to fill the week. Add more recipes!'); return; }
+
+  // Show preview
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const preview = plan.map(p => {
+    const d = new Date(p.date + 'T12:00:00');
+    const note = p.note ? ` (${p.note})` : '';
+    return `${dayNames[d.getDay()]} ${d.getDate()}: ${p.meal}${note}`;
+  }).join('\n');
+
+  if (!confirm(`Fill ${plan.length} empty day${plan.length > 1 ? 's' : ''} with:\n\n${preview}\n\nConfirm?`)) return;
+
+  // Apply
+  for (const p of plan) {
+    setDinnerEntry(p.date, p.meal, []);
+  }
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+}
+
 function openDinnerModal(dateStr) {
   activeDinnerDate=dateStr; const d=new Date(dateStr+'T12:00:00');
   document.getElementById('dinner-modal-title').textContent=`Dinner — ${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
