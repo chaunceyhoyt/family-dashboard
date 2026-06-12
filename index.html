@@ -998,7 +998,7 @@ const PERSON_COLORS = [
 ];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, krogerModality = 'PICKUP', allDayMode = false, currentPage = 'home';
+let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocationId = null, krogerModality = 'PICKUP', allDayMode = false, currentPage = localStorage.getItem('lastPage') || 'home';
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
@@ -1849,6 +1849,7 @@ const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3 };
 
 function showPage(page) {
   currentPage = page;
+  localStorage.setItem('lastPage', page);
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
   const hideStrip = page === 'home' || page === 'tasks' || page === 'grocery';
   ['strip-wrapper', 'strip-toggle-bar', 'week-nav'].forEach(id => {
