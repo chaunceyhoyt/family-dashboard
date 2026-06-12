@@ -741,6 +741,7 @@
       <div id="recipe-swap-list" style="max-height:46vh;overflow-y:auto"></div>
       <div class="modal-btns" style="margin-top:10px">
         <button class="btn-secondary" onclick="closeSwapRecipeMode()">Cancel</button>
+        <button class="btn-primary" onclick="pickRandomForDay()" style="background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);color:#c4b5fd">🎲 Random</button>
       </div>
     </div>
 
@@ -2030,6 +2031,20 @@ function renderSwapList() {
     }).join('');
     return header + items;
   }).join('');
+}
+
+function pickRandomForDay() {
+  const excluded = ['Sides', 'Cocktails'];
+  const alreadyPicked = new Set(weekDays.map(d => getDinnerEntry(isoDate(d)).main).filter(Boolean));
+  const dow = recipeCurrentDate ? new Date(recipeCurrentDate + 'T12:00:00').getDay() : new Date().getDay();
+  const preferQuick = dow >= 1 && dow <= 5;
+  const result = pickMealForDate(recipeCurrentDate || isoDate(new Date()), alreadyPicked, preferQuick);
+  if (!result || result.isEatOut) return;
+  setDinnerEntry(recipeCurrentDate, result.meal, []);
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+  recipeCurrentMeal = result.meal;
+  openMealMode();
 }
 
 function closeSwapRecipeMode() {
