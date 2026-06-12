@@ -1524,14 +1524,59 @@ function getFoodHoliday(dateStr) {
   return FOOD_HOLIDAYS[mmdd] || null;
 }
 
-function pickMealForDate(dateStr, alreadyPicked) {
+const DEFAULT_LOCATION = 'Hillcrest Pkwy, Chesapeake, VA 23322';
+const QUICK_TAGS = ['quick', '30 min', '30min', 'easy', 'weeknight', 'fast'];
+const QUICK_CATS = ['Quick & Easy'];
+
+function isQuickMeal(name) {
+  const r = recipesData[name];
+  if (!r) return false;
+  const tags = (r.tags || []).map(t => t.toLowerCase());
+  const cat = (r.category || '').toLowerCase();
+  return QUICK_TAGS.some(t => tags.includes(t)) || QUICK_CATS.some(c => c.toLowerCase() === cat);
+}
+
+function getDinnerTimeEventsForDate(dateStr) {
+  // Returns calendar events on dateStr that fall between 5pm–9pm
+  const idx = weekDays.findIndex(d => isoDate(d) === dateStr);
+  if (idx < 0) return [];
+  const evs = calEventsByDay[idx] || [];
+  return evs.filter(ev => {
+    if (!ev.start?.dateTime) return false;
+    const h = new Date(ev.start.dateTime).getHours();
+    return h >= 17 && h <= 21;
+  });
+}
+
+function buildRestaurantSuggestion(eventName, location) {
+  const loc = (location || DEFAULT_LOCATION).trim();
+  const query = encodeURIComponent(`restaurants near ${loc}`);
+  const mapsUrl = `https://www.google.com/maps/search/${query}`;
+  return { meal: `🍽️ Eat Out — ${eventName}`, note: `📍 Near ${loc}`, isEatOut: true, mapsUrl, location: loc };
+}
+
+function pickMealForDate(dateStr, alreadyPicked, preferQuick) {
+  // Check for dinner-time event → eat out
+  const dinnerEvs = getDinnerTimeEventsForDate(dateStr);
+  if (dinnerEvs.length) {
+    const ev = dinnerEvs[0];
+    const loc = ev.location || DEFAULT_LOCATION;
+    return buildRestaurantSuggestion(ev.summary || 'Event', loc);
+  }
+
   // Get all dinner-appropriate recipes (exclude Sides, Cocktails)
   const excluded = ['Sides', 'Cocktails'];
-  const pool = Object.keys(recipesData).filter(name => {
+  let pool = Object.keys(recipesData).filter(name => {
     const cat = recipesData[name]?.category || '';
     return !excluded.includes(cat) && !alreadyPicked.has(name);
   });
   if (!pool.length) return null;
+
+  // Weekday preference: try quick meals first
+  if (preferQuick) {
+    const quickPool = pool.filter(name => isQuickMeal(name));
+    if (quickPool.length) pool = quickPool;
+  }
 
   // Check for food holiday match
   const holiday = getFoodHoliday(dateStr);
@@ -1553,6 +1598,48 @@ function pickMealForDate(dateStr, alreadyPicked) {
   return { meal: pick, note: null };
 }
 
+// Build a consolidated grocery list from all planned meals this week
+async function buildWeeklyGroceryList() {
+  const COMMON_PANTRY = [
+    'salt','pepper','garlic powder','onion powder','olive oil','vegetable oil','butter',
+    'flour','sugar','baking powder','baking soda','cumin','paprika','oregano','basil',
+    'thyme','cayenne','red pepper flakes','black pepper','white pepper','cinnamon',
+    'vanilla extract','soy sauce','worcestershire sauce','hot sauce','vinegar',
+    'chicken broth','beef broth','water','eggs','milk','cream','vegetable broth'
+  ];
+
+  const allIngredients = [];
+  for (const d of weekDays) {
+    const entry = getDinnerEntry(isoDate(d));
+    const allMeals = [entry.main, ...(entry.sides || [])].filter(Boolean);
+    for (const mealName of allMeals) {
+      const recipe = recipesData[mealName];
+      if (!recipe?.ingredients) continue;
+      for (const ing of recipe.ingredients) {
+        const text = ing.trim().toLowerCase();
+        if (!text) continue;
+        const isPantry = COMMON_PANTRY.some(p => text.includes(p));
+        if (!isPantry) allIngredients.push(ing.trim());
+      }
+    }
+  }
+
+  if (!allIngredients.length) return 0;
+
+  // Deduplicate (case-insensitive)
+  const seen = new Set(grocery.map(g => g.text.toLowerCase()));
+  let added = 0;
+  for (const ing of allIngredients) {
+    if (!seen.has(ing.toLowerCase())) {
+      seen.add(ing.toLowerCase());
+      grocery.push({ id: uid(), text: ing, done: false });
+      added++;
+    }
+  }
+  if (added) await saveFamilyData('grocery', grocery);
+  return added;
+}
+
 async function fillWeekMeals() {
   // Make sure recipes are loaded
   if (!Object.keys(recipesData).length) {
@@ -1563,19 +1650,24 @@ async function fillWeekMeals() {
 
   const emptyDays = weekDays.filter(d => !getDinnerEntry(isoDate(d)).main);
   if (!emptyDays.length) {
-    alert('All days this week already have meals planned! ✅\n\nNavigate to next week and try again.');
+    if (confirm('All days this week already have meals planned! ✅\n\nWould you like to build a grocery list from this week\'s meals?')) {
+      const n = await buildWeeklyGroceryList();
+      alert(n ? `Added ${n} item${n > 1 ? 's' : ''} to your grocery list! 🛒` : 'All ingredients already in your grocery list.');
+    }
     return;
   }
 
   // Collect meals already planned this week to avoid repeats
   const alreadyPicked = new Set(weekDays.map(d => getDinnerEntry(isoDate(d)).main).filter(Boolean));
 
-  // Build plan
+  // Build plan (Mon–Fri prefer quick meals, Sat–Sun go all out)
   const plan = [];
   for (const d of emptyDays) {
-    const result = pickMealForDate(isoDate(d), alreadyPicked);
+    const dow = d.getDay(); // 0=Sun, 6=Sat
+    const preferQuick = dow >= 1 && dow <= 5;
+    const result = pickMealForDate(isoDate(d), alreadyPicked, preferQuick);
     if (result) {
-      alreadyPicked.add(result.meal);
+      if (!result.isEatOut) alreadyPicked.add(result.meal);
       plan.push({ date: isoDate(d), ...result });
     }
   }
@@ -1586,18 +1678,28 @@ async function fillWeekMeals() {
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const preview = plan.map(p => {
     const d = new Date(p.date + 'T12:00:00');
-    const note = p.note ? ` (${p.note})` : '';
-    return `${dayNames[d.getDay()]} ${d.getDate()}: ${p.meal}${note}`;
+    const dow = d.getDay();
+    const dayType = (dow >= 1 && dow <= 5) ? '' : ' (weekend)';
+    const note = p.note ? ` — ${p.note}` : '';
+    return `${dayNames[dow]} ${d.getDate()}${dayType}: ${p.meal}${note}`;
   }).join('\n');
 
   if (!confirm(`Fill ${plan.length} empty day${plan.length > 1 ? 's' : ''} with:\n\n${preview}\n\nConfirm?`)) return;
 
-  // Apply
+  // Apply meals
   for (const p of plan) {
-    setDinnerEntry(p.date, p.meal, []);
+    if (!p.isEatOut) setDinnerEntry(p.date, p.meal, []);
+    else setDinnerEntry(p.date, p.meal, []);
   }
   saveFamilyData('dinners', dinners);
   renderStrip();
+
+  // Consolidate grocery list
+  const added = await buildWeeklyGroceryList();
+  if (added) {
+    const go = confirm(`Meals planned! ✅\n\nAdded ${added} ingredient${added > 1 ? 's' : ''} to your grocery list from this week's recipes.\n\nGo to grocery list now?`);
+    if (go) showPage('grocery');
+  }
 }
 
 function openDinnerModal(dateStr) {
