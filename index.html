@@ -987,6 +987,33 @@
   </div>
 </div>
 
+<!-- LISTING DETAIL MODAL -->
+<div class="dim" id="listing-dim" onclick="if(event.target===this)closeListingModal()">
+  <div class="modal-box" style="max-width:480px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px">
+      <div style="flex:1;min-width:0">
+        <div id="listing-modal-source" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);margin-bottom:4px"></div>
+        <div id="listing-modal-title" class="modal-box-title" style="margin-bottom:0"></div>
+        <div id="listing-modal-price" style="font-size:22px;font-weight:900;color:#4ade80;margin-top:4px"></div>
+      </div>
+      <button onclick="closeListingModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;flex-shrink:0;padding:0;line-height:1">×</button>
+    </div>
+    <div id="listing-modal-meta" style="font-size:13px;color:var(--text-muted);margin-bottom:14px"></div>
+    <div id="listing-modal-summary" style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:10px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#4ade80;margin-bottom:8px">✅ Pros</div>
+        <div id="listing-modal-pros" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#f87171;margin-bottom:8px">⚠️ Cons</div>
+        <div id="listing-modal-cons" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+    <a id="listing-modal-link" href="#" target="_blank" rel="noopener" class="btn-primary" style="display:block;text-align:center;text-decoration:none">↗ View Full Listing</a>
+  </div>
+</div>
+
 <!-- KROGER OVERLAY -->
 <div id="kroger-overlay">
   <div class="kroger-logo">🛒</div>
@@ -2538,20 +2565,18 @@ function renderDiscover() {
   // ── Col 2: Marketplace Listings ──
   let col2 = '';
   if (localListings.length) {
-    col2 = localListings.map(item => {
+    col2 = localListings.map((item, i) => {
       const icon = LISTING_ICONS[item.category?.toLowerCase()] || '🏷️';
-      const evLink = item.url || item.link || '#';
-      const target = evLink !== '#' ? ' target="_blank" rel="noopener"' : '';
-      return `<a class="listing-card" href="${evLink}"${target}>
+      const milesLabel = item.miles && item.miles !== 'New' ? ` · ${item.miles} mi` : item.miles === 'New' ? ' · New' : '';
+      return `<div class="listing-card" onclick="openListingModal(${i})">
         <div class="listing-icon">${icon}</div>
         <div class="listing-body">
           <div class="listing-title">${item.title}</div>
-          ${item.price ? `<div class="listing-price">${item.price}</div>` : ''}
+          ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
           <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
-          ${item.description ? `<div class="listing-meta" style="white-space:normal;margin-top:2px">${item.description}</div>` : ''}
         </div>
         <div class="listing-arrow">›</div>
-      </a>`;
+      </div>`;
     }).join('');
   } else {
     col2 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔎</div>No listings yet — add marketplace searches to your routine</div>';
@@ -3172,6 +3197,29 @@ function openLocalEventModal(idx) {
 function closeLocalEventModal() {
   document.getElementById('local-event-dim').classList.remove('open');
   _activeLocalEvent = null;
+}
+
+// ── LISTING DETAIL MODAL ──────────────────────────────────────────────────────
+function openListingModal(idx) {
+  const item = localListings[idx];
+  if (!item) return;
+  document.getElementById('listing-modal-source').textContent = item.source || '';
+  document.getElementById('listing-modal-title').textContent = item.title;
+  document.getElementById('listing-modal-price').textContent = item.price || '';
+  const meta = [item.miles ? (item.miles === 'New' ? 'New vehicle' : item.miles + ' miles') : null, item.location].filter(Boolean).join('  ·  ');
+  document.getElementById('listing-modal-meta').textContent = meta;
+  document.getElementById('listing-modal-summary').textContent = item.summary || item.description || '';
+  const prosEl = document.getElementById('listing-modal-pros');
+  const consEl = document.getElementById('listing-modal-cons');
+  prosEl.innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${p}</div>`).join('');
+  consEl.innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${c}</div>`).join('');
+  const link = item.url || item.link || '#';
+  document.getElementById('listing-modal-link').href = link;
+  document.getElementById('listing-modal-link').style.display = link !== '#' ? '' : 'none';
+  document.getElementById('listing-dim').classList.add('open');
+}
+function closeListingModal() {
+  document.getElementById('listing-dim').classList.remove('open');
 }
 async function addLocalEventToCalendar() {
   if (!_activeLocalEvent) return;
