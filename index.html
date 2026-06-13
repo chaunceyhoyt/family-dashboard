@@ -146,9 +146,9 @@
       .dinner-chip { min-height: 44px; font-size: 12px; }
       .dinner-add-btn { height: 44px; font-size: 22px; }
       /* Stack schedule columns vertically in portrait */
-      #page-schedule .home-grid { grid-template-columns: 1fr; overflow-y: auto; }
-      #page-schedule .home-col, #page-home .home-col { min-height: 200px; max-height: none; }
-      #page-schedule .home-col-body, #page-home .home-col-body { overflow-y: visible; max-height: none; }
+      #page-schedule .home-grid, #page-discover .home-grid { grid-template-columns: 1fr; overflow-y: auto; }
+      #page-schedule .home-col, #page-home .home-col, #page-discover .home-col { min-height: 200px; max-height: none; }
+      #page-schedule .home-col-body, #page-home .home-col-body, #page-discover .home-col-body { overflow-y: visible; max-height: none; }
       /* Recipe modal more full-screen in portrait */
       .dim .modal-box, .dim .recipe-modal-box { width: 96vw !important; max-width: 96vw !important; max-height: 88vh; }
     }
@@ -2587,7 +2587,7 @@ function renderDiscover() {
 
   document.getElementById('page-discover').innerHTML =
     '<div class="page-datetime-header">' + discLabel + '</div>' +
-    '<div class="home-grid" style="flex:1;min-height:0;overflow:hidden">' +
+    '<div class="home-grid" style="flex:1;min-height:0">' +
       '<div class="home-col">' +
         '<div class="col-header">📍 Upcoming Local Events</div>' +
         '<div class="home-col-body">' + col1 + '</div>' +
