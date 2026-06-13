@@ -145,6 +145,31 @@
       .dinner-slot { min-height: 44px; }
       .dinner-chip { min-height: 44px; font-size: 12px; }
       .dinner-add-btn { height: 44px; font-size: 22px; }
+      /* Stack schedule columns vertically in portrait */
+      #page-schedule .home-grid { grid-template-columns: 1fr; overflow-y: auto; }
+      #page-schedule .home-col, #page-home .home-col { min-height: 200px; max-height: none; }
+      #page-schedule .home-col-body, #page-home .home-col-body { overflow-y: visible; max-height: none; }
+      /* Recipe modal more full-screen in portrait */
+      .dim .modal-box, .dim .recipe-modal-box { width: 96vw !important; max-width: 96vw !important; max-height: 88vh; }
+    }
+    /* Compact week-nav on narrow portrait phones */
+    @media (orientation: portrait) and (max-width: 600px) {
+      #week-nav { gap: 4px; padding: 5px 8px; }
+      #week-label { font-size: 13px; }
+      .week-nav-arrow { width: 28px; height: 28px; font-size: 16px; }
+      .week-today-btn { font-size: 11px; padding: 5px 8px; }
+      .week-cal-btn { width: 28px; height: 28px; font-size: 16px; }
+      /* Compact strip on phone portrait */
+      .day-col { padding: 6px 4px; gap: 3px; }
+      .day-col-date { font-size: 22px; }
+      .day-weather { display: none; }
+      .day-ev-chip { font-size: 10px; padding: 3px 4px; }
+      .dinner-slot, .dinner-chip, .dinner-add-btn { min-height: 38px; }
+      .dinner-chip { font-size: 11px; }
+      .dinner-add-btn { height: 38px; font-size: 20px; }
+      /* Nav bar: icon only on very narrow */
+      .nav-btn span { display: none; }
+      .nav-btn { gap: 0; }
     }
     /* Landscape: side-by-side, each column scrolls independently */
     @media (orientation: landscape) {
@@ -183,7 +208,11 @@
     .home-col-body { overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex: 1; min-height: 0; }
     .home-col-body::-webkit-scrollbar { display: none; }
     .col-header { font-size: 12px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; padding: 6px 10px; flex-shrink: 0; background: var(--surface2); border-radius: 8px; border-bottom: 2px solid rgba(59,130,246,0.3); }
-    @media (max-width: 440px) { .home-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 440px) {
+      .home-grid { grid-template-columns: 1fr; overflow-y: auto; }
+      .home-col { min-height: 200px; max-height: none; }
+      .home-col-body { overflow-y: visible; max-height: none; }
+    }
 
     /* Tasks page */
     #tasks-page-wrap { display:flex; flex-direction:column; height:100%; }
