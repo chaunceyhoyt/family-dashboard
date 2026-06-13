@@ -104,8 +104,8 @@
     #strip-wrapper.expanded .day-more-indicator { display: none; }
     /* Dinner row — sits below weekly strip, always aligned */
     #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, var(--header-bg-end, #111e35) 0%, var(--header-bg-start, #0d1a2e) 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery { display: none; }
-    #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery { display: none; }
+    #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery, #strip-wrapper.page-discover { display: none; }
+    #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery, #week-nav.page-discover { display: none; }
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
     #strip-toggle-btn { transition: transform 0.25s; }
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
@@ -187,8 +187,8 @@
 
     /* ── CONTENT AREA ── */
     #content-area { flex: 1; overflow: hidden; position: relative; min-height: 0; }
-    #pages-rail { display: flex; flex-direction: row; width: 400%; height: 100%; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); will-change: transform; }
-    .page-panel { width: 25%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-shrink: 0; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); box-sizing: border-box; }
+    #pages-rail { display: flex; flex-direction: row; width: 500%; height: 100%; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); will-change: transform; }
+    .page-panel { width: 20%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-shrink: 0; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); box-sizing: border-box; }
     .page-panel.panel-flex { overflow: hidden; padding: 0; display: flex; flex-direction: column; }
 
     /* ── BOTTOM NAV ── */
@@ -273,6 +273,16 @@
     .local-ev-meta { font-size:11px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .local-ev-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
     body.light .local-ev-card { border-color:rgba(0,0,0,0.08); }
+    /* Marketplace listing cards */
+    .listing-card { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:12px; margin-bottom:8px; text-decoration:none; color:inherit; transition:background 0.15s; -webkit-tap-highlight-color:transparent; }
+    .listing-card:active { background:var(--surface2); }
+    .listing-icon { font-size:24px; flex-shrink:0; width:36px; text-align:center; }
+    .listing-body { flex:1; min-width:0; }
+    .listing-title { font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .listing-price { font-size:15px; font-weight:800; color:#4ade80; margin-top:2px; }
+    .listing-meta { font-size:11px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .listing-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
+    body.light .listing-card { border-color:rgba(0,0,0,0.08); }
     .local-item { background: var(--surface); border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); padding: 10px 12px; }
     .local-item-dot-row { display: flex; align-items: flex-start; gap: 8px; }
     .local-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
@@ -598,6 +608,7 @@
       <div class="page-panel" id="page-schedule"></div>
       <div class="page-panel" id="page-tasks"></div>
       <div class="page-panel" id="page-grocery"></div>
+      <div class="page-panel" id="page-discover"></div>
     </div>
   </div>
   <div id="bottom-nav">
@@ -612,6 +623,9 @@
     </button>
     <button class="nav-btn" id="nav-grocery" onclick="showPage('grocery')">
       <div class="nav-home-icon">🛒</div><span>Grocery</span>
+    </button>
+    <button class="nav-btn" id="nav-discover" onclick="showPage('discover')">
+      <div class="nav-home-icon">🔍</div><span>Discover</span>
     </button>
     <button id="theme-toggle-btn" onclick="cycleTheme()" style="flex:0 0 auto;width:48px;background:none;border:1px solid rgba(128,128,128,0.2);border-radius:12px;margin:6px 0;font-size:22px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:background 0.15s">☀️</button>
   </div>
@@ -1051,7 +1065,7 @@ let gcalToken = null, krogerToken = null, krogerRefreshToken = null, krogerLocat
 let weekOffset = 0;
 let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
-let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {}, localEvents = [];
+let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {}, localEvents = [], localListings = [];
 let tasks = [];
 let taskPoints = {};
 let taskWeek = '';
@@ -1191,6 +1205,7 @@ async function loadFamilyData() {
         }
       }
       else if (row.key === 'local_events') localEvents = row.value || [];
+      else if (row.key === 'local_listings') localListings = row.value || [];
       else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
     }
   } catch(e) { console.error('family_data error', e); }
@@ -2269,28 +2284,30 @@ async function addDinnerIngredientsToGrocery() {
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
-const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3 };
+const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3, discover: 4 };
 
 function showPage(page) {
   currentPage = page;
   localStorage.setItem('lastPage', page);
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
-  const hideStrip = page === 'home' || page === 'tasks' || page === 'grocery';
+  const hideStrip = page === 'home' || page === 'tasks' || page === 'grocery' || page === 'discover';
   ['strip-wrapper', 'week-nav'].forEach(id => {
     const el = document.getElementById(id);
-    ['page-home','page-tasks','page-grocery'].forEach(c => el.classList.remove(c));
+    ['page-home','page-tasks','page-grocery','page-discover'].forEach(c => el.classList.remove(c));
     if (hideStrip) el.classList.add('page-' + page);
   });
   // Slide rail to the correct panel
   const idx = PAGE_INDEX[page] ?? 0;
-  document.getElementById('pages-rail').style.transform = 'translateX(-' + (idx * 25) + '%)';
-  // panel-flex controls overflow:hidden needed for home/schedule column layouts
+  document.getElementById('pages-rail').style.transform = 'translateX(-' + (idx * 20) + '%)';
+  // panel-flex controls overflow:hidden needed for home/schedule/discover column layouts
   document.getElementById('page-home').classList.toggle('panel-flex', true);
   document.getElementById('page-schedule').classList.toggle('panel-flex', true);
+  document.getElementById('page-discover').classList.toggle('panel-flex', true);
   // Re-render on navigation so async-loaded data (localEvents, etc.) is always fresh
   if (page === 'schedule') renderSchedule();
   else if (page === 'home') renderHome();
   else if (page === 'grocery') renderGrocery();
+  else if (page === 'discover') renderDiscover();
 }
 
 // ── TODAY PAGE ────────────────────────────────────────────────────────────────
@@ -2479,7 +2496,79 @@ function renderSchedule() {
         '<div class="home-col-body">' + col1 + '</div>' +
       '</div>' +
       '<div class="home-col">' +
+        '<div class="col-header" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="showPage(\'discover\')" title="Open Discover">🔍 Discover <span style="font-size:11px;color:var(--accent);font-weight:600;letter-spacing:0">View all →</span></div>' +
+        '<div class="home-col-body">' + col2 + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+// ── DISCOVER PAGE ─────────────────────────────────────────────────────────────
+const LISTING_ICONS = { car:'🚗', truck:'🚛', suv:'🚙', furniture:'🪑', sofa:'🛋️', electronics:'📱', tv:'📺', clothing:'👕', appliance:'🏠', tool:'🔧', toy:'🧸', book:'📚', bike:'🚲', jewelry:'💍', art:'🖼️', other:'🏷️' };
+
+function renderDiscover() {
+  const catIcon = { concert:'🎵', market:'🥦', festival:'🎉', sports:'🏆', arts:'🎨', food:'🍽️', community:'🏘️', outdoor:'🌿', family:'👨‍👩‍👧', 'date-night':'❤️', other:'📍' };
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // ── Col 1: Upcoming Local Events ──
+  let col1 = '';
+  if (localEvents.length) {
+    const upcoming = localEvents.filter(e => e.date && new Date(e.date + 'T00:00:00') >= today).sort((a,b) => a.date.localeCompare(b.date));
+    col1 = upcoming.length
+      ? upcoming.map((ev, i) => {
+          const icon = catIcon[ev.category] || '📍';
+          const d = new Date(ev.date + 'T00:00:00');
+          const dateLabel = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+          return `<div class="local-ev-card" onclick="openLocalEventModal(${i})">
+            <div class="local-ev-icon">${icon}</div>
+            <div class="local-ev-body">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+                <span class="local-ev-title">${ev.title}</span>
+                <span class="local-ev-datetime" style="flex-shrink:0">${dateLabel}${ev.time ? '  ·  ' + ev.time : ''}</span>
+              </div>
+              ${ev.description ? `<div class="local-ev-meta" style="white-space:normal;margin-top:3px">${ev.description}</div>` : ''}
+            </div>
+            <div class="local-ev-arrow">›</div>
+          </div>`;
+        }).join('')
+      : '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🎉</div>No upcoming local events</div>';
+  } else {
+    col1 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📭</div>No local events yet — run your daily routine to populate this</div>';
+  }
+
+  // ── Col 2: Marketplace Listings ──
+  let col2 = '';
+  if (localListings.length) {
+    col2 = localListings.map(item => {
+      const icon = LISTING_ICONS[item.category?.toLowerCase()] || '🏷️';
+      const evLink = item.url || item.link || '#';
+      const target = evLink !== '#' ? ' target="_blank" rel="noopener"' : '';
+      return `<a class="listing-card" href="${evLink}"${target}>
+        <div class="listing-icon">${icon}</div>
+        <div class="listing-body">
+          <div class="listing-title">${item.title}</div>
+          ${item.price ? `<div class="listing-price">${item.price}</div>` : ''}
+          <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
+          ${item.description ? `<div class="listing-meta" style="white-space:normal;margin-top:2px">${item.description}</div>` : ''}
+        </div>
+        <div class="listing-arrow">›</div>
+      </a>`;
+    }).join('');
+  } else {
+    col2 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔎</div>No listings yet — add marketplace searches to your routine</div>';
+  }
+
+  const discNow = new Date();
+  const discLabel = discNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) + ' · ' + discNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+
+  document.getElementById('page-discover').innerHTML =
+    '<div class="page-datetime-header">' + discLabel + '</div>' +
+    '<div class="home-grid" style="flex:1;min-height:0;overflow:hidden">' +
+      '<div class="home-col">' +
         '<div class="col-header">📍 Upcoming Local Events</div>' +
+        '<div class="home-col-body">' + col1 + '</div>' +
+      '</div>' +
+      '<div class="home-col">' +
+        '<div class="col-header">🛍️ Marketplace Finds</div>' +
         '<div class="home-col-body">' + col2 + '</div>' +
       '</div>' +
     '</div>';
@@ -2527,6 +2616,7 @@ function reRenderCurrentPage() {
   if (currentPage === 'grocery') renderGrocery();
   else if (currentPage === 'home') renderHome();
   else if (currentPage === 'schedule') renderSchedule();
+  else if (currentPage === 'discover') renderDiscover();
 }
 
 // ── GROCERY CRUD ──────────────────────────────────────────────────────────────
@@ -3345,7 +3435,7 @@ async function init() {
   weekDays=getWeekDays(); weatherDays=Array(7).fill(null); calEventsByDay=Array(7).fill([]);
   document.getElementById('week-label').textContent=weekLabel();
   renderStrip();
-  renderHome(); renderSchedule(); renderTasks(); renderGrocery();
+  renderHome(); renderSchedule(); renderTasks(); renderGrocery(); renderDiscover();
   showPage(currentPage);
 
   const [wRes,evRes,upRes,,brRes]=await Promise.allSettled([
@@ -3368,7 +3458,7 @@ async function init() {
   if(brRes.status==='fulfilled') briefingData=brRes.value;
 
   renderStrip();
-  renderHome(); renderSchedule(); renderTasks(); renderGrocery();
+  renderHome(); renderSchedule(); renderTasks(); renderGrocery(); renderDiscover();
   showPage(currentPage); renderNavBadges();
 }
 
