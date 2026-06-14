@@ -981,6 +981,35 @@
   </div>
 </div>
 
+<!-- MANUAL LISTING ADD MODAL -->
+<div class="dim" id="manual-listing-dim" onclick="if(event.target===this)closeManualListingModal()">
+  <div class="modal-box" style="max-width:400px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-box-title" style="margin:0">Add Listing</div>
+      <button onclick="closeManualListingModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input id="ml-title" type="text" placeholder="Title *" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <input id="ml-price" type="text" placeholder="Price (e.g. $1,200)" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+        <select id="ml-category" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+          <option value="car">🚗 Car</option>
+          <option value="furniture">🪑 Furniture</option>
+          <option value="electronics">📱 Electronics</option>
+          <option value="appliance">🏠 Appliance</option>
+          <option value="tool">🔧 Tool</option>
+          <option value="other" selected>🏷️ Other</option>
+        </select>
+      </div>
+      <input id="ml-location" type="text" placeholder="Location" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <input id="ml-source" type="text" placeholder="Source (e.g. Facebook Marketplace)" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <input id="ml-url" type="url" placeholder="Link URL" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <textarea id="ml-summary" placeholder="Notes / description" rows="3" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <button onclick="confirmManualListing()" class="btn-primary" style="width:100%;margin-top:16px">Add to Finds</button>
+  </div>
+</div>
+
 <!-- LOCAL EVENT DETAIL MODAL -->
 <div class="dim" id="local-event-dim" onclick="if(event.target===this)closeLocalEventModal()">
   <div class="modal-box" style="max-width:400px">
@@ -2655,10 +2684,19 @@ function renderDiscover() {
   const discNow = new Date();
   const discLabel = discNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) + ' · ' + discNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
+  const listingsHeader =
+    '<div style="display:flex;align-items:center;gap:8px;padding:0 0 10px;flex-shrink:0">' +
+      '<input id="listing-search-input" type="text" placeholder="Search local marketplace…" ' +
+        'style="flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text);outline:none" ' +
+        'onkeydown="if(event.key===\'Enter\')runListingSearch()" />' +
+      '<button onclick="runListingSearch()" style="background:var(--accent);border:none;color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">🔍</button>' +
+      '<button onclick="openManualListingModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);color:var(--text-muted);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer" title="Add manually">＋</button>' +
+    '</div>' +
+    '<div id="listing-search-status" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;min-height:16px;flex-shrink:0"></div>';
+
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
 
   if (isPortrait) {
-    // Portrait: swipeable horizontal rail with tab pills
     document.getElementById('page-discover').innerHTML =
       '<div class="page-datetime-header">' + discLabel + '</div>' +
       '<div style="display:flex;gap:0;justify-content:center;padding:0 0 8px;flex-shrink:0">' +
@@ -2669,8 +2707,9 @@ function renderDiscover() {
         '<div style="width:50%;display:flex;flex-direction:column;min-height:0;overflow:hidden">' +
           '<div class="home-col-body" style="flex:1;overflow-y:auto;padding:8px 12px">' + col1 + '</div>' +
         '</div>' +
-        '<div style="width:50%;display:flex;flex-direction:column;min-height:0;overflow:hidden">' +
-          '<div class="home-col-body" style="flex:1;overflow-y:auto;padding:8px 12px">' + col2 + '</div>' +
+        '<div style="width:50%;display:flex;flex-direction:column;min-height:0;overflow:hidden;padding:8px 12px">' +
+          listingsHeader +
+          '<div id="listings-col-body" class="home-col-body" style="flex:1;overflow-y:auto">' + col2 + '</div>' +
         '</div>' +
       '</div>';
     attachDiscoverSwipe();
@@ -2682,9 +2721,10 @@ function renderDiscover() {
           '<div class="col-header">📍 Upcoming Local Events</div>' +
           '<div class="home-col-body">' + col1 + '</div>' +
         '</div>' +
-        '<div class="home-col">' +
-          '<div class="col-header">🛍️ Marketplace Finds</div>' +
-          '<div class="home-col-body">' + col2 + '</div>' +
+        '<div class="home-col" style="display:flex;flex-direction:column;min-height:0">' +
+          '<div class="col-header" style="flex-shrink:0">🛍️ Marketplace Finds</div>' +
+          '<div style="padding:0 0 4px;flex-shrink:0">' + listingsHeader + '</div>' +
+          '<div id="listings-col-body" class="home-col-body" style="flex:1;overflow-y:auto">' + col2 + '</div>' +
         '</div>' +
       '</div>';
   }
@@ -2719,6 +2759,129 @@ function attachDiscoverSwipe() {
       discoverShowTab(dx < 0 ? 1 : 0);
     }
   }, { passive: true });
+}
+
+// ── MARKETPLACE SEARCH ────────────────────────────────────────────────────────
+async function runListingSearch() {
+  const input = document.getElementById('listing-search-input');
+  const query = input?.value?.trim();
+  if (!query) return;
+  const statusEl = document.getElementById('listing-search-status');
+  const bodyEl = document.getElementById('listings-col-body');
+  if (statusEl) { statusEl.textContent = '🔍 Searching with Claude…'; statusEl.style.color = 'var(--accent)'; }
+  if (bodyEl) bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon" style="font-size:28px;animation:spin 1s linear infinite">⏳</div>Finding listings…</div>';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/marketplace-search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+      body: JSON.stringify({ query, location: 'Chesapeake VA 23322' })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Search failed');
+
+    const results = data.listings || [];
+    if (statusEl) { statusEl.textContent = results.length ? `Found ${results.length} listing${results.length !== 1 ? 's' : ''} — tap to save` : 'No listings found — try a different search'; statusEl.style.color = 'var(--text-muted)'; }
+
+    if (!results.length) {
+      if (bodyEl) bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔎</div>No results found</div>';
+      return;
+    }
+
+    if (bodyEl) {
+      bodyEl.innerHTML = results.map((item, i) => {
+        const icon = LISTING_ICONS[item.category?.toLowerCase()] || '🏷️';
+        const milesLabel = item.miles ? ` · ${item.miles} mi` : '';
+        return `<div class="listing-card" style="position:relative">
+          <div onclick="openSearchResultModal(${i})" style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer">
+            <div class="listing-icon">${icon}</div>
+            <div class="listing-body">
+              <div class="listing-title">${item.title}</div>
+              ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
+              <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
+            </div>
+          </div>
+          <button onclick="saveSearchResult(${i})" style="background:var(--accent);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap">Save</button>
+        </div>`;
+      }).join('');
+      window._searchResults = results;
+    }
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = '⚠️ ' + (err.message || 'Search failed'); statusEl.style.color = 'var(--urgent)'; }
+    if (bodyEl) bodyEl.innerHTML = '';
+  }
+}
+
+function openSearchResultModal(idx) {
+  const item = (window._searchResults || [])[idx];
+  if (!item) return;
+  openListingModalFromItem(item);
+}
+
+function saveSearchResult(idx) {
+  const item = (window._searchResults || [])[idx];
+  if (!item) return;
+  const newItem = { id: uid(), ...item };
+  localListings.unshift(newItem);
+  saveFamilyData('local_listings', localListings);
+  const statusEl = document.getElementById('listing-search-status');
+  if (statusEl) { statusEl.textContent = `✓ "${item.title}" saved to Marketplace Finds`; statusEl.style.color = '#4ade80'; }
+  // Remove the card visually
+  const bodyEl = document.getElementById('listings-col-body');
+  if (bodyEl) {
+    const cards = bodyEl.querySelectorAll('.listing-card');
+    if (cards[idx]) cards[idx].style.opacity = '0.3';
+  }
+}
+
+// ── MANUAL LISTING ADD ────────────────────────────────────────────────────────
+function openManualListingModal() {
+  document.getElementById('manual-listing-dim').classList.add('open');
+  document.getElementById('ml-title').value = '';
+  document.getElementById('ml-price').value = '';
+  document.getElementById('ml-location').value = '';
+  document.getElementById('ml-source').value = '';
+  document.getElementById('ml-url').value = '';
+  document.getElementById('ml-category').value = 'other';
+  document.getElementById('ml-summary').value = '';
+}
+function closeManualListingModal() {
+  document.getElementById('manual-listing-dim').classList.remove('open');
+}
+function confirmManualListing() {
+  const title = document.getElementById('ml-title').value.trim();
+  if (!title) return;
+  const item = {
+    id: uid(),
+    title,
+    price: document.getElementById('ml-price').value.trim(),
+    location: document.getElementById('ml-location').value.trim(),
+    source: document.getElementById('ml-source').value.trim() || 'Manual',
+    url: document.getElementById('ml-url').value.trim(),
+    category: document.getElementById('ml-category').value,
+    summary: document.getElementById('ml-summary').value.trim(),
+    pros: [], cons: []
+  };
+  localListings.unshift(item);
+  saveFamilyData('local_listings', localListings);
+  closeManualListingModal();
+  renderDiscover();
+}
+
+// Variant of openListingModal that takes an item object directly (for search results)
+function openListingModalFromItem(item) {
+  document.getElementById('listing-modal-source').textContent = item.source || '';
+  document.getElementById('listing-modal-title').textContent = item.title;
+  document.getElementById('listing-modal-price').textContent = item.price || '';
+  const meta = [item.miles ? item.miles + ' miles' : null, item.location].filter(Boolean).join('  ·  ');
+  document.getElementById('listing-modal-meta').textContent = meta;
+  document.getElementById('listing-modal-summary').textContent = item.summary || '';
+  document.getElementById('listing-modal-pros').innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${p}</div>`).join('');
+  document.getElementById('listing-modal-cons').innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${c}</div>`).join('');
+  const link = item.url || item.link || '#';
+  document.getElementById('listing-modal-link').href = link;
+  document.getElementById('listing-modal-link').style.display = link !== '#' ? '' : 'none';
+  document.getElementById('listing-dim').classList.add('open');
 }
 
 // ── GROCERY PAGE ──────────────────────────────────────────────────────────────
