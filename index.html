@@ -1051,7 +1051,8 @@ const KROGER_CLIENT_SECRET = 'J19lW3UZfTwpfy3pvwETMjvUTTMEwSIUdabFTsQa';
 const KROGER_REDIRECT = location.origin + location.pathname;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const DAY_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_NAMES       = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_NAMES_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAY_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const WMO_EMOJI   = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
@@ -1433,7 +1434,7 @@ function renderStrip() {
     }).join('');
     const moreIndicator = evs.length > 1 ? `<div class="day-more-indicator">▾</div>` : '';
     return `<div class="day-col${todayCls}">
-      <div class="day-col-top"><div class="day-col-name">${DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
+      <div class="day-col-top"><div class="day-col-name">${window.matchMedia('(orientation:portrait)').matches ? DAY_NAMES_SHORT[d.getDay()] : DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
       <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
       <div class="day-weather" style="cursor:${w?'pointer':'default'}" onclick="${w?`openWeatherModal('${isoDate(d)}',${i})`:''}"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
       <div class="day-events-wrap"><div class="day-events">${chips}</div></div>${moreIndicator}
