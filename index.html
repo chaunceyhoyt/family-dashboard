@@ -3291,6 +3291,7 @@ async function addLocalEventToCalendar() {
     if (ev.time && ev.time.includes(':')) {
       // parse "7:00 PM" style times
       const parseTime = s => {
+        if (!s) return null;
         const m = s.trim().match(/^(\d+):(\d+)\s*(AM|PM)?$/i);
         if (!m) return null;
         let h = parseInt(m[1]), min = m[2];
@@ -3300,7 +3301,7 @@ async function addLocalEventToCalendar() {
       };
       const parts = ev.time.split(/[-–]/);
       const startT = parseTime(parts[0]) || '10:00';
-      const endT = parseTime(parts[1]) || (startT.split(':')[0] < 22 ? (parseInt(startT)+1).toString().padStart(2,'0') + ':' + startT.split(':')[1] : '23:00');
+      const endT = parseTime(parts[1]) || (parseInt(startT) < 22 ? String(parseInt(startT)+1).padStart(2,'0') + ':' + startT.split(':')[1] : '23:00');
       gcalEv.start = { dateTime: `${ev.date}T${startT}:00`, timeZone: 'America/New_York' };
       gcalEv.end   = { dateTime: `${ev.date}T${endT}:00`,   timeZone: 'America/New_York' };
     } else {
