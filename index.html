@@ -967,6 +967,20 @@
   </div>
 </div>
 
+<!-- DAY VIEW MODAL -->
+<div class="dim" id="day-view-dim" onclick="if(event.target===this)closeDayView()">
+  <div class="modal-box" style="max-width:420px;display:flex;flex-direction:column;max-height:80vh">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0">
+      <div id="day-view-title" style="font-size:17px;font-weight:800;color:var(--text)"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="openEventSheetFromDay()" style="background:var(--accent);border:none;color:#fff;font-size:20px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">+</button>
+        <button onclick="closeDayView()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
+      </div>
+    </div>
+    <div id="day-view-events" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
 <!-- LOCAL EVENT DETAIL MODAL -->
 <div class="dim" id="local-event-dim" onclick="if(event.target===this)closeLocalEventModal()">
   <div class="modal-box" style="max-width:400px">
@@ -1435,7 +1449,7 @@ function renderStrip() {
     const moreIndicator = evs.length > 1 ? `<div class="day-more-indicator">▾</div>` : '';
     return `<div class="day-col${todayCls}">
       <div class="day-col-top"><div class="day-col-name">${window.matchMedia('(orientation:portrait)').matches ? DAY_NAMES_SHORT[d.getDay()] : DAY_NAMES[d.getDay()]}</div><button class="day-col-mic" onclick="openVoice('${isoDate(d)}')">🎤</button></div>
-      <div class="day-col-date" onclick="openEventSheet('${isoDate(d)}')">${d.getDate()}</div>
+      <div class="day-col-date" onclick="openDayView('${isoDate(d)}')" style="cursor:pointer">${d.getDate()}</div>
       <div class="day-weather" style="cursor:${w?'pointer':'default'}" onclick="${w?`openWeatherModal('${isoDate(d)}',${i})`:''}"><span class="day-weather-icon">${w ? WMO_EMOJI[w.code]||'🌡️' : '–'}</span><span>${w ? `${w.high}°/${w.low}°` : ''}</span></div>
       <div class="day-events-wrap"><div class="day-events">${chips}</div></div>${moreIndicator}
     </div>`;
@@ -2956,6 +2970,50 @@ async function fetchLatestBriefing() {
 }
 
 // ── ADD EVENT SHEET ───────────────────────────────────────────────────────────
+// ── DAY VIEW MODAL ────────────────────────────────────────────────────────────
+let _dayViewDate = null;
+function openDayView(dateStr) {
+  _dayViewDate = dateStr;
+  const d = new Date(dateStr + 'T12:00:00');
+  const label = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  document.getElementById('day-view-title').textContent = label;
+
+  const dayIdx = weekDays.findIndex(wd => isoDate(wd) === dateStr);
+  const evs = (dayIdx >= 0 ? calEventsByDay[dayIdx] : []) || [];
+
+  const eventsEl = document.getElementById('day-view-events');
+  if (!evs.length) {
+    eventsEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📅</div>No events — tap + to add one</div>';
+  } else {
+    eventsEl.innerHTML = evs.map(ev => {
+      const title = ev.summary || 'Event';
+      const time = ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day';
+      const color = eventColor(title);
+      const emoji = eventEmoji(title);
+      const link = ev.htmlLink || '#';
+      const loc = ev.location ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">📍 ${ev.location}</div>` : '';
+      const desc = ev.description ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">${ev.description.replace(/<[^>]+>/g,'').trim()}</div>` : '';
+      return `<a href="${link}" target="_blank" style="display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;text-decoration:none;color:inherit">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(160deg,${color}44,${color}22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${title}</div>
+          <div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:2px">${time}</div>
+          ${loc}${desc}
+        </div>
+      </a>`;
+    }).join('');
+  }
+  document.getElementById('day-view-dim').classList.add('open');
+}
+function closeDayView() {
+  document.getElementById('day-view-dim').classList.remove('open');
+}
+function openEventSheetFromDay() {
+  const date = _dayViewDate;
+  closeDayView();
+  openEventSheet(date);
+}
+
 function openEventSheet(dateStr) {
   document.getElementById('ev-title').value=''; document.getElementById('ev-date').value=dateStr||isoDate(new Date());
   document.getElementById('ev-start').value='09:00'; document.getElementById('ev-end').value='10:00';
