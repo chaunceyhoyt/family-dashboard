@@ -2513,20 +2513,75 @@ function renderSchedule() {
       '<button onclick="signOutCalendar()" title="Sign out" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
     : '<button onclick="signIn()" title="Sign in" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
 
-  document.getElementById('page-schedule').innerHTML =
-    '<div class="home-grid" style="grid-template-columns:1fr 1fr">' +
-      '<div class="home-col">' +
-        '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
-          '<span>📅 Upcoming Events</span>' +
-          '<div style="display:flex;gap:5px">' + calBtns + '</div>' +
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+  if (isPortrait) {
+    document.getElementById('page-schedule').innerHTML =
+      '<div style="display:flex;gap:0;justify-content:center;padding:8px 12px 6px;flex-shrink:0">' +
+        '<button id="sched-tab-0" onclick="scheduleShowTab(0)" style="flex:1;max-width:160px;padding:7px 0;border-radius:20px 0 0 20px;border:1px solid rgba(255,255,255,0.12);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">📅 Events</button>' +
+        '<button id="sched-tab-1" onclick="scheduleShowTab(1)" style="flex:1;max-width:160px;padding:7px 0;border-radius:0 20px 20px 0;border:1px solid rgba(255,255,255,0.12);background:var(--surface);color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer">🔍 Discover</button>' +
+      '</div>' +
+      '<div id="sched-swipe-rail" style="display:flex;flex-direction:row;width:200%;flex:1;min-height:0;transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);will-change:transform">' +
+        '<div style="width:50%;display:flex;flex-direction:column;min-height:0;overflow:hidden">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;padding:0 12px 6px;flex-shrink:0">' +
+            '<span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted)">Upcoming Events</span>' +
+            '<div style="display:flex;gap:5px">' + calBtns + '</div>' +
+          '</div>' +
+          '<div class="home-col-body" style="flex:1;overflow-y:auto;padding:0 12px 12px">' + col1 + '</div>' +
         '</div>' +
-        '<div class="home-col-body">' + col1 + '</div>' +
-      '</div>' +
-      '<div class="home-col">' +
-        '<div class="col-header" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="showPage(\'discover\')" title="Open Discover">🔍 Discover <span style="font-size:11px;color:var(--accent);font-weight:600;letter-spacing:0">View all →</span></div>' +
-        '<div class="home-col-body">' + col2 + '</div>' +
-      '</div>' +
-    '</div>';
+        '<div style="width:50%;display:flex;flex-direction:column;min-height:0;overflow:hidden">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;padding:0 12px 6px;flex-shrink:0">' +
+            '<span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted)">Local Events</span>' +
+            '<button onclick="showPage(\'discover\')" style="background:none;border:none;font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;padding:0">View all →</button>' +
+          '</div>' +
+          '<div class="home-col-body" style="flex:1;overflow-y:auto;padding:0 12px 12px">' + col2 + '</div>' +
+        '</div>' +
+      '</div>';
+    attachScheduleSwipe();
+  } else {
+    document.getElementById('page-schedule').innerHTML =
+      '<div class="home-grid" style="grid-template-columns:1fr 1fr">' +
+        '<div class="home-col">' +
+          '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
+            '<span>📅 Upcoming Events</span>' +
+            '<div style="display:flex;gap:5px">' + calBtns + '</div>' +
+          '</div>' +
+          '<div class="home-col-body">' + col1 + '</div>' +
+        '</div>' +
+        '<div class="home-col">' +
+          '<div class="col-header" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="showPage(\'discover\')" title="Open Discover">🔍 Discover <span style="font-size:11px;color:var(--accent);font-weight:600;letter-spacing:0">View all →</span></div>' +
+          '<div class="home-col-body">' + col2 + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+}
+
+let _schedCurrentTab = 0;
+function scheduleShowTab(idx) {
+  _schedCurrentTab = idx;
+  const rail = document.getElementById('sched-swipe-rail');
+  if (rail) rail.style.transform = idx === 0 ? '' : 'translateX(-50%)';
+  const t0 = document.getElementById('sched-tab-0');
+  const t1 = document.getElementById('sched-tab-1');
+  if (t0 && t1) {
+    t0.style.background = idx === 0 ? 'var(--accent)' : 'var(--surface)';
+    t0.style.color = idx === 0 ? '#fff' : 'var(--text-muted)';
+    t1.style.background = idx === 1 ? 'var(--accent)' : 'var(--surface)';
+    t1.style.color = idx === 1 ? '#fff' : 'var(--text-muted)';
+  }
+}
+
+function attachScheduleSwipe() {
+  const rail = document.getElementById('sched-swipe-rail');
+  if (!rail) return;
+  let startX = 0, moved = false;
+  rail.addEventListener('touchstart', e => { startX = e.touches[0].clientX; moved = false; }, { passive: true });
+  rail.addEventListener('touchmove', () => { moved = true; }, { passive: true });
+  rail.addEventListener('touchend', e => {
+    if (!moved) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 40) scheduleShowTab(dx < 0 ? 1 : 0);
+  }, { passive: true });
 }
 
 // ── DISCOVER PAGE ─────────────────────────────────────────────────────────────
