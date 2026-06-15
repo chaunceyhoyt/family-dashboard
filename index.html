@@ -2780,9 +2780,85 @@ function renderSearchHistory() {
   if (!el) return;
   if (!_searchHistory.length) { el.style.display = 'none'; return; }
   el.style.display = 'flex';
-  el.innerHTML = _searchHistory.map((h, i) =>
-    `<button onclick="loadHistorySearch(${i})" style="flex-shrink:0;background:${_activeHistoryIdx===i?'var(--accent)':'var(--surface)'};border:1px solid rgba(255,255,255,0.12);color:${_activeHistoryIdx===i?'#fff':'var(--text-muted)'};border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">${h.query}</button>`
-  ).join('');
+  el.innerHTML = _searchHistory.map((h, i) => {
+    const active = _activeHistoryIdx === i;
+    return `<button id="hist-pill-${i}" data-idx="${i}"
+      style="flex-shrink:0;background:${active?'var(--accent)':'var(--surface)'};border:1px solid rgba(255,255,255,0.12);color:${active?'#fff':'var(--text-muted)'};border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none"
+      >${h.query}</button>`;
+  }).join('');
+
+  el.querySelectorAll('button[data-idx]').forEach(btn => {
+    const i = parseInt(btn.dataset.idx);
+    let holdTimer = null;
+
+    const startHold = () => {
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        deleteHistorySearch(i);
+      }, 600);
+    };
+    const cancelHold = () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } };
+    const handleClick = () => {
+      if (holdTimer) { cancelHold(); return; } // was a hold, not a tap
+      if (_activeHistoryIdx === i) {
+        // Deactivate — go back to saved listings
+        _activeHistoryIdx = -1;
+        _searchResults = [];
+        const statusEl = document.getElementById('listing-search-status');
+        if (statusEl) { statusEl.textContent = ''; }
+        const input = document.getElementById('listing-search-input');
+        if (input) input.value = '';
+        renderSavedListings();
+        renderSearchHistory();
+      } else {
+        loadHistorySearch(i);
+      }
+    };
+
+    btn.addEventListener('mousedown', startHold);
+    btn.addEventListener('mouseup', () => { cancelHold(); });
+    btn.addEventListener('mouseleave', cancelHold);
+    btn.addEventListener('touchstart', startHold, { passive: true });
+    btn.addEventListener('touchend', () => { cancelHold(); }, { passive: true });
+    btn.addEventListener('touchcancel', cancelHold, { passive: true });
+    btn.addEventListener('click', handleClick);
+  });
+}
+
+function deleteHistorySearch(idx) {
+  _searchHistory.splice(idx, 1);
+  localStorage.setItem('search_history', JSON.stringify(_searchHistory));
+  if (_activeHistoryIdx === idx) {
+    _activeHistoryIdx = -1;
+    _searchResults = [];
+    renderSavedListings();
+  } else if (_activeHistoryIdx > idx) {
+    _activeHistoryIdx--;
+  }
+  renderSearchHistory();
+}
+
+function renderSavedListings() {
+  const bodyEl = document.getElementById('listings-col-body');
+  if (!bodyEl) return;
+  if (!localListings.length) {
+    bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔎</div>Search above to find listings</div>';
+    return;
+  }
+  bodyEl.innerHTML = localListings.map((item, i) => {
+    const icon = LISTING_ICONS[item.category?.toLowerCase()] || '🏷️';
+    const milesRaw = item.miles || item.specs?.mileage || item.specs?.odometer || null;
+    const milesLabel = milesRaw ? ` · ${milesRaw} mi` : '';
+    return `<div class="listing-card" onclick="openListingModal(${i})">
+      <div class="listing-icon">${icon}</div>
+      <div class="listing-body">
+        <div class="listing-title">${item.title}</div>
+        ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
+        <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
+      </div>
+      <div class="listing-arrow">›</div>
+    </div>`;
+  }).join('');
 }
 
 function loadHistorySearch(idx) {
