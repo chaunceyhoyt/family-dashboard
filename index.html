@@ -1257,12 +1257,11 @@ function uid() { return Math.random().toString(36).slice(2,10); }
 const RECURRENCE_LABELS = { daily:'🔁 Daily', '2xdaily':'🔁 2×/day', weekly:'🔁 Weekly', monthly:'🔁 Monthly', annual:'🔁 Annual' };
 
 function isoWeekOf(d) {
+  // Week starts Monday
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = x.getDay() || 7;
-  x.setDate(x.getDate() + 4 - day);
-  const y = x.getFullYear();
-  const w = Math.ceil(((x - new Date(y, 0, 1)) / 86400000 + 1) / 7);
-  return y + '-W' + String(w).padStart(2, '0');
+  const day = (x.getDay() + 6) % 7; // Mon=0 ... Sun=6
+  x.setDate(x.getDate() - day);
+  return isoDate(x);
 }
 
 function isTaskDue(task, personKey) {
@@ -1278,8 +1277,8 @@ function isTaskDue(task, personKey) {
       const count = (dc && dc.date === today) ? (dc.count || 0) : 0;
       if (count >= 2) return false;
       if (count === 0) return true;
-      // last completion > 6 hours ago
-      return !lc || (now - new Date(lc)) > 6 * 3600000;
+      // Second slot available after noon
+      return now.getHours() >= 12;
     }
     case 'weekly':
       return !lc || isoWeekOf(new Date(lc)) !== isoWeekOf(now);
@@ -3799,39 +3798,69 @@ function deadlineLabel(deadline) {
 }
 
 function renderTasks() {
+  cleanupCompletedTasks();
   seedDefaultTasksIfEmpty();
   seedDefaultRewardsIfEmpty();
   const kidKeys = ['son','daughter'];
-  // Remove joint column — exclude joint tasks from display until redesigned
   const cols = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji, color: HOUSE.color }];
   kidKeys.forEach(k => { if (PEOPLE[k]) cols.push({ key:k, label:PEOPLE[k].label, emoji:PEOPLE[k].emoji, color:PEOPLE[k].color }); });
 
+  const activeViewer = _taskViewer && PEOPLE[_taskViewer] ? _taskViewer : null;
+  const viewerCol = activeViewer ? cols.find(c => c.key === activeViewer) : null;
+  const accentColor = (viewerCol && viewerCol.color) ? viewerCol.color : 'var(--accent)';
+
+  function taskIsDoneToday(task, personKey) {
+    if (task.completedAt) return true; // non-recurring completed today
+    if (!task.recurrence) return false;
+    return !isTaskDue(task, personKey);
+  }
+
   function makeTaskCard(task, viewerKey) {
+    const effectiveViewer = viewerKey || task.assignee;
+    const done = taskIsDoneToday(task, effectiveViewer);
     const dl = task.deadline ? deadlineLabel(task.deadline) : '';
     const isOverdue = task.deadline && new Date(task.deadline) < new Date();
     const dlClass = isOverdue ? 'task-card-deadline overdue' : 'task-card-deadline';
     const recurBadge = task.recurrence ? '<span class="task-recur-badge">' + (RECURRENCE_LABELS[task.recurrence]||'') + '</span>' : '';
+
+    if (done) {
+      const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' : '';
+      return '<div class="task-card" style="opacity:0.5">' +
+        '<div class="task-card-top"><span class="task-card-title" style="text-decoration:line-through">' + task.title + '</span>' +
+          '<span style="font-size:11px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:6px;padding:1px 7px">✓ Done</span>' +
+        '</div>' +
+        (recurBadge ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + '</div>' : '') +
+        '<div class="task-card-meta"><span style="font-size:11px;color:var(--text-muted)">Completed today</span>' + delBtn + '</div>' +
+      '</div>';
+    }
+
     let actionHtml = '';
-    if (!task.assignee) {
-      actionHtml = '<span style="font-size:11px;color:var(--text-muted);font-style:italic">Drag to assign</span>';
+    if (!task.assignee || task.assignee === 'null') {
+      // Unassigned — complete button assigns to current viewer
+      const whoCompletes = viewerKey || null;
+      actionHtml = whoCompletes
+        ? '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\',\'' + whoCompletes + '\')">✓ Claim</button>'
+        : '<span style="font-size:11px;color:var(--text-muted);font-style:italic">Select a user to claim</span>';
     } else {
       actionHtml = '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\',\'' + task.assignee + '\')">✓ Done</button>';
     }
-    const delBtn = _pinUnlocked
-      ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>'
-      : '';
-    return '<div class="task-card" draggable="true" data-id="' + task.id + '" ondragstart="taskDragStart(event,\'' + task.id + '\')">' +
+    const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' : '';
+    return '<div class="task-card">' +
       '<div class="task-card-top"><span class="task-card-title">' + task.title + '</span><span class="task-card-pts">+' + (task.points||0) + ' pts</span></div>' +
       (task.desc ? '<div class="task-card-desc">' + task.desc + '</div>' : '') +
       (recurBadge ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + '</div>' : '') +
-      '<div class="task-card-meta">' + (dl ? '<span class="' + dlClass + '">' + dl + '</span>' : '') + actionHtml +
-        delBtn +
-      '</div></div>';
+      '<div class="task-card-meta">' + (dl ? '<span class="' + dlClass + '">' + dl + '</span>' : '') + actionHtml + delBtn + '</div>' +
+    '</div>';
   }
 
   function getColTasks(col) {
-    if (col.key === null) return tasks.filter(t => !t.isJoint && (t.assignee === null || t.assignee === 'null' || t.assignee === undefined));
-    return tasks.filter(t => !t.isJoint && String(t.assignee) === col.key && isTaskDue(t, col.key));
+    if (col.key === null) {
+      // Unassigned: show tasks not assigned to anyone (excluding joint)
+      return tasks.filter(t => !t.isJoint && (!t.assignee || t.assignee === 'null' || t.assignee === 'undefined'));
+    }
+    // Person: show their tasks — due ones + ones completed today
+    return tasks.filter(t => !t.isJoint && String(t.assignee) === col.key &&
+      (isTaskDue(t, col.key) || taskIsDoneToday(t, col.key)));
   }
 
   function makeTile(col, viewerKey) {
@@ -3860,15 +3889,13 @@ function renderTasks() {
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
   const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
 
-  // Shared pill nav markup
+  // Shared pill nav markup — active pill uses viewer's color
   const taskPillActive = _taskPortraitTab !== 'rewards';
-  const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px">' +
-    '<button onclick="setTaskPortraitTab(\'tasks\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (taskPillActive ? 'var(--accent)' : 'transparent') + ';color:' + (taskPillActive ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>' +
-    '<button onclick="setTaskPortraitTab(\'rewards\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (!taskPillActive ? 'var(--accent)' : 'transparent') + ';color:' + (!taskPillActive ? '#fff' : 'var(--text-muted)') + '">🎁 Rewards</button>' +
+  const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;flex:1">' +
+    '<button onclick="setTaskPortraitTab(\'tasks\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (taskPillActive ? accentColor : 'transparent') + ';color:' + (taskPillActive ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>' +
+    '<button onclick="setTaskPortraitTab(\'rewards\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (!taskPillActive ? accentColor : 'transparent') + ';color:' + (!taskPillActive ? '#fff' : 'var(--text-muted)') + '">🎁 Rewards</button>' +
   '</div>';
 
-  const activeViewer = _taskViewer && PEOPLE[_taskViewer] ? _taskViewer : null;
-  const viewerCol = activeViewer ? cols.find(c => c.key === activeViewer) : null;
   const unassignedCol = cols.find(c => c.key === null);
 
   if (isPortrait) {
@@ -3947,15 +3974,24 @@ function openTaskUserSelect() {
   list.innerHTML = kidKeys.map(k => {
     const p = PEOPLE[k];
     const pts = taskPoints[k] || 0;
-    return '<button onclick="selectTaskUser(\'' + k + '\')" style="display:flex;align-items:center;gap:14px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 18px;cursor:pointer;width:100%;text-align:left">' +
-      '<span style="font-size:36px">' + p.emoji + '</span>' +
-      '<div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + p.label + '</div>' +
-        '<div style="font-size:13px;color:#fbbf24;font-weight:700">' + pts + ' pts</div>' +
-      '</div>' +
-    '</button>';
+    const color = p.color || 'var(--accent)';
+    return '<div style="display:flex;align-items:center;gap:6px">' +
+      '<button onclick="selectTaskUser(\'' + k + '\')" style="display:flex;align-items:center;gap:14px;background:' + color + '18;border:2px solid ' + color + '44;border-radius:14px;padding:14px 18px;cursor:pointer;flex:1;text-align:left">' +
+        '<span style="font-size:36px">' + p.emoji + '</span>' +
+        '<div>' +
+          '<div style="font-size:16px;font-weight:700;color:var(--text)">' + p.label + '</div>' +
+          '<div style="font-size:13px;color:#fbbf24;font-weight:700">' + pts + ' pts</div>' +
+        '</div>' +
+      '</button>' +
+      '<button onclick="editTaskUser(\'' + k + '\')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px;font-size:18px;cursor:pointer;flex-shrink:0" title="Edit">✏️</button>' +
+    '</div>';
   }).join('');
   document.getElementById('task-user-select-dim').classList.add('open');
+}
+
+function editTaskUser(key) {
+  document.getElementById('task-user-select-dim').classList.remove('open');
+  openManageUserEdit(key);
 }
 
 function selectTaskUser(key) {
@@ -4066,11 +4102,28 @@ function taskDrop(e, assigneeKey) {
 }
 
 // ── TASK CRUD ─────────────────────────────────────────────────────────────────
+function cleanupCompletedTasks() {
+  // Remove non-recurring tasks completed on a previous day
+  const today = isoDate(new Date());
+  const before = tasks.length;
+  tasks = tasks.filter(function(t) {
+    if (!t.completedAt) return true;
+    return isoDate(new Date(t.completedAt)) === today;
+  });
+  if (tasks.length !== before) saveFamilyData('tasks', tasks);
+}
+
 function completeTask(id, personKey) {
   var task = tasks.find(function(t) { return t.id === id; });
   if (!task) return;
   const now = new Date().toISOString();
   const today = isoDate(new Date());
+
+  // Auto-assign unassigned task to the person completing it
+  if (!task.assignee || task.assignee === 'null') {
+    task.assignee = personKey;
+  }
+
   if (task.recurrence) {
     if (!task.lastCompleted) task.lastCompleted = {};
     task.lastCompleted[personKey] = now;
@@ -4080,8 +4133,11 @@ function completeTask(id, personKey) {
       task.dailyCompletions[personKey] = { date: today, count: (dc && dc.date === today ? (dc.count || 0) + 1 : 1) };
     }
   } else {
-    tasks = tasks.filter(function(t) { return t.id !== id; });
+    // Mark completed — stays visible today, cleared at midnight
+    task.completedAt = now;
+    task.completedBy = personKey;
   }
+
   if (!taskPoints[personKey]) taskPoints[personKey] = 0;
   taskPoints[personKey] += (task.points || 0);
   saveFamilyData('tasks', tasks);
