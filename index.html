@@ -71,6 +71,8 @@
     body.light .dinner-chip { background: rgba(22,101,52,0.10); border-color: rgba(22,101,52,0.25); color: #166534; }
     body.light .dinner-chip.today-meal { background: rgba(22,101,52,0.18); border-color: #166534; color: #14532d; }
     body.light .home-dinner-bar { background: linear-gradient(180deg, var(--header-bg-start), var(--header-bg-end)); border-top: 2px solid rgba(22,101,52,0.2); }
+    body.light .home-dinner-meal-name { color: #166534 !important; }
+    body.light .home-dinner-cook-arrow { color: rgba(22,101,52,0.7) !important; }
     body.light .task-card { border-color: rgba(0,0,0,0.08); }
     body.light .list-item { border-bottom-color: rgba(0,0,0,0.06); }
 
@@ -2678,10 +2680,10 @@ function renderHome() {
           '<span style="font-size:64px">🍽️</span>' +
           '<div>' +
             '<div style="font-size:16px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">' + label + '</div>' +
-            '<div style="font-size:36px;font-weight:800;color:#6ee7b7;line-height:1.2">' + meal + '</div>' +
+            '<div class="home-dinner-meal-name" style="font-size:36px;font-weight:800;color:#6ee7b7;line-height:1.2">' + meal + '</div>' +
           '</div>' +
         '</div>' +
-        (allowCook ? '<span style="font-size:20px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' : '<span style="font-size:13px;color:var(--text-muted)">Tomorrow →</span>') +
+        (allowCook ? '<span class="home-dinner-cook-arrow" style="font-size:20px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' : '<span style="font-size:13px;color:var(--text-muted)">Tomorrow →</span>') +
       '</div>';
     }
     return '<div class="home-dinner-bar" style="opacity:0.5;cursor:default">' +
