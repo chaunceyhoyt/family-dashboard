@@ -228,6 +228,14 @@
     .task-col-pts { font-size:13px; font-weight:800; color:#fbbf24; background:rgba(251,191,36,0.12); border-radius:8px; padding:2px 8px; }
     .task-col-body { flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:80px; -webkit-overflow-scrolling:touch; }
     .task-col-body.drag-over { background:rgba(59,130,246,0.08); }
+    .tasks-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; overflow-y:auto; padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px); align-content:start; flex:1; }
+    .task-tile { background:var(--surface); border-radius:14px; border:1px solid rgba(255,255,255,0.07); overflow:hidden; display:flex; flex-direction:column; }
+    .task-tile.wide { grid-column:1 / -1; }
+    .task-tile-header { padding:10px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+    .task-tile-name { flex:1; font-size:13px; font-weight:700; color:var(--text); }
+    .task-tile-pts { font-size:12px; font-weight:800; color:#fbbf24; background:rgba(251,191,36,0.12); border-radius:8px; padding:2px 7px; }
+    .task-tile-body { overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:60px; max-height:220px; -webkit-overflow-scrolling:touch; }
+    .task-tile-body.drag-over { background:rgba(59,130,246,0.08); }
     .task-card { background:var(--surface2); border-radius:10px; padding:10px; border:1px solid rgba(255,255,255,0.07); cursor:grab; user-select:none; }
     .task-card.dragging { opacity:0.3; }
     .task-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; margin-bottom:4px; }
@@ -899,6 +907,22 @@
     <div class="modal-btns">
       <button class="btn-secondary" onclick="closeGroceryAddModal()">Cancel</button>
       <button class="btn-primary" onclick="confirmAddGrocery()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONSOLIDATE CONFIRM MODAL -->
+<div class="dim" id="consolidate-dim" onclick="if(event.target===this)cancelConsolidation()">
+  <div class="modal-box" style="max-width:420px;max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0">
+      <div class="modal-box-title" style="margin:0">🔀 Review Consolidation</div>
+      <button onclick="cancelConsolidation()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;flex-shrink:0">Gemini wasn't sure about these — check each merge:</div>
+    <div id="consolidate-uncertain-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="applyConsolidation()" class="btn-primary" style="flex:1">Apply</button>
+      <button onclick="cancelConsolidation()" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text);border-radius:10px;padding:10px;font-size:14px;font-weight:600;cursor:pointer">Cancel</button>
     </div>
   </div>
 </div>
@@ -2598,25 +2622,45 @@ function renderHome() {
     return header + body;
   }).join('');
 
-  // Tonight's dinner
+  // Tonight's + Tomorrow's dinner (swipeable)
   const todayMeal = dinners[todayStr] || '';
-  const dinnerSection = todayMeal
-    ? '<div class="home-dinner-bar" onclick="openCookMode(\'' + todayStr + '\',\'' + todayMeal.replace(/'/g,"\\'") + '\')">' +
+  const tomorrowStr = isoDate(new Date(Date.now() + 86400000));
+  const tomorrowMeal = dinners[tomorrowStr] || '';
+  const isAfter8pm = new Date().getHours() >= 20;
+
+  function buildDinnerSlide(meal, label, dateStr, allowCook) {
+    if (meal) {
+      const ck = allowCook ? 'onclick="openCookMode(\'' + dateStr + '\',\'' + meal.replace(/'/g,"\\'") + '\')" style="cursor:pointer"' : 'style="cursor:default"';
+      return '<div class="home-dinner-bar" ' + ck + '>' +
         '<div style="display:flex;align-items:center;gap:20px">' +
           '<span style="font-size:64px">🍽️</span>' +
           '<div>' +
-            '<div style="font-size:16px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Tonight\'s Dinner</div>' +
-            '<div style="font-size:36px;font-weight:800;color:#6ee7b7;line-height:1.2">' + todayMeal + '</div>' +
+            '<div style="font-size:16px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">' + label + '</div>' +
+            '<div style="font-size:36px;font-weight:800;color:#6ee7b7;line-height:1.2">' + meal + '</div>' +
           '</div>' +
         '</div>' +
-        '<span style="font-size:20px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' +
-      '</div>'
-    : '<div class="home-dinner-bar" style="opacity:0.5">' +
-        '<div style="display:flex;align-items:center;gap:20px">' +
-          '<span style="font-size:64px">🍽️</span>' +
-          '<div style="font-size:26px;font-weight:700;color:var(--text-muted)">No dinner planned tonight</div>' +
-        '</div>' +
+        (allowCook ? '<span style="font-size:20px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' : '<span style="font-size:13px;color:var(--text-muted)">Tomorrow →</span>') +
       '</div>';
+    }
+    return '<div class="home-dinner-bar" style="opacity:0.5;cursor:default">' +
+      '<div style="display:flex;align-items:center;gap:20px">' +
+        '<span style="font-size:64px">🍽️</span>' +
+        '<div style="font-size:22px;font-weight:700;color:var(--text-muted)">No ' + label.toLowerCase() + ' planned</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  const dinnerSection =
+    '<div id="dinner-swipe-wrap" style="overflow:hidden;flex-shrink:0;position:relative">' +
+      '<div id="dinner-swipe-rail" style="display:flex;width:200%;transition:transform 0.28s cubic-bezier(.4,0,.2,1)">' +
+        '<div style="width:50%">' + buildDinnerSlide(todayMeal, "Tonight's Dinner", todayStr, true) + '</div>' +
+        '<div style="width:50%">' + buildDinnerSlide(tomorrowMeal, "Tomorrow's Dinner", tomorrowStr, false) + '</div>' +
+      '</div>' +
+      '<div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;pointer-events:none">' +
+        '<div id="dinner-dot-0" style="width:6px;height:6px;border-radius:50%;transition:all 0.2s"></div>' +
+        '<div id="dinner-dot-1" style="width:6px;height:6px;border-radius:50%;transition:all 0.2s"></div>' +
+      '</div>' +
+    '</div>';
 
   const homeCalBtns = gcalToken
     ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
@@ -2642,6 +2686,30 @@ function renderHome() {
       '</div>' +
       dinnerSection +
     '</div>';
+
+  // Wire dinner swipe
+  const dWrap = document.getElementById('dinner-swipe-wrap');
+  const dRail = document.getElementById('dinner-swipe-rail');
+  if (dWrap && dRail) {
+    let dSlide = isAfter8pm ? 1 : 0;
+    function switchDinnerSlide(idx) {
+      dSlide = idx;
+      dRail.style.transform = 'translateX(-' + (idx * 50) + '%)';
+      const d0 = document.getElementById('dinner-dot-0');
+      const d1 = document.getElementById('dinner-dot-1');
+      if (d0) d0.style.background = idx === 0 ? 'rgba(110,231,183,0.9)' : 'rgba(255,255,255,0.25)';
+      if (d1) d1.style.background = idx === 1 ? 'rgba(110,231,183,0.9)' : 'rgba(255,255,255,0.25)';
+    }
+    switchDinnerSlide(dSlide);
+    let dTouchX = null;
+    dWrap.addEventListener('touchstart', e => { dTouchX = e.touches[0].clientX; }, { passive: true });
+    dWrap.addEventListener('touchend', e => {
+      if (dTouchX === null) return;
+      const dx = e.changedTouches[0].clientX - dTouchX;
+      if (Math.abs(dx) > 40) switchDinnerSlide(dx < 0 ? 1 : 0);
+      dTouchX = null;
+    }, { passive: true });
+  }
 }
 
 // ── WEEK PAGE — UPCOMING CALENDAR + LOCAL EVENTS ─────────────────────────────
@@ -3194,21 +3262,25 @@ function renderGrocery() {
     '<div style="padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;flex:1;min-height:0;box-sizing:border-box;">' +
       '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">' +
         '<span>🛒 Grocery List</span>' +
-        '<button onclick="openKrogerOverlay()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">' + (krogerToken ? '🛒 Send to Kroger' : '🔗 Kroger') + '</button>' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+          '<button id="consolidate-btn" onclick="consolidateGrocery(null)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(139,92,246,0.4);background:rgba(139,92,246,0.15);color:#c4b5fd;cursor:pointer;font-weight:600">🔀 Consolidate</button>' +
+          '<button onclick="openKrogerWithConsolidate()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:#2055b7;color:#fff;cursor:pointer;font-weight:600">' + (krogerToken ? '🛒 Kroger' : '🔗 Kroger') + '</button>' +
+        '</div>' +
       '</div>' +
       '<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">' +
-        '<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">' + groceryRows + '</div>' +
-        '<div class="list-add-row" style="justify-content:space-between;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.06)">' +
-          '<div style="display:flex;gap:6px;align-items:center">' +
-            '<button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">All</button>' +
-            '<button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">None</button>' +
-            '<button onclick="clearSelectedGrocery()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:8px">Clear</button>' +
+        '<div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">' +
+          '<div style="display:flex;gap:6px;margin-bottom:8px">' +
+            '<input id="grocery-inline-input" type="text" placeholder="Add item…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addGroceryInline()">' +
+            '<button onclick="addGroceryInline()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">Add</button>' +
+            '<button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add" style="flex-shrink:0">🎤</button>' +
           '</div>' +
           '<div style="display:flex;gap:6px;align-items:center">' +
-            '<button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add">🎤</button>' +
-            '<button class="list-add-btn" onclick="openGroceryAddModal()">+</button>' +
+            '<button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:7px">All</button>' +
+            '<button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:11px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:7px">None</button>' +
+            '<button onclick="clearSelectedGrocery()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:11px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:7px">Clear Done</button>' +
           '</div>' +
         '</div>' +
+        '<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">' + groceryRows + '</div>' +
       '</div>' +
     '</div>';
 }
@@ -3251,6 +3323,92 @@ function toggleGrocery(id) {
 }
 function deleteGrocery(id) {
   grocery = grocery.filter(g => String(g.id)!==String(id)); saveFamilyData('grocery', grocery); reRenderCurrentPage();
+}
+function addGroceryInline() {
+  const input = document.getElementById('grocery-inline-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  grocery.push({ id: uid(), text, done: false });
+  saveFamilyData('grocery', grocery);
+  input.value = '';
+  reRenderCurrentPage();
+  setTimeout(() => { const el = document.getElementById('grocery-inline-input'); if (el) el.focus(); }, 50);
+}
+
+let _consolidatePending = null;
+let _consolidateCb = null;
+
+async function consolidateGrocery(callback) {
+  if (!grocery.length) { if (callback) callback(); return; }
+  const btn = document.getElementById('consolidate-btn');
+  if (btn) { btn.textContent = '⏳ Working…'; btn.disabled = true; }
+  const items = grocery.map(g => g.text);
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/consolidate-grocery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({ items })
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Error');
+    const consolidated = d.consolidated || [];
+    const uncertain = consolidated.filter(i => i.uncertain);
+    const certain = consolidated.filter(i => !i.uncertain);
+    if (uncertain.length > 0) {
+      _consolidatePending = { certain, uncertain };
+      _consolidateCb = callback || null;
+      const list = document.getElementById('consolidate-uncertain-list');
+      if (list) {
+        list.innerHTML = uncertain.map((item, i) =>
+          '<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">' +
+            '<input type="checkbox" id="cmerge-' + i + '" checked style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">' +
+            '<label for="cmerge-' + i + '" style="font-size:14px;color:var(--text);cursor:pointer;flex:1">' + item.text + '</label>' +
+          '</div>'
+        ).join('');
+      }
+      document.getElementById('consolidate-dim').classList.add('open');
+    } else {
+      grocery = certain.map(i => ({ id: uid(), text: i.text, done: false }));
+      saveFamilyData('grocery', grocery);
+      reRenderCurrentPage();
+      if (callback) callback();
+    }
+  } catch (err) {
+    alert('Consolidation failed: ' + err.message);
+    reRenderCurrentPage();
+    if (callback) callback();
+  }
+}
+
+function applyConsolidation() {
+  if (!_consolidatePending) { document.getElementById('consolidate-dim').classList.remove('open'); return; }
+  const { certain, uncertain } = _consolidatePending;
+  const merged = [...certain];
+  uncertain.forEach((item, i) => {
+    const cb = document.getElementById('cmerge-' + i);
+    merged.push({ text: item.text, done: false });
+  });
+  grocery = merged.map(i => ({ id: uid(), text: i.text, done: false }));
+  saveFamilyData('grocery', grocery);
+  _consolidatePending = null;
+  const cb = _consolidateCb;
+  _consolidateCb = null;
+  document.getElementById('consolidate-dim').classList.remove('open');
+  reRenderCurrentPage();
+  if (cb) cb();
+}
+
+function cancelConsolidation() {
+  _consolidatePending = null;
+  const cb = _consolidateCb;
+  _consolidateCb = null;
+  document.getElementById('consolidate-dim').classList.remove('open');
+  if (cb) cb();
+}
+
+function openKrogerWithConsolidate() {
+  consolidateGrocery(() => openKrogerOverlay());
 }
 
 // ── GROCERY VOICE ─────────────────────────────────────────────────────────────
@@ -3672,58 +3830,43 @@ function renderTasks() {
     return tasks.filter(t => String(t.assignee) === col.key && !t.isJoint && isTaskDue(t, col.key));
   }
 
-  function makeCol(col) {
+  function makeTile(col) {
+    const isWide = (col.key === null || col.key === 'joint');
     const colTasks = getColTasks(col);
     const pts = (col.key && col.key !== 'joint') ? (taskPoints[col.key] || 0) : null;
-    const ptsHtml = pts !== null ? '<span class="task-col-pts">' + pts + ' pts</span>' : '';
+    const ptsHtml = pts !== null ? '<span class="task-tile-pts">' + pts + ' pts</span>' : '';
+    const adjustBtn = (pts !== null && _pinUnlocked)
+      ? '<button onclick="adjustPoints(\'' + col.key + '\')" style="font-size:10px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;border-radius:5px;padding:2px 6px;cursor:pointer;margin-left:4px">✏️</button>'
+      : '';
     const cardsHtml = colTasks.length ? colTasks.map(makeTaskCard).join('') : '<div class="task-empty">No tasks due 🎉</div>';
-    return '<div class="task-col" data-assignee="' + col.key + '">' +
-      '<div class="task-col-header"><div class="task-col-avatar" style="background:' + col.color + ';border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center">' + col.emoji + '</div>' +
-      '<div class="task-col-name">' + col.label + '</div>' + ptsHtml + '</div>' +
-      '<div class="task-col-body" data-assignee="' + col.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + col.key + '\')">' + cardsHtml + '</div></div>';
+    return '<div class="task-tile' + (isWide ? ' wide' : '') + '" data-assignee="' + col.key + '">' +
+      '<div class="task-tile-header">' +
+        '<div style="background:' + col.color + ';border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px">' + col.emoji + '</div>' +
+        '<div class="task-tile-name">' + col.label + '</div>' +
+        ptsHtml + adjustBtn +
+      '</div>' +
+      '<div class="task-tile-body" data-assignee="' + col.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + col.key + '\')">' +
+        cardsHtml +
+      '</div>' +
+    '</div>';
   }
 
   const taskNow = new Date();
   const taskDateTimeLabel = taskNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) + ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+  const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
 
   if (isPortrait) {
-    if (!cols.find(c => String(c.key) === String(_activeTaskCol))) _activeTaskCol = null;
-    const pills = cols.map(col => {
-      const active = String(col.key) === String(_activeTaskCol);
-      const pts = (col.key && col.key !== 'joint') ? (taskPoints[col.key] || 0) : null;
-      return '<button id="task-pill-' + col.key + '" data-col="' + col.key + '" style="flex-shrink:0;display:flex;align-items:center;gap:5px;background:' + (active?col.color:'var(--surface)') + ';border:1px solid ' + (active?col.color:'rgba(255,255,255,0.12)') + ';color:' + (active?'#fff':'var(--text-muted)') + ';border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none">' +
-        '<span>' + col.emoji + '</span><span>' + col.label + '</span>' + (pts!==null ? '<span style="font-size:11px;opacity:0.85">' + pts + 'pts</span>' : '') + '</button>';
-    }).join('');
-    const activeCol = cols.find(c => String(c.key) === String(_activeTaskCol));
-    const colBody = activeCol
-      ? '<div class="task-col-body" data-assignee="' + activeCol.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + activeCol.key + '\')">' +
-          (getColTasks(activeCol).map(makeTaskCard).join('') || '<div class="task-empty">No tasks due 🎉</div>') + '</div>'
-      : '<div class="task-empty" style="padding:24px">Select a person above</div>';
-
     document.getElementById('page-tasks').innerHTML =
       '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;padding:0 12px 10px;flex-shrink:0">' +
-        '<div id="task-pills" style="display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none">' + pills + '</div>' +
-        '<button onclick="openRewardsModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0">🎁</button>' +
-        '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>' +
-        '<button class="task-add-btn" onclick="openTaskAddModal()" style="flex-shrink:0">+ Add</button>' +
+      '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 10px;flex-shrink:0">' +
+        '<span style="font-size:15px;font-weight:700;flex:1">🏆 Tasks</span>' +
+        '<button onclick="openRewardsModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer">🎁</button>' +
+        lockBtn +
+        '<button class="task-mgr-btn" onclick="openManageUsersModal()" style="font-size:12px;padding:5px 9px">Users</button>' +
+        '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add</button>' +
       '</div>' +
-      '<div id="task-portrait-col" style="flex:1;overflow-y:auto;padding:0 12px 12px">' + colBody + '</div>';
-
-    // Wire pill clicks + long-press for user edit
-    document.querySelectorAll('#task-pills button[data-col]').forEach(btn => {
-      const key = btn.dataset.col;
-      let holdTimer = null;
-      const startHold = () => { holdTimer = setTimeout(() => { holdTimer = null; if (key && key !== 'joint' && key !== 'null') openManageUserEdit(key); }, 600); };
-      const cancelHold = () => { clearTimeout(holdTimer); holdTimer = null; };
-      btn.addEventListener('touchstart', startHold, {passive:true});
-      btn.addEventListener('touchend', () => { if (holdTimer) { cancelHold(); taskShowCol(key); } }, {passive:true});
-      btn.addEventListener('touchcancel', cancelHold, {passive:true});
-      btn.addEventListener('mousedown', startHold);
-      btn.addEventListener('mouseup', () => { if (holdTimer) { cancelHold(); taskShowCol(key); } });
-      btn.addEventListener('mouseleave', cancelHold);
-    });
+      '<div class="tasks-grid">' + cols.map(makeTile).join('') + '</div>';
   } else {
     document.getElementById('page-tasks').innerHTML =
       '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
@@ -3735,20 +3878,26 @@ function renderTasks() {
             '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
             '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' +
           '</div></div>' +
-        '<div class="tasks-cols-wrap">' + cols.map(makeCol).join('') + '</div>' +
+        '<div class="tasks-grid" style="padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' + cols.map(makeTile).join('') + '</div>' +
       '</div>';
   }
-}
-
-let _activeTaskCol = null;
-function taskShowCol(key) {
-  _activeTaskCol = (key === 'null' || key === null) ? null : key;
-  renderTasks();
 }
 
 function openManageUserEdit(key) {
   openManageUsersModal();
   setTimeout(() => startEditUser(key), 150);
+}
+
+function adjustPoints(personKey) {
+  const current = taskPoints[personKey] || 0;
+  const val = prompt('Adjust points for ' + PEOPLE[personKey].label + ' (current: ' + current + '):', current);
+  if (val === null) return;
+  const n = parseInt(val);
+  if (!isNaN(n) && n >= 0) {
+    taskPoints[personKey] = n;
+    saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
+    renderTasks();
+  }
 }
 
 // ── TASK DRAG/DROP ────────────────────────────────────────────────────────────
