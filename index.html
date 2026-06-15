@@ -1237,6 +1237,7 @@ let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loade
 let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {}, localEvents = [], localListings = [];
 let tasks = [];
 let rewards = [];
+let purchases = []; // { id, rewardId, rewardTitle, rewardEmoji, personKey, redeemedAt }
 let taskPoints = {};
 let taskWeek = '';
 let _pinUnlocked = false;
@@ -1405,6 +1406,7 @@ async function loadFamilyData() {
       }
       else if (row.key === 'tasks') tasks = row.value || [];
       else if (row.key === 'rewards') rewards = row.value || [];
+      else if (row.key === 'purchases') purchases = row.value || [];
       else if (row.key === 'task_points') {
         const stored = row.value || {};
         const cw = currentISOWeek();
@@ -4009,23 +4011,27 @@ function buildInlineRewards() {
   const kidKeys = ['son','daughter'].filter(k => PEOPLE[k]);
   if (!kidKeys.length) return '<div style="text-align:center;color:var(--text-muted);padding:40px">No users configured</div>';
 
-  const pointsBar = kidKeys.map(k => {
-    const p = PEOPLE[k]; const pts = taskPoints[k] || 0;
-    return '<div style="background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:center">' +
-      '<span style="font-size:24px">' + p.emoji + '</span>' +
-      '<div><div style="font-size:12px;color:var(--text-muted)">' + p.label + '</div>' +
-      '<div style="font-weight:800;color:var(--accent)">' + pts + ' pts</div></div>' +
-      (_pinUnlocked ? '<button onclick="adjustPoints(\'' + k + '\')" style="margin-left:auto;font-size:11px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;border-radius:6px;padding:3px 8px;cursor:pointer">✏️ Edit</button>' : '') +
-    '</div>';
-  }).join('');
-
-  const redeemerSel = '<div style="margin:14px 0 10px"><label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Redeeming as</label>' +
-    '<select id="rewards-redeemer-inline" onchange="renderTasks()" class="modal-field" style="margin-top:6px">' +
-    kidKeys.map(k => '<option value="' + k + '">' + PEOPLE[k].emoji + ' ' + PEOPLE[k].label + '</option>').join('') +
-    '</select></div>';
-
-  const redeemer = (document.getElementById('rewards-redeemer-inline') || {}).value || kidKeys[0];
+  // Use _taskViewer as the active redeemer; fall back to first kid
+  const redeemer = (_taskViewer && PEOPLE[_taskViewer]) ? _taskViewer : kidKeys[0];
+  const rp = PEOPLE[redeemer];
   const pts = taskPoints[redeemer] || 0;
+  const accentColor = rp.color || 'var(--accent)';
+
+  // Viewer strip — same pattern as tasks page
+  const viewerStrip =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">' +
+      '<div style="display:flex;align-items:center;gap:8px;flex:1;background:' + accentColor + '1a;border:1px solid ' + accentColor + '44;border-radius:10px;padding:8px 12px">' +
+        '<span style="font-size:24px">' + rp.emoji + '</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:700;color:var(--text)">' + rp.label + '</div>' +
+          '<div style="font-size:13px;font-weight:800;color:#fbbf24">' + pts + ' pts</div>' +
+        '</div>' +
+        (_pinUnlocked ? '<button onclick="adjustPoints(\'' + redeemer + '\')" style="font-size:11px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;border-radius:6px;padding:3px 8px;cursor:pointer">✏️</button>' : '') +
+      '</div>' +
+      '<button onclick="openTaskUserSelect()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text-muted);cursor:pointer;flex-shrink:0">Switch</button>' +
+    '</div>';
+
+  // Available rewards
   const rewardsList = rewards.length
     ? rewards.map(r => {
         const canAfford = pts >= r.cost;
@@ -4033,27 +4039,55 @@ function buildInlineRewards() {
           '<div style="font-size:28px">' + (r.emoji || '🎁') + '</div>' +
           '<div style="flex:1"><div style="font-weight:600;font-size:15px">' + r.title + '</div>' +
           '<div style="font-size:12px;color:var(--text-muted)">' + r.cost + ' pts</div></div>' +
-          '<button onclick="redeemRewardInline(\'' + r.id + '\')" style="background:' + (canAfford ? 'var(--accent)' : 'var(--surface2)') + ';color:' + (canAfford ? '#fff' : 'var(--text-muted)') + ';border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '">' + (canAfford ? 'Redeem' : 'Need ' + (r.cost - pts) + ' more') + '</button>' +
+          '<button onclick="redeemRewardInline(\'' + r.id + '\')" style="background:' + (canAfford ? accentColor : 'var(--surface2)') + ';color:' + (canAfford ? '#fff' : 'var(--text-muted)') + ';border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '">' + (canAfford ? 'Redeem' : 'Need ' + (r.cost - pts) + ' more') + '</button>' +
         '</div>';
       }).join('')
-    : '<div style="text-align:center;color:var(--text-muted);padding:20px">No rewards yet</div>';
+    : '<div style="text-align:center;color:var(--text-muted);padding:20px">No rewards configured</div>';
 
-  return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">' + pointsBar + '</div>' +
-    redeemerSel +
-    '<div style="display:flex;flex-direction:column;gap:10px">' + rewardsList + '</div>';
+  // Purchased history for this redeemer
+  const myPurchases = purchases.filter(p => p.personKey === redeemer);
+  const purchasedSection = '<div style="margin-top:20px">' +
+    '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🧾 Purchased</div>' +
+    (myPurchases.length
+      ? myPurchases.map(p => {
+          const date = new Date(p.redeemedAt).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+          const clearBtn = _pinUnlocked
+            ? '<button onclick="clearPurchase(\'' + p.id + '\')" style="font-size:11px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:6px;padding:2px 7px;cursor:pointer">×</button>'
+            : '';
+          return '<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:10px 12px">' +
+            '<span style="font-size:22px">' + (p.rewardEmoji || '🎁') + '</span>' +
+            '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">' + p.rewardTitle + '</div>' +
+            '<div style="font-size:11px;color:var(--text-muted)">' + date + '</div></div>' +
+            clearBtn +
+          '</div>';
+        }).join('')
+      : '<div style="font-size:13px;color:var(--text-muted);font-style:italic;padding:8px 0">Nothing purchased yet</div>') +
+  '</div>';
+
+  return viewerStrip +
+    '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🎁 Available Rewards</div>' +
+    '<div style="display:flex;flex-direction:column;gap:10px">' + rewardsList + '</div>' +
+    purchasedSection;
 }
 
 function redeemRewardInline(rewardId) {
   const reward = rewards.find(r => r.id === rewardId);
   if (!reward) return;
-  const sel = document.getElementById('rewards-redeemer-inline');
-  const redeemer = sel ? sel.value : null;
-  if (!redeemer || !PEOPLE[redeemer]) return;
+  const redeemer = (_taskViewer && PEOPLE[_taskViewer]) ? _taskViewer : null;
+  if (!redeemer) { alert('Select a user first'); return; }
   const pts = taskPoints[redeemer] || 0;
   if (pts < reward.cost) { alert('Not enough points!'); return; }
   taskPoints[redeemer] = pts - reward.cost;
+  purchases.push({ id: uid(), rewardId: reward.id, rewardTitle: reward.title, rewardEmoji: reward.emoji || '🎁', personKey: redeemer, redeemedAt: new Date().toISOString() });
   saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
-  alert(PEOPLE[redeemer].emoji + ' ' + PEOPLE[redeemer].label + ' redeemed: ' + reward.title + '!');
+  saveFamilyData('purchases', purchases);
+  renderTasks();
+}
+
+function clearPurchase(purchaseId) {
+  if (!_pinUnlocked) return;
+  purchases = purchases.filter(p => p.id !== purchaseId);
+  saveFamilyData('purchases', purchases);
   renderTasks();
 }
 
