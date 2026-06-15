@@ -2687,10 +2687,17 @@ function renderDiscover() {
   const listingsHeader =
     '<div style="display:flex;align-items:center;gap:8px;padding:0 0 8px;flex-shrink:0">' +
       '<input id="listing-search-input" type="text" placeholder="Search anything — cars, furniture…" ' +
-        'style="flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text);outline:none" ' +
+        'style="flex:1;min-width:0;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text);outline:none" ' +
         'onkeydown="if(event.key===\'Enter\')runListingSearch()" />' +
-      '<button onclick="runListingSearch()" style="background:var(--accent);border:none;color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">🔍</button>' +
-      '<button onclick="openManualListingModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);color:var(--text-muted);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer" title="Add manually">＋</button>' +
+      '<select id="listing-search-radius" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 6px;font-size:12px;color:var(--text-muted);font-weight:600;outline:none;cursor:pointer;flex-shrink:0">' +
+        '<option value="25">25 mi</option>' +
+        '<option value="50">50 mi</option>' +
+        '<option value="100" selected>100 mi</option>' +
+        '<option value="200">200 mi</option>' +
+        '<option value="500">500 mi</option>' +
+      '</select>' +
+      '<button onclick="runListingSearch()" style="background:var(--accent);border:none;color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">🔍</button>' +
+      '<button onclick="openManualListingModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);color:var(--text-muted);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer;flex-shrink:0" title="Add manually">＋</button>' +
     '</div>' +
     '<div id="search-history-bar" style="display:none;gap:6px;overflow-x:auto;padding:0 0 8px;flex-shrink:0;scrollbar-width:none"></div>' +
     '<div id="listing-search-status" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;min-height:16px;flex-shrink:0"></div>';
@@ -2823,17 +2830,18 @@ async function runListingSearch() {
   const input = document.getElementById('listing-search-input');
   const query = input?.value?.trim();
   if (!query) return;
+  const radius = document.getElementById('listing-search-radius')?.value || '100';
   _activeHistoryIdx = -1;
   const statusEl = document.getElementById('listing-search-status');
   const bodyEl = document.getElementById('listings-col-body');
-  if (statusEl) { statusEl.textContent = '🔍 Searching with Gemini…'; statusEl.style.color = 'var(--accent)'; }
+  if (statusEl) { statusEl.textContent = `🔍 Searching within ${radius} miles…`; statusEl.style.color = 'var(--accent)'; }
   if (bodyEl) bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon" style="font-size:28px">⏳</div>Finding listings…</div>';
 
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/marketplace-search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-      body: JSON.stringify({ query, location: 'Chesapeake VA 23322' })
+      body: JSON.stringify({ query, location: 'Chesapeake VA 23322', radius })
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'Search failed');
@@ -2841,9 +2849,10 @@ async function runListingSearch() {
     const results = data.listings || [];
     _searchResults = results;
 
-    // Save to history (dedup by query, keep last 5)
-    _searchHistory = _searchHistory.filter(h => h.query.toLowerCase() !== query.toLowerCase());
-    _searchHistory.unshift({ query, results, ts: Date.now() });
+    // Save to history (dedup by query+radius, keep last 5)
+    const histKey = `${query} (${radius}mi)`;
+    _searchHistory = _searchHistory.filter(h => h.query.toLowerCase() !== histKey.toLowerCase());
+    _searchHistory.unshift({ query: histKey, results, ts: Date.now() });
     if (_searchHistory.length > 5) _searchHistory = _searchHistory.slice(0, 5);
     localStorage.setItem('search_history', JSON.stringify(_searchHistory));
     renderSearchHistory();
