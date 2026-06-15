@@ -2768,7 +2768,7 @@ async function runListingSearch() {
   if (!query) return;
   const statusEl = document.getElementById('listing-search-status');
   const bodyEl = document.getElementById('listings-col-body');
-  if (statusEl) { statusEl.textContent = '🔍 Searching with Claude…'; statusEl.style.color = 'var(--accent)'; }
+  if (statusEl) { statusEl.textContent = '🔍 Searching with Gemini…'; statusEl.style.color = 'var(--accent)'; }
   if (bodyEl) bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon" style="font-size:28px;animation:spin 1s linear infinite">⏳</div>Finding listings…</div>';
 
   try {
