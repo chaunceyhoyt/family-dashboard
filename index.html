@@ -1052,6 +1052,15 @@
   </div>
 </div>
 
+<!-- TASK USER SELECT MODAL -->
+<div class="dim" id="task-user-select-dim">
+  <div class="modal-box" style="max-width:320px;text-align:center">
+    <div class="modal-box-title" style="margin-bottom:6px">Who's doing tasks?</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px">Select a family member</div>
+    <div id="task-user-select-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
 <!-- PIN MODAL -->
 <div class="dim" id="pin-dim" onclick="if(event.target===this)closePinModal()">
   <div class="modal-box" style="max-width:300px;text-align:center">
@@ -2559,6 +2568,7 @@ function showPage(page) {
   if (page === 'schedule') renderSchedule();
   else if (page === 'home') renderHome();
   else if (page === 'grocery') renderGrocery();
+  else if (page === 'tasks') { _taskViewer = null; renderTasks(); openTaskUserSelect(); }
   else if (page === 'discover') renderDiscover();
 }
 
@@ -3850,69 +3860,64 @@ function renderTasks() {
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
   const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
 
+  // Shared pill nav markup
+  const taskPillActive = _taskPortraitTab !== 'rewards';
+  const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px">' +
+    '<button onclick="setTaskPortraitTab(\'tasks\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (taskPillActive ? 'var(--accent)' : 'transparent') + ';color:' + (taskPillActive ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>' +
+    '<button onclick="setTaskPortraitTab(\'rewards\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (!taskPillActive ? 'var(--accent)' : 'transparent') + ';color:' + (!taskPillActive ? '#fff' : 'var(--text-muted)') + '">🎁 Rewards</button>' +
+  '</div>';
+
+  const activeViewer = _taskViewer && PEOPLE[_taskViewer] ? _taskViewer : null;
+  const viewerCol = activeViewer ? cols.find(c => c.key === activeViewer) : null;
+  const unassignedCol = cols.find(c => c.key === null);
+
   if (isPortrait) {
-    // Portrait: pill nav for Tasks / Rewards, user selector for whose tasks to show
-    const kidCols = cols.filter(c => c.key !== null);
-    const activeViewer = _taskViewer && PEOPLE[_taskViewer] ? _taskViewer : (kidCols[0] ? kidCols[0].key : null);
-    const viewerCol = cols.find(c => c.key === activeViewer);
-
-    // Pill nav: Tasks | Rewards
-    const taskPillActive = _taskPortraitTab !== 'rewards';
-    const taskPill = '<button onclick="setTaskPortraitTab(\'tasks\')" style="flex:1;padding:8px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (taskPillActive ? 'var(--accent)' : 'var(--surface)') + ';color:' + (taskPillActive ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>';
-    const rewardPill = '<button onclick="setTaskPortraitTab(\'rewards\')" style="flex:1;padding:8px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (!taskPillActive ? 'var(--accent)' : 'var(--surface)') + ';color:' + (!taskPillActive ? '#fff' : 'var(--text-muted)') + '">🎁 Rewards</button>';
-
     if (_taskPortraitTab === 'rewards') {
-      // Inline rewards view
       document.getElementById('page-tasks').innerHTML =
         '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0">' +
-          '<div style="display:flex;gap:4px;flex:1;background:var(--surface2);border-radius:22px;padding:3px">' + taskPill + rewardPill + '</div>' +
-          lockBtn +
+          pillNav + lockBtn +
         '</div>' +
-        '<div style="flex:1;overflow-y:auto;padding:0 12px 12px">' + buildInlineRewards() + '</div>';
+        '<div style="flex:1;overflow-y:auto;padding:0 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px)">' + buildInlineRewards() + '</div>';
     } else {
-      // User selector pills (kids only)
-      const userPills = kidCols.map(col => {
-        const active = col.key === activeViewer;
-        const pts = taskPoints[col.key] || 0;
-        return '<button onclick="setTaskViewer(\'' + col.key + '\')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;border-radius:10px;border:2px solid ' + (active ? col.color : 'transparent') + ';background:' + (active ? col.color + '33' : 'var(--surface)') + ';cursor:pointer">' +
-          '<span style="font-size:22px">' + col.emoji + '</span>' +
-          '<span style="font-size:11px;font-weight:700;color:' + (active ? col.color : 'var(--text-muted)') + '">' + col.label + '</span>' +
-          '<span style="font-size:10px;color:#fbbf24;font-weight:700">' + pts + ' pts' + (active && _pinUnlocked ? ' <span onclick="event.stopPropagation();adjustPoints(\'' + col.key + '\')" style="cursor:pointer">✏️</span>' : '') + '</span>' +
-        '</button>';
-      }).join('');
+      // Who's selected indicator strip
+      const viewerStrip = viewerCol
+        ? '<div style="display:flex;align-items:center;gap:8px;padding:0 12px 8px;flex-shrink:0">' +
+            '<div style="display:flex;align-items:center;gap:6px;flex:1;background:' + viewerCol.color + '22;border:1px solid ' + viewerCol.color + '55;border-radius:10px;padding:6px 10px">' +
+              '<span style="font-size:18px">' + viewerCol.emoji + '</span>' +
+              '<span style="font-size:13px;font-weight:700;color:var(--text);flex:1">' + viewerCol.label + '\'s Tasks</span>' +
+              '<span style="font-size:12px;font-weight:800;color:#fbbf24">' + (taskPoints[viewerCol.key] || 0) + ' pts</span>' +
+              (_pinUnlocked ? '<button onclick="adjustPoints(\'' + viewerCol.key + '\')" style="font-size:11px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;border-radius:5px;padding:2px 7px;cursor:pointer;margin-left:4px">✏️</button>' : '') +
+            '</div>' +
+            '<button onclick="openTaskUserSelect()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 9px;font-size:12px;color:var(--text-muted);cursor:pointer">Switch</button>' +
+          '</div>'
+        : '';
 
-      // Unassigned tile + selected user tile
-      const unassignedCol = cols.find(c => c.key === null);
       const unassignedTile = unassignedCol ? makeTile(unassignedCol, activeViewer) : '';
       const userTile = viewerCol ? makeTile(viewerCol, activeViewer) : '';
 
       document.getElementById('page-tasks').innerHTML =
         '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0">' +
-          '<div style="display:flex;gap:4px;flex:1;background:var(--surface2);border-radius:22px;padding:3px">' + taskPill + rewardPill + '</div>' +
-          lockBtn +
-          '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add</button>' +
+          pillNav + lockBtn +
         '</div>' +
-        '<div style="display:flex;gap:8px;padding:0 12px 8px;flex-shrink:0">' + userPills + '</div>' +
-        '<div class="tasks-grid" style="padding:0 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' +
+        '<div style="padding:0 12px 8px;flex-shrink:0">' +
+          '<button class="task-add-btn" onclick="openTaskAddModal()" style="width:100%;justify-content:center">+ Add Task</button>' +
+        '</div>' +
+        viewerStrip +
+        '<div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding:0 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' +
           unassignedTile + userTile +
         '</div>';
     }
   } else {
-    // Landscape: full grid, Tasks + Rewards pill tabs in header
-    const taskPillActive = _taskPortraitTab !== 'rewards';
-    const pillRow = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;margin-right:4px">' +
-      '<button onclick="setTaskPortraitTab(\'tasks\')" style="padding:5px 14px;border-radius:18px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:' + (taskPillActive ? 'var(--accent)' : 'transparent') + ';color:' + (taskPillActive ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>' +
-      '<button onclick="setTaskPortraitTab(\'rewards\')" style="padding:5px 14px;border-radius:18px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:' + (!taskPillActive ? 'var(--accent)' : 'transparent') + ';color:' + (!taskPillActive ? '#fff' : 'var(--text-muted)') + '">🎁 Rewards</button>' +
-    '</div>';
-
+    // Landscape: full grid with all tiles
+    const lsPillRow = pillNav.replace('flex:1;', '').replace('border-radius:22px', 'border-radius:22px;margin-right:4px');
     if (_taskPortraitTab === 'rewards') {
       document.getElementById('page-tasks').innerHTML =
         '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
         '<div id="tasks-page-wrap">' +
           '<div class="tasks-page-header"><div class="tasks-page-title">🏆 Family Tasks</div>' +
-            '<div class="tasks-page-btns">' + pillRow +
+            '<div class="tasks-page-btns">' + lsPillRow +
               '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Lock') + '</button>' +
               '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
             '</div></div>' +
@@ -3923,7 +3928,7 @@ function renderTasks() {
         '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
         '<div id="tasks-page-wrap">' +
           '<div class="tasks-page-header"><div class="tasks-page-title">🏆 Family Tasks</div>' +
-            '<div class="tasks-page-btns">' + pillRow +
+            '<div class="tasks-page-btns">' + lsPillRow +
               '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Lock') + '</button>' +
               '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
               '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' +
@@ -3932,6 +3937,31 @@ function renderTasks() {
         '</div>';
     }
   }
+}
+
+function openTaskUserSelect() {
+  const kidKeys = ['son','daughter'].filter(k => PEOPLE[k]);
+  if (!kidKeys.length) return;
+  const list = document.getElementById('task-user-select-list');
+  if (!list) return;
+  list.innerHTML = kidKeys.map(k => {
+    const p = PEOPLE[k];
+    const pts = taskPoints[k] || 0;
+    return '<button onclick="selectTaskUser(\'' + k + '\')" style="display:flex;align-items:center;gap:14px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 18px;cursor:pointer;width:100%;text-align:left">' +
+      '<span style="font-size:36px">' + p.emoji + '</span>' +
+      '<div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + p.label + '</div>' +
+        '<div style="font-size:13px;color:#fbbf24;font-weight:700">' + pts + ' pts</div>' +
+      '</div>' +
+    '</button>';
+  }).join('');
+  document.getElementById('task-user-select-dim').classList.add('open');
+}
+
+function selectTaskUser(key) {
+  document.getElementById('task-user-select-dim').classList.remove('open');
+  _taskViewer = key;
+  renderTasks();
 }
 
 let _taskViewer = null;
