@@ -1141,7 +1141,7 @@ let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = 
 let tasks = [];
 let taskPoints = {};
 let taskWeek = '';
-let HOUSE = { label: 'House', emoji: '🏠', color: '#1e293b' };
+let HOUSE = { label: 'Unassigned', emoji: '📋', color: '#1e293b' };
 let editingUserKey = null, newUserSelectedIcon = '', newUserSelectedColor = '';
 let activeDinnerDate = null;
 let drag = { active: false, sourceDate: null, mealText: '' };
@@ -3492,7 +3492,7 @@ function renderTasks() {
       (task.desc ? '<div class="task-card-desc">' + task.desc + '</div>' : '') +
       '<div class="task-card-meta">' +
         (dl ? '<span class="' + dlClass + '">' + dl + '</span>' : '') +
-        '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\')">✓ Done</button>' +
+        (task.assignee ? '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\')">✓ Done</button>' : '<span style="font-size:11px;color:var(--text-muted);font-style:italic">Assign to complete</span>') +
         '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' +
       '</div>' +
     '</div>';
