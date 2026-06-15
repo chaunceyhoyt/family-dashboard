@@ -2685,13 +2685,14 @@ function renderDiscover() {
   const discLabel = discNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) + ' · ' + discNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
   const listingsHeader =
-    '<div style="display:flex;align-items:center;gap:8px;padding:0 0 10px;flex-shrink:0">' +
-      '<input id="listing-search-input" type="text" placeholder="Search local marketplace…" ' +
+    '<div style="display:flex;align-items:center;gap:8px;padding:0 0 8px;flex-shrink:0">' +
+      '<input id="listing-search-input" type="text" placeholder="Search anything — cars, furniture…" ' +
         'style="flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text);outline:none" ' +
         'onkeydown="if(event.key===\'Enter\')runListingSearch()" />' +
       '<button onclick="runListingSearch()" style="background:var(--accent);border:none;color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">🔍</button>' +
       '<button onclick="openManualListingModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);color:var(--text-muted);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer" title="Add manually">＋</button>' +
     '</div>' +
+    '<div id="search-history-bar" style="display:none;gap:6px;overflow-x:auto;padding:0 0 8px;flex-shrink:0;scrollbar-width:none"></div>' +
     '<div id="listing-search-status" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;min-height:16px;flex-shrink:0"></div>';
 
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
@@ -2728,6 +2729,7 @@ function renderDiscover() {
         '</div>' +
       '</div>';
   }
+  renderSearchHistory();
 }
 
 let _discCurrentTab = 0;
@@ -2762,14 +2764,70 @@ function attachDiscoverSwipe() {
 }
 
 // ── MARKETPLACE SEARCH ────────────────────────────────────────────────────────
+let _searchHistory = JSON.parse(localStorage.getItem('search_history') || '[]'); // [{query, results, ts}]
+let _searchResults = [];
+let _activeHistoryIdx = -1; // -1 = live results
+
+function renderSearchHistory() {
+  const el = document.getElementById('search-history-bar');
+  if (!el) return;
+  if (!_searchHistory.length) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = _searchHistory.map((h, i) =>
+    `<button onclick="loadHistorySearch(${i})" style="flex-shrink:0;background:${_activeHistoryIdx===i?'var(--accent)':'var(--surface)'};border:1px solid rgba(255,255,255,0.12);color:${_activeHistoryIdx===i?'#fff':'var(--text-muted)'};border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">${h.query}</button>`
+  ).join('');
+}
+
+function loadHistorySearch(idx) {
+  _activeHistoryIdx = idx;
+  const h = _searchHistory[idx];
+  _searchResults = h.results;
+  const input = document.getElementById('listing-search-input');
+  if (input) input.value = h.query;
+  const statusEl = document.getElementById('listing-search-status');
+  const ago = Math.round((Date.now() - h.ts) / 60000);
+  const agoLabel = ago < 60 ? `${ago}m ago` : `${Math.round(ago/60)}h ago`;
+  if (statusEl) { statusEl.textContent = `${h.results.length} results · searched ${agoLabel}`; statusEl.style.color = 'var(--text-muted)'; }
+  renderSearchResults(h.results);
+  renderSearchHistory();
+}
+
+function renderSearchResults(results) {
+  const bodyEl = document.getElementById('listings-col-body');
+  if (!bodyEl) return;
+  if (!results.length) {
+    bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔎</div>No results found</div>';
+    return;
+  }
+  bodyEl.innerHTML = results.map((item, i) => {
+    const icon = LISTING_ICONS[item.category?.toLowerCase()] || '🏷️';
+    const milesLabel = item.miles ? ` · ${item.miles} mi` : '';
+    const saved = localListings.some(l => l.url === item.url && l.title === item.title);
+    return `<div class="listing-card" style="position:relative;${saved?'opacity:0.5':''}">
+      <div onclick="openSearchResultModal(${i})" style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer">
+        <div class="listing-icon">${icon}</div>
+        <div class="listing-body">
+          <div class="listing-title">${item.title}</div>
+          ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
+          <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
+        </div>
+      </div>
+      ${saved
+        ? `<span style="font-size:11px;color:#4ade80;font-weight:700;flex-shrink:0">✓ Saved</span>`
+        : `<button onclick="saveSearchResult(${i})" style="background:var(--accent);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap">Save</button>`}
+    </div>`;
+  }).join('');
+}
+
 async function runListingSearch() {
   const input = document.getElementById('listing-search-input');
   const query = input?.value?.trim();
   if (!query) return;
+  _activeHistoryIdx = -1;
   const statusEl = document.getElementById('listing-search-status');
   const bodyEl = document.getElementById('listings-col-body');
   if (statusEl) { statusEl.textContent = '🔍 Searching with Gemini…'; statusEl.style.color = 'var(--accent)'; }
-  if (bodyEl) bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon" style="font-size:28px;animation:spin 1s linear infinite">⏳</div>Finding listings…</div>';
+  if (bodyEl) bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon" style="font-size:28px">⏳</div>Finding listings…</div>';
 
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/marketplace-search`, {
@@ -2781,31 +2839,17 @@ async function runListingSearch() {
     if (!res.ok || data.error) throw new Error(data.error || 'Search failed');
 
     const results = data.listings || [];
+    _searchResults = results;
+
+    // Save to history (dedup by query, keep last 5)
+    _searchHistory = _searchHistory.filter(h => h.query.toLowerCase() !== query.toLowerCase());
+    _searchHistory.unshift({ query, results, ts: Date.now() });
+    if (_searchHistory.length > 5) _searchHistory = _searchHistory.slice(0, 5);
+    localStorage.setItem('search_history', JSON.stringify(_searchHistory));
+    renderSearchHistory();
+
     if (statusEl) { statusEl.textContent = results.length ? `Found ${results.length} listing${results.length !== 1 ? 's' : ''} — tap to save` : 'No listings found — try a different search'; statusEl.style.color = 'var(--text-muted)'; }
-
-    if (!results.length) {
-      if (bodyEl) bodyEl.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🔎</div>No results found</div>';
-      return;
-    }
-
-    if (bodyEl) {
-      bodyEl.innerHTML = results.map((item, i) => {
-        const icon = LISTING_ICONS[item.category?.toLowerCase()] || '🏷️';
-        const milesLabel = item.miles ? ` · ${item.miles} mi` : '';
-        return `<div class="listing-card" style="position:relative">
-          <div onclick="openSearchResultModal(${i})" style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer">
-            <div class="listing-icon">${icon}</div>
-            <div class="listing-body">
-              <div class="listing-title">${item.title}</div>
-              ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
-              <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
-            </div>
-          </div>
-          <button onclick="saveSearchResult(${i})" style="background:var(--accent);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap">Save</button>
-        </div>`;
-      }).join('');
-      window._searchResults = results;
-    }
+    renderSearchResults(results);
   } catch (err) {
     if (statusEl) { statusEl.textContent = '⚠️ ' + (err.message || 'Search failed'); statusEl.style.color = 'var(--urgent)'; }
     if (bodyEl) bodyEl.innerHTML = '';
@@ -2813,25 +2857,23 @@ async function runListingSearch() {
 }
 
 function openSearchResultModal(idx) {
-  const item = (window._searchResults || [])[idx];
+  const item = _searchResults[idx];
   if (!item) return;
   openListingModalFromItem(item);
 }
 
 function saveSearchResult(idx) {
-  const item = (window._searchResults || [])[idx];
+  const item = _searchResults[idx];
   if (!item) return;
   const newItem = { id: uid(), ...item };
   localListings.unshift(newItem);
   saveFamilyData('local_listings', localListings);
+  // Update history cache so saved state persists
+  const hi = _activeHistoryIdx >= 0 ? _activeHistoryIdx : 0;
+  if (_searchHistory[hi]) { _searchHistory[hi].results = _searchResults; localStorage.setItem('search_history', JSON.stringify(_searchHistory)); }
+  renderSearchResults(_searchResults);
   const statusEl = document.getElementById('listing-search-status');
-  if (statusEl) { statusEl.textContent = `✓ "${item.title}" saved to Marketplace Finds`; statusEl.style.color = '#4ade80'; }
-  // Remove the card visually
-  const bodyEl = document.getElementById('listings-col-body');
-  if (bodyEl) {
-    const cards = bodyEl.querySelectorAll('.listing-card');
-    if (cards[idx]) cards[idx].style.opacity = '0.3';
-  }
+  if (statusEl) { statusEl.textContent = `✓ "${item.title}" saved`; statusEl.style.color = '#4ade80'; }
 }
 
 // ── MANUAL LISTING ADD ────────────────────────────────────────────────────────
