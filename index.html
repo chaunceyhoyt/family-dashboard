@@ -238,6 +238,18 @@
     .task-card-deadline { font-size:11px; font-weight:600; color:var(--text-muted); }
     .task-card-deadline.overdue { color:#f87171; }
     .task-done-btn { font-size:11px; font-weight:700; background:rgba(74,222,128,0.15); border:1px solid rgba(74,222,128,0.35); color:#4ade80; border-radius:6px; padding:2px 8px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .task-recur-badge { font-size:10px; font-weight:700; background:rgba(99,102,241,0.2); color:#818cf8; border-radius:4px; padding:1px 6px; }
+    .task-joint-badge { font-size:10px; font-weight:700; background:rgba(251,191,36,0.2); color:#fbbf24; border-radius:4px; padding:1px 6px; }
+    .pin-btn { background:var(--surface); border:1px solid rgba(255,255,255,0.12); color:var(--text); font-size:20px; font-weight:700; border-radius:12px; padding:14px; cursor:pointer; }
+    .pin-btn:active { background:var(--accent); color:#fff; }
+    .reward-card { background:var(--surface); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; }
+    .reward-icon { font-size:28px; flex-shrink:0; }
+    .reward-body { flex:1; min-width:0; }
+    .reward-name { font-size:14px; font-weight:700; color:var(--text); }
+    .reward-cost { font-size:13px; color:#fbbf24; font-weight:800; margin-top:2px; }
+    .joint-confirm-btn { font-size:11px; font-weight:700; border-radius:6px; padding:4px 10px; cursor:pointer; border:1px solid; }
+    .joint-confirm-btn.pending { background:rgba(251,191,36,0.15); border-color:rgba(251,191,36,0.4); color:#fbbf24; }
+    .joint-confirm-btn.done { background:rgba(74,222,128,0.15); border-color:rgba(74,222,128,0.4); color:#4ade80; }
     .task-del-btn { font-size:13px; font-weight:700; background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; padding:2px 4px; margin-left:auto; -webkit-tap-highlight-color:transparent; }
     .task-del-btn:active { color:#f87171; }
     .task-empty { font-size:12px; color:var(--text-muted); text-align:center; padding:16px 8px; opacity:0.6; }
@@ -911,6 +923,25 @@
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Deadline (optional)</label>
     <input class="modal-field" id="task-add-deadline" type="datetime-local" style="margin-top:6px">
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Recurrence</label>
+        <select class="modal-field" id="task-add-recurrence" style="margin-top:6px">
+          <option value="">One-time</option>
+          <option value="daily">Daily</option>
+          <option value="2xdaily">Twice Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;padding-bottom:10px">
+          <input type="checkbox" id="task-add-joint" style="width:18px;height:18px;accent-color:var(--accent)">
+          🤝 Joint task
+        </label>
+      </div>
+    </div>
     <div class="modal-btns">
       <button class="btn-secondary" onclick="closeTaskAddModal()">Cancel</button>
       <button class="btn-primary" onclick="confirmAddTask()">Add Task</button>
@@ -978,6 +1009,39 @@
       </div>
     </div>
     <div id="day-view-events" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- REWARDS STORE MODAL -->
+<div class="dim" id="rewards-dim" onclick="if(event.target===this)closeRewardsModal()">
+  <div class="modal-box" style="max-width:460px;max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0">
+      <div class="modal-box-title" style="margin:0">🎁 Rewards Store</div>
+      <button onclick="closeRewardsModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
+    </div>
+    <div id="rewards-points-bar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;flex-shrink:0"></div>
+    <div style="margin-bottom:12px;flex-shrink:0">
+      <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Redeeming as</label>
+      <select id="rewards-redeemer" class="modal-field" style="margin-top:6px"></select>
+    </div>
+    <div id="rewards-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div class="dim" id="pin-dim" onclick="if(event.target===this)closePinModal()">
+  <div class="modal-box" style="max-width:300px;text-align:center">
+    <div class="modal-box-title">🔒 Enter PIN</div>
+    <div id="pin-dots" style="display:flex;gap:12px;justify-content:center;margin:16px 0;font-size:28px">○ ○ ○ ○</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+      <button class="pin-btn" onclick="pinPress('1')">1</button><button class="pin-btn" onclick="pinPress('2')">2</button><button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button><button class="pin-btn" onclick="pinPress('5')">5</button><button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button><button class="pin-btn" onclick="pinPress('8')">8</button><button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn" onclick="pinClear()" style="background:var(--surface2);color:var(--text-muted)">⌫</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn" onclick="closePinModal()" style="background:var(--surface2);color:var(--text-muted)">✕</button>
+    </div>
+    <div id="pin-error" style="font-size:12px;color:var(--urgent);min-height:16px"></div>
   </div>
 </div>
 
@@ -1139,8 +1203,11 @@ let weekDays = [], weatherDays = [], calEventsByDay = [];
 let upcomingFamilyEvents = []; // null = fetch failed, [] = empty, array = loaded
 let dinners = {}, grocery = [], chores = {}, briefingData = null, recipesData = {}, localEvents = [], localListings = [];
 let tasks = [];
+let rewards = [];
 let taskPoints = {};
 let taskWeek = '';
+let _pinUnlocked = false;
+const TASK_PIN = '1007';
 let HOUSE = { label: 'Unassigned', emoji: '📋', color: '#1e293b' };
 let editingUserKey = null, newUserSelectedIcon = '', newUserSelectedColor = '';
 let activeDinnerDate = null;
@@ -1152,6 +1219,47 @@ let groceryVoiceRec = null, pendingGroceryItems = [];
 function isoDate(d) { return d.toISOString().split('T')[0]; }
 function isToday(d) { return isoDate(d) === isoDate(new Date()); }
 function uid() { return Math.random().toString(36).slice(2,10); }
+
+// ── RECURRENCE / TASK DUE HELPERS ──────────────────────────────────────────────
+const RECURRENCE_LABELS = { daily:'🔁 Daily', '2xdaily':'🔁 2×/day', weekly:'🔁 Weekly', monthly:'🔁 Monthly', annual:'🔁 Annual' };
+
+function isoWeekOf(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = x.getDay() || 7;
+  x.setDate(x.getDate() + 4 - day);
+  const y = x.getFullYear();
+  const w = Math.ceil(((x - new Date(y, 0, 1)) / 86400000 + 1) / 7);
+  return y + '-W' + String(w).padStart(2, '0');
+}
+
+function isTaskDue(task, personKey) {
+  if (!task || !task.recurrence) return true;
+  const now = new Date();
+  const today = isoDate(now);
+  const lc = (task.lastCompleted && task.lastCompleted[personKey]) || null;
+  switch (task.recurrence) {
+    case 'daily':
+      return !lc || isoDate(new Date(lc)) !== today;
+    case '2xdaily': {
+      const dc = (task.dailyCompletions && task.dailyCompletions[personKey]) || null;
+      const count = (dc && dc.date === today) ? (dc.count || 0) : 0;
+      if (count >= 2) return false;
+      if (count === 0) return true;
+      // last completion > 6 hours ago
+      return !lc || (now - new Date(lc)) > 6 * 3600000;
+    }
+    case 'weekly':
+      return !lc || isoWeekOf(new Date(lc)) !== isoWeekOf(now);
+    case 'monthly':
+      if (!lc) return true;
+      { const d = new Date(lc); return !(d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()); }
+    case 'annual':
+      if (!lc) return true;
+      return new Date(lc).getFullYear() !== now.getFullYear();
+    default:
+      return true;
+  }
+}
 
 function getWeekDays() {
   const now = new Date(), dow = now.getDay();
@@ -1264,6 +1372,7 @@ async function loadFamilyData() {
         });
       }
       else if (row.key === 'tasks') tasks = row.value || [];
+      else if (row.key === 'rewards') rewards = row.value || [];
       else if (row.key === 'task_points') {
         const stored = row.value || {};
         const cw = currentISOWeek();
@@ -1281,7 +1390,54 @@ async function loadFamilyData() {
       else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
     }
   } catch(e) { console.error('family_data error', e); }
+  seedDefaultTasksIfEmpty();
+  seedDefaultRewardsIfEmpty();
   renderNavBadges();
+}
+
+// ── SEED DEFAULTS ──────────────────────────────────────────────────────────────
+function seedDefaultTasksIfEmpty() {
+  const hasRecurring = tasks.some(t => t.recurrence);
+  if (tasks.length > 0 && hasRecurring) return;
+  const mk = (title, assignee, recurrence, points, extra) => Object.assign({
+    id: uid(), title: title, desc: '', points: points, deadline: null,
+    assignee: assignee, recurrence: recurrence, lastCompleted: {}, dailyCompletions: {}
+  }, extra || {});
+  const defaults = [
+    // Unassigned
+    mk('Take out trash', null, 'weekly', 15),
+    mk('Vacuum living room', null, 'weekly', 20),
+    mk('Wipe down kitchen counters', null, 'daily', 10),
+    mk('Set table for dinner', null, 'daily', 10),
+    // Son
+    mk('Brush teeth', 'son', '2xdaily', 5),
+    mk('Make bed', 'son', 'daily', 10),
+    mk('Do homework', 'son', 'daily', 20),
+    mk('Clean room', 'son', 'weekly', 25),
+    // Daughter
+    mk('Brush teeth', 'daughter', '2xdaily', 5),
+    mk('Make bed', 'daughter', 'daily', 10),
+    mk('Do homework', 'daughter', 'daily', 20),
+    mk('Clean room', 'daughter', 'weekly', 25),
+    // Joint
+    mk('Clean kitchen together', 'joint', 'weekly', 20, { isJoint: true, jointBonus: 25, pendingJoint: [] }),
+    mk('Tidy living room together', 'joint', 'weekly', 15, { isJoint: true, jointBonus: 25, pendingJoint: [] }),
+  ];
+  tasks = tasks.concat(defaults);
+  saveFamilyData('tasks', tasks);
+}
+
+function seedDefaultRewardsIfEmpty() {
+  if (rewards.length > 0) return;
+  rewards = [
+    { id: uid(), name: 'Extra screen time (30 min)', cost: 50, icon: '📱', redeemed: false },
+    { id: uid(), name: 'Choose dinner tonight', cost: 75, icon: '🍕', redeemed: false },
+    { id: uid(), name: 'Stay up 30 min later', cost: 100, icon: '🌙', redeemed: false },
+    { id: uid(), name: 'Skip one chore', cost: 150, icon: '🎟️', redeemed: false },
+    { id: uid(), name: 'Movie night pick', cost: 200, icon: '🎬', redeemed: false },
+    { id: uid(), name: '$5 allowance bonus', cost: 500, icon: '💵', redeemed: false },
+  ];
+  saveFamilyData('rewards', rewards);
 }
 
 async function saveFamilyData(key, value) {
@@ -3475,92 +3631,110 @@ function deadlineLabel(deadline) {
 }
 
 function renderTasks() {
+  seedDefaultTasksIfEmpty();
+  seedDefaultRewardsIfEmpty();
+  const kidKeys = ['son','daughter'];
   const cols = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji, color: HOUSE.color }];
-  Object.entries(PEOPLE).forEach(function(entry) {
-    cols.push({ key: entry[0], label: entry[1].label, emoji: entry[1].emoji, color: entry[1].color });
-  });
+  kidKeys.forEach(k => { if (PEOPLE[k]) cols.push({ key:k, label:PEOPLE[k].label, emoji:PEOPLE[k].emoji, color:PEOPLE[k].color }); });
+  cols.push({ key:'joint', label:'Joint', emoji:'🤝', color:'#92400e' });
 
   function makeTaskCard(task) {
     const dl = task.deadline ? deadlineLabel(task.deadline) : '';
     const isOverdue = task.deadline && new Date(task.deadline) < new Date();
     const dlClass = isOverdue ? 'task-card-deadline overdue' : 'task-card-deadline';
+    const recurBadge = task.recurrence ? '<span class="task-recur-badge">' + (RECURRENCE_LABELS[task.recurrence]||'') + '</span>' : '';
+    const jointBadge = task.isJoint ? '<span class="task-joint-badge">🤝 +' + (task.jointBonus||25) + ' bonus</span>' : '';
+    let actionHtml = '';
+    if (!task.assignee) {
+      actionHtml = '<span style="font-size:11px;color:var(--text-muted);font-style:italic">Assign to complete</span>';
+    } else if (task.isJoint) {
+      actionHtml = kidKeys.map(k => {
+        if (!PEOPLE[k]) return '';
+        const confirmed = (task.pendingJoint||[]).includes(k);
+        return '<button class="joint-confirm-btn ' + (confirmed?'done':'pending') + '" onclick="jointConfirm(\'' + task.id + '\',\'' + k + '\')" ' + (confirmed?'disabled':'') + '>' +
+          (confirmed ? '✓ ' : '') + PEOPLE[k].emoji + ' ' + PEOPLE[k].label + '</button>';
+      }).join('');
+    } else {
+      actionHtml = '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\',\'' + task.assignee + '\')">✓ Done</button>';
+    }
     return '<div class="task-card" draggable="true" data-id="' + task.id + '" ondragstart="taskDragStart(event,\'' + task.id + '\')">' +
-      '<div class="task-card-top">' +
-        '<span class="task-card-title">' + task.title + '</span>' +
-        '<span class="task-card-pts">+' + (task.points || 0) + ' pts</span>' +
-      '</div>' +
+      '<div class="task-card-top"><span class="task-card-title">' + task.title + '</span><span class="task-card-pts">+' + (task.points||0) + ' pts</span></div>' +
       (task.desc ? '<div class="task-card-desc">' + task.desc + '</div>' : '') +
-      '<div class="task-card-meta">' +
-        (dl ? '<span class="' + dlClass + '">' + dl + '</span>' : '') +
-        (task.assignee ? '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\')">✓ Done</button>' : '<span style="font-size:11px;color:var(--text-muted);font-style:italic">Assign to complete</span>') +
+      ((recurBadge||jointBadge) ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + jointBadge + '</div>' : '') +
+      '<div class="task-card-meta">' + (dl ? '<span class="' + dlClass + '">' + dl + '</span>' : '') + actionHtml +
         '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' +
-      '</div>' +
-    '</div>';
+      '</div></div>';
+  }
+
+  function getColTasks(col) {
+    if (col.key === null) return tasks.filter(t => t.assignee === null || t.assignee === 'null');
+    if (col.key === 'joint') return tasks.filter(t => t.isJoint);
+    return tasks.filter(t => String(t.assignee) === col.key && !t.isJoint && isTaskDue(t, col.key));
   }
 
   function makeCol(col) {
-    const colTasks = tasks.filter(function(t) { return String(t.assignee) === String(col.key); });
-    const pts = col.key ? (taskPoints[col.key] || 0) : null;
+    const colTasks = getColTasks(col);
+    const pts = (col.key && col.key !== 'joint') ? (taskPoints[col.key] || 0) : null;
     const ptsHtml = pts !== null ? '<span class="task-col-pts">' + pts + ' pts</span>' : '';
-    const cardsHtml = colTasks.length
-      ? colTasks.map(makeTaskCard).join('')
-      : '<div class="task-empty">Drop tasks here</div>';
+    const cardsHtml = colTasks.length ? colTasks.map(makeTaskCard).join('') : '<div class="task-empty">No tasks due 🎉</div>';
     return '<div class="task-col" data-assignee="' + col.key + '">' +
-      '<div class="task-col-header">' +
-        '<div class="task-col-avatar" style="background:' + col.color + ';border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center">' + col.emoji + '</div>' +
-        '<div class="task-col-name">' + col.label + '</div>' +
-        ptsHtml +
-      '</div>' +
-      '<div class="task-col-body" data-assignee="' + col.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + col.key + '\')">' +
-        cardsHtml +
-      '</div>' +
-    '</div>';
+      '<div class="task-col-header"><div class="task-col-avatar" style="background:' + col.color + ';border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center">' + col.emoji + '</div>' +
+      '<div class="task-col-name">' + col.label + '</div>' + ptsHtml + '</div>' +
+      '<div class="task-col-body" data-assignee="' + col.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + col.key + '\')">' + cardsHtml + '</div></div>';
   }
 
   const taskNow = new Date();
-  const taskDateTimeLabel = taskNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
-    ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-
+  const taskDateTimeLabel = taskNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) + ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
 
   if (isPortrait) {
-    if (_activeTaskCol === null || !cols.find(c => String(c.key) === String(_activeTaskCol))) {
-      _activeTaskCol = cols[0].key;
-    }
-    const pills = cols.map((col, i) => {
+    if (!cols.find(c => String(c.key) === String(_activeTaskCol))) _activeTaskCol = null;
+    const pills = cols.map(col => {
       const active = String(col.key) === String(_activeTaskCol);
-      const pts = col.key ? (taskPoints[col.key] || 0) : null;
-      return `<button onclick="taskShowCol('${col.key}')"
-        style="flex-shrink:0;display:flex;align-items:center;gap:5px;background:${active ? col.color : 'var(--surface)'};border:1px solid ${active ? col.color : 'rgba(255,255,255,0.12)'};color:${active ? '#fff' : 'var(--text-muted)'};border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
-        <span>${col.emoji}</span><span>${col.label}</span>${pts !== null ? `<span style="font-size:11px;opacity:0.85">${pts}pts</span>` : ''}
-      </button>`;
+      const pts = (col.key && col.key !== 'joint') ? (taskPoints[col.key] || 0) : null;
+      return '<button id="task-pill-' + col.key + '" data-col="' + col.key + '" style="flex-shrink:0;display:flex;align-items:center;gap:5px;background:' + (active?col.color:'var(--surface)') + ';border:1px solid ' + (active?col.color:'rgba(255,255,255,0.12)') + ';color:' + (active?'#fff':'var(--text-muted)') + ';border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none">' +
+        '<span>' + col.emoji + '</span><span>' + col.label + '</span>' + (pts!==null ? '<span style="font-size:11px;opacity:0.85">' + pts + 'pts</span>' : '') + '</button>';
     }).join('');
-
     const activeCol = cols.find(c => String(c.key) === String(_activeTaskCol));
-    const colHtml = activeCol ? makeCol(activeCol) : '';
+    const colBody = activeCol
+      ? '<div class="task-col-body" data-assignee="' + activeCol.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + activeCol.key + '\')">' +
+          (getColTasks(activeCol).map(makeTaskCard).join('') || '<div class="task-empty">No tasks due 🎉</div>') + '</div>'
+      : '<div class="task-empty" style="padding:24px">Select a person above</div>';
 
     document.getElementById('page-tasks').innerHTML =
       '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
       '<div style="display:flex;align-items:center;gap:8px;padding:0 12px 10px;flex-shrink:0">' +
         '<div id="task-pills" style="display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none">' + pills + '</div>' +
+        '<button onclick="openRewardsModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0">🎁</button>' +
+        '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>' +
         '<button class="task-add-btn" onclick="openTaskAddModal()" style="flex-shrink:0">+ Add</button>' +
       '</div>' +
-      '<div id="task-portrait-col" style="flex:1;overflow-y:auto;padding:0 12px 12px">' +
-        (activeCol ? '<div class="task-col-body" data-assignee="' + activeCol.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + activeCol.key + '\')">' +
-          (tasks.filter(t => String(t.assignee) === String(activeCol.key)).map(makeTaskCard).join('') || '<div class="task-empty">No tasks here</div>') +
-        '</div>' : '') +
-      '</div>';
+      '<div id="task-portrait-col" style="flex:1;overflow-y:auto;padding:0 12px 12px">' + colBody + '</div>';
+
+    // Wire pill clicks + long-press for user edit
+    document.querySelectorAll('#task-pills button[data-col]').forEach(btn => {
+      const key = btn.dataset.col;
+      let holdTimer = null;
+      const startHold = () => { holdTimer = setTimeout(() => { holdTimer = null; if (key && key !== 'joint' && key !== 'null') openManageUserEdit(key); }, 600); };
+      const cancelHold = () => { clearTimeout(holdTimer); holdTimer = null; };
+      btn.addEventListener('touchstart', startHold, {passive:true});
+      btn.addEventListener('touchend', () => { if (holdTimer) { cancelHold(); taskShowCol(key); } }, {passive:true});
+      btn.addEventListener('touchcancel', cancelHold, {passive:true});
+      btn.addEventListener('mousedown', startHold);
+      btn.addEventListener('mouseup', () => { if (holdTimer) { cancelHold(); taskShowCol(key); } });
+      btn.addEventListener('mouseleave', cancelHold);
+    });
   } else {
     document.getElementById('page-tasks').innerHTML =
       '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
       '<div id="tasks-page-wrap">' +
-        '<div class="tasks-page-header">' +
-          '<div class="tasks-page-title">🏆 Family Tasks</div>' +
+        '<div class="tasks-page-header"><div class="tasks-page-title">🏆 Family Tasks</div>' +
           '<div class="tasks-page-btns">' +
+            '<button onclick="openRewardsModal()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">🎁 Rewards</button>' +
+            '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Lock') + '</button>' +
             '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
             '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' +
-          '</div>' +
-        '</div>' +
+          '</div></div>' +
         '<div class="tasks-cols-wrap">' + cols.map(makeCol).join('') + '</div>' +
       '</div>';
   }
@@ -3568,8 +3742,13 @@ function renderTasks() {
 
 let _activeTaskCol = null;
 function taskShowCol(key) {
-  _activeTaskCol = key === 'null' ? null : key;
+  _activeTaskCol = (key === 'null' || key === null) ? null : key;
   renderTasks();
+}
+
+function openManageUserEdit(key) {
+  openManageUsersModal();
+  setTimeout(() => startEditUser(key), 150);
 }
 
 // ── TASK DRAG/DROP ────────────────────────────────────────────────────────────
@@ -3600,20 +3779,51 @@ function taskDrop(e, assigneeKey) {
 }
 
 // ── TASK CRUD ─────────────────────────────────────────────────────────────────
-function completeTask(id) {
+function completeTask(id, personKey) {
   var task = tasks.find(function(t) { return t.id === id; });
   if (!task) return;
-  if (task.assignee) {
-    var isOverdue = task.deadline && new Date(task.deadline) < new Date();
-    if (!isOverdue) {
-      if (!taskPoints[task.assignee]) taskPoints[task.assignee] = 0;
-      taskPoints[task.assignee] += (task.points || 0);
+  const now = new Date().toISOString();
+  const today = isoDate(new Date());
+  if (task.recurrence) {
+    if (!task.lastCompleted) task.lastCompleted = {};
+    task.lastCompleted[personKey] = now;
+    if (task.recurrence === '2xdaily') {
+      if (!task.dailyCompletions) task.dailyCompletions = {};
+      const dc = task.dailyCompletions[personKey];
+      task.dailyCompletions[personKey] = { date: today, count: (dc && dc.date === today ? (dc.count || 0) + 1 : 1) };
     }
+  } else {
+    tasks = tasks.filter(function(t) { return t.id !== id; });
   }
-  tasks = tasks.filter(function(t) { return t.id !== id; });
+  if (!taskPoints[personKey]) taskPoints[personKey] = 0;
+  taskPoints[personKey] += (task.points || 0);
   saveFamilyData('tasks', tasks);
   saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
   renderNavBadges();
+  renderTasks();
+}
+
+function jointConfirm(id, personKey) {
+  var task = tasks.find(function(t) { return t.id === id; });
+  if (!task) return;
+  if (!task.pendingJoint) task.pendingJoint = [];
+  if (!task.pendingJoint.includes(personKey)) task.pendingJoint.push(personKey);
+  const kidKeys = ['son','daughter'].filter(function(k) { return PEOPLE[k]; });
+  if (kidKeys.every(function(k) { return task.pendingJoint.includes(k); })) {
+    kidKeys.forEach(function(k) {
+      if (!taskPoints[k]) taskPoints[k] = 0;
+      taskPoints[k] += (task.points || 0) + (task.jointBonus || 25);
+    });
+    task.pendingJoint = [];
+    if (task.recurrence) {
+      if (!task.lastCompleted) task.lastCompleted = {};
+      kidKeys.forEach(function(k) { task.lastCompleted[k] = new Date().toISOString(); });
+    } else {
+      tasks = tasks.filter(function(t) { return t.id !== id; });
+    }
+    saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
+  }
+  saveFamilyData('tasks', tasks);
   renderTasks();
 }
 
@@ -3649,11 +3859,118 @@ function confirmAddTask() {
   var deadline = document.getElementById('task-add-deadline').value || null;
   var assigneeVal = document.getElementById('task-add-assignee').value;
   var assignee = assigneeVal === 'null' ? null : assigneeVal;
-  tasks.push({ id: uid(), title: title, desc: desc, points: points, deadline: deadline, assignee: assignee });
+  var recurrenceEl = document.getElementById('task-add-recurrence');
+  var recurrence = recurrenceEl ? (recurrenceEl.value || null) : null;
+  var isJointEl = document.getElementById('task-add-joint');
+  var isJoint = isJointEl ? isJointEl.checked : false;
+  var newTask = { id: uid(), title: title, desc: desc, points: points, deadline: deadline, assignee: assignee };
+  if (recurrence) newTask.recurrence = recurrence;
+  if (isJoint) { newTask.isJoint = true; newTask.jointBonus = 25; newTask.pendingJoint = []; }
+  tasks.push(newTask);
   saveFamilyData('tasks', tasks);
   closeTaskAddModal();
   renderNavBadges();
   renderTasks();
+}
+
+// ── REWARDS MODAL ─────────────────────────────────────────────────────────────
+function openRewardsModal() {
+  renderRewards();
+  document.getElementById('rewards-dim').classList.add('open');
+}
+function closeRewardsModal() {
+  document.getElementById('rewards-dim').classList.remove('open');
+}
+function renderRewards() {
+  const kidKeys = ['son','daughter'].filter(function(k) { return PEOPLE[k]; });
+  // Points bar
+  var bar = document.getElementById('rewards-points-bar');
+  bar.innerHTML = kidKeys.map(function(k) {
+    var p = PEOPLE[k];
+    var pts = taskPoints[k] || 0;
+    return '<div style="background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 14px;display:flex;gap:8px;align-items:center">' +
+      '<span style="font-size:20px">' + p.emoji + '</span>' +
+      '<div><div style="font-size:12px;color:var(--text-muted)">' + p.label + '</div><div style="font-weight:700;color:var(--accent)">' + pts + ' pts</div></div></div>';
+  }).join('');
+  // Redeemer dropdown
+  var sel = document.getElementById('rewards-redeemer');
+  var prevVal = sel.value;
+  sel.innerHTML = kidKeys.map(function(k) {
+    return '<option value="' + k + '">' + PEOPLE[k].emoji + ' ' + PEOPLE[k].label + '</option>';
+  }).join('');
+  if (prevVal && kidKeys.includes(prevVal)) sel.value = prevVal;
+  sel.onchange = function() { renderRewards(); };
+  // Rewards list
+  var list = document.getElementById('rewards-list');
+  list.innerHTML = rewards.map(function(r) {
+    var redeemer = sel.value || kidKeys[0];
+    var pts = taskPoints[redeemer] || 0;
+    var canAfford = pts >= r.cost;
+    return '<div class="reward-card">' +
+      '<div style="font-size:28px">' + (r.emoji || '🎁') + '</div>' +
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px">' + r.title + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted)">' + r.cost + ' pts</div></div>' +
+      '<button onclick="redeemReward(\'' + r.id + '\')" style="background:' + (canAfford ? 'var(--accent)' : 'var(--surface2)') + ';color:' + (canAfford ? '#fff' : 'var(--text-muted)') + ';border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '">' + (canAfford ? 'Redeem' : 'Need ' + (r.cost - pts) + ' more') + '</button>' +
+      '</div>';
+  }).join('') || '<div style="text-align:center;color:var(--text-muted);padding:20px">No rewards yet</div>';
+}
+function redeemReward(rewardId) {
+  var reward = rewards.find(function(r) { return r.id === rewardId; });
+  if (!reward) return;
+  var sel = document.getElementById('rewards-redeemer');
+  var redeemer = sel ? sel.value : null;
+  if (!redeemer || !PEOPLE[redeemer]) return;
+  var pts = taskPoints[redeemer] || 0;
+  if (pts < reward.cost) { alert('Not enough points!'); return; }
+  taskPoints[redeemer] = pts - reward.cost;
+  saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
+  renderRewards();
+  alert(PEOPLE[redeemer].emoji + ' ' + PEOPLE[redeemer].label + ' redeemed: ' + reward.title + '!');
+}
+
+// ── PIN MODAL ─────────────────────────────────────────────────────────────────
+var _pinEntry = '';
+var _pinCallback = null;
+function openPinModal(callback) {
+  _pinEntry = '';
+  _pinCallback = callback || null;
+  document.getElementById('pin-error').textContent = '';
+  updatePinDots();
+  document.getElementById('pin-dim').classList.add('open');
+}
+function closePinModal() {
+  _pinEntry = '';
+  _pinCallback = null;
+  document.getElementById('pin-dim').classList.remove('open');
+}
+function updatePinDots() {
+  var dots = '';
+  for (var i = 0; i < 4; i++) dots += (i < _pinEntry.length ? '●' : '○') + (i < 3 ? ' ' : '');
+  document.getElementById('pin-dots').textContent = dots;
+}
+function pinPress(digit) {
+  if (_pinEntry.length >= 4) return;
+  _pinEntry += digit;
+  updatePinDots();
+  if (_pinEntry.length === 4) {
+    if (_pinEntry === TASK_PIN) {
+      _pinUnlocked = true;
+      closePinModal();
+      if (_pinCallback) { var cb = _pinCallback; _pinCallback = null; cb(); }
+      else renderTasks();
+    } else {
+      document.getElementById('pin-error').textContent = 'Incorrect PIN';
+      setTimeout(function() { _pinEntry = ''; updatePinDots(); document.getElementById('pin-error').textContent = ''; }, 900);
+    }
+  }
+}
+function pinClear() {
+  _pinEntry = _pinEntry.slice(0, -1);
+  updatePinDots();
+}
+function togglePinLock() {
+  if (_pinUnlocked) { _pinUnlocked = false; renderTasks(); }
+  else openPinModal();
 }
 
 // ── MANAGE USERS MODAL ────────────────────────────────────────────────────────
