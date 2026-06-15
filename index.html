@@ -3521,18 +3521,55 @@ function renderTasks() {
   const taskDateTimeLabel = taskNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
     ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
-  document.getElementById('page-tasks').innerHTML =
-    '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
-    '<div id="tasks-page-wrap">' +
-      '<div class="tasks-page-header">' +
-        '<div class="tasks-page-title">🏆 Family Tasks</div>' +
-        '<div class="tasks-page-btns">' +
-          '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
-          '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' +
-        '</div>' +
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+  if (isPortrait) {
+    if (_activeTaskCol === null || !cols.find(c => String(c.key) === String(_activeTaskCol))) {
+      _activeTaskCol = cols[0].key;
+    }
+    const pills = cols.map((col, i) => {
+      const active = String(col.key) === String(_activeTaskCol);
+      const pts = col.key ? (taskPoints[col.key] || 0) : null;
+      return `<button onclick="taskShowCol('${col.key}')"
+        style="flex-shrink:0;display:flex;align-items:center;gap:5px;background:${active ? col.color : 'var(--surface)'};border:1px solid ${active ? col.color : 'rgba(255,255,255,0.12)'};color:${active ? '#fff' : 'var(--text-muted)'};border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+        <span>${col.emoji}</span><span>${col.label}</span>${pts !== null ? `<span style="font-size:11px;opacity:0.85">${pts}pts</span>` : ''}
+      </button>`;
+    }).join('');
+
+    const activeCol = cols.find(c => String(c.key) === String(_activeTaskCol));
+    const colHtml = activeCol ? makeCol(activeCol) : '';
+
+    document.getElementById('page-tasks').innerHTML =
+      '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;padding:0 12px 10px;flex-shrink:0">' +
+        '<div id="task-pills" style="display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none">' + pills + '</div>' +
+        '<button class="task-add-btn" onclick="openTaskAddModal()" style="flex-shrink:0">+ Add</button>' +
       '</div>' +
-      '<div class="tasks-cols-wrap">' + cols.map(makeCol).join('') + '</div>' +
-    '</div>';
+      '<div id="task-portrait-col" style="flex:1;overflow-y:auto;padding:0 12px 12px">' +
+        (activeCol ? '<div class="task-col-body" data-assignee="' + activeCol.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + activeCol.key + '\')">' +
+          (tasks.filter(t => String(t.assignee) === String(activeCol.key)).map(makeTaskCard).join('') || '<div class="task-empty">No tasks here</div>') +
+        '</div>' : '') +
+      '</div>';
+  } else {
+    document.getElementById('page-tasks').innerHTML =
+      '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
+      '<div id="tasks-page-wrap">' +
+        '<div class="tasks-page-header">' +
+          '<div class="tasks-page-title">🏆 Family Tasks</div>' +
+          '<div class="tasks-page-btns">' +
+            '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
+            '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tasks-cols-wrap">' + cols.map(makeCol).join('') + '</div>' +
+      '</div>';
+  }
+}
+
+let _activeTaskCol = null;
+function taskShowCol(key) {
+  _activeTaskCol = key === 'null' ? null : key;
+  renderTasks();
 }
 
 // ── TASK DRAG/DROP ────────────────────────────────────────────────────────────
