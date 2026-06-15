@@ -1088,7 +1088,10 @@
 <!-- TASK USER SELECT MODAL -->
 <div class="dim" id="task-user-select-dim">
   <div class="modal-box" style="max-width:320px;text-align:center">
-    <div class="modal-box-title" style="margin-bottom:6px">Who's doing tasks?</div>
+    <div style="display:flex;align-items:center;margin-bottom:6px">
+      <button id="task-user-select-back" onclick="taskUserSelectBack()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 8px 0 0;line-height:1">‹</button>
+      <div class="modal-box-title" style="flex:1;margin:0">Who's doing tasks?</div>
+    </div>
     <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px">Select a family member</div>
     <div id="task-user-select-list" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
@@ -2582,6 +2585,7 @@ async function addDinnerIngredientsToGrocery() {
 const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3, discover: 4 };
 
 function showPage(page) {
+  if (page === 'tasks' && currentPage !== 'tasks') _prevPage = currentPage;
   currentPage = page;
   localStorage.setItem('lastPage', page);
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
@@ -4029,8 +4033,14 @@ function selectTaskUser(key) {
   renderTasks();
 }
 
+function taskUserSelectBack() {
+  document.getElementById('task-user-select-dim').classList.remove('open');
+  showPage(_prevPage || 'home');
+}
+
 let _taskViewer = null;
 let _taskPortraitTab = 'tasks';
+let _prevPage = 'home';
 function setTaskViewer(key) { _taskViewer = key; renderTasks(); }
 function setTaskPortraitTab(tab) { _taskPortraitTab = tab; renderTasks(); }
 
