@@ -986,9 +986,17 @@
       <div class="icon-grid" id="edit-user-icon-grid"></div>
       <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Color</div>
       <div class="color-grid" id="edit-user-color-grid"></div>
-      <div class="modal-btns" style="margin-top:8px">
-        <button class="btn-secondary" onclick="cancelEditUser()">Cancel</button>
-        <button class="btn-primary" id="edit-user-confirm-btn" onclick="confirmEditUser()">Save</button>
+      <div id="edit-user-points-row" style="display:none;margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;color:var(--text-muted);flex:1">Points</span>
+        <span id="edit-user-pts-display" style="font-size:14px;font-weight:800;color:#fbbf24"></span>
+        <button onclick="editPanelAdjustPoints()" style="font-size:12px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;border-radius:6px;padding:4px 10px;cursor:pointer">Adjust</button>
+      </div>
+      <div class="modal-btns" style="margin-top:8px;justify-content:space-between">
+        <button id="edit-user-remove-btn" onclick="removeEditingUser()" class="btn-secondary" style="display:none;color:#fca5a5;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1)">Remove</button>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button class="btn-secondary" onclick="cancelEditUser()">Cancel</button>
+          <button class="btn-primary" id="edit-user-confirm-btn" onclick="confirmEditUser()">Save</button>
+        </div>
       </div>
     </div>
     <div id="manage-users-bottom" style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;display:flex;justify-content:space-between">
@@ -3870,15 +3878,12 @@ function renderTasks() {
     const colTasks = getColTasks(col);
     const pts = col.key ? (taskPoints[col.key] || 0) : null;
     const ptsHtml = pts !== null ? '<span class="task-tile-pts">' + pts + ' pts</span>' : '';
-    const adjustBtn = (pts !== null && _pinUnlocked)
-      ? '<button onclick="adjustPoints(\'' + col.key + '\')" style="font-size:10px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;border-radius:5px;padding:2px 6px;cursor:pointer;margin-left:4px">✏️</button>'
-      : '';
     const cardsHtml = colTasks.length ? colTasks.map(t => makeTaskCard(t, viewerKey)).join('') : '<div class="task-empty">No tasks due 🎉</div>';
     return '<div class="task-tile' + (isWide ? ' wide' : '') + '" data-assignee="' + col.key + '">' +
       '<div class="task-tile-header">' +
         '<div style="background:' + col.color + ';border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px">' + col.emoji + '</div>' +
         '<div class="task-tile-name">' + col.label + '</div>' +
-        ptsHtml + adjustBtn +
+        ptsHtml +
       '</div>' +
       '<div class="task-tile-body" data-assignee="' + col.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + col.key + '\')">' +
         cardsHtml +
@@ -3916,7 +3921,6 @@ function renderTasks() {
               '<span style="font-size:18px">' + viewerCol.emoji + '</span>' +
               '<span style="font-size:13px;font-weight:700;color:var(--text);flex:1">' + viewerCol.label + '\'s Tasks</span>' +
               '<span style="font-size:12px;font-weight:800;color:#fbbf24">' + (taskPoints[viewerCol.key] || 0) + ' pts</span>' +
-              (_pinUnlocked ? '<button onclick="adjustPoints(\'' + viewerCol.key + '\')" style="font-size:11px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;border-radius:5px;padding:2px 7px;cursor:pointer;margin-left:4px">✏️</button>' : '') +
             '</div>' +
             '<button onclick="openTaskUserSelect()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 9px;font-size:12px;color:var(--text-muted);cursor:pointer">Switch</button>' +
           '</div>'
@@ -4024,7 +4028,6 @@ function buildInlineRewards() {
           '<div style="font-size:13px;font-weight:700;color:var(--text)">' + rp.label + '</div>' +
           '<div style="font-size:12px;font-weight:800;color:#fbbf24">' + pts + ' pts</div>' +
         '</div>' +
-        (_pinUnlocked ? '<button onclick="adjustPoints(\'' + redeemer + '\')" style="font-size:11px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;border-radius:6px;padding:3px 8px;cursor:pointer">✏️</button>' : '') +
       '</div>' +
       '<button onclick="openTaskUserSelect()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 9px;font-size:12px;color:var(--text-muted);cursor:pointer;flex-shrink:0">Switch</button>' +
     '</div>';
@@ -4480,16 +4483,17 @@ function renderManageUsersList() {
   '</div>';
   const peopleRows = Object.entries(PEOPLE).map(function(entry) {
     const k = entry[0], p = entry[1];
+    const pts = taskPoints[k] || 0;
     return '<div class="user-row">' +
       '<div class="user-row-avatar" style="background:' + p.color + '">' + p.emoji + '</div>' +
-      '<div class="user-row-name">' + p.label + '</div>' +
-      '<button class="user-edit-btn" onclick="showEditUserForm(\'' + k + '\')">Edit</button>' +
-      '<button class="user-remove-btn" onclick="removeUser(\'' + k + '\')">Remove</button>' +
+      '<div class="user-row-name">' + p.label + '<span style="font-size:11px;color:#fbbf24;font-weight:700;margin-left:6px">' + pts + ' pts</span></div>' +
+      (_pinUnlocked ? '<button class="user-edit-btn" onclick="showEditUserForm(\'' + k + '\')">Edit</button>' : '') +
     '</div>';
   }).join('');
   document.getElementById('manage-users-list').innerHTML = houseRow + peopleRows;
 }
 function showEditUserForm(key) {
+  if (!_pinUnlocked) return; // edit panel locked
   editingUserKey = key;
   const isHouse = key === '__house__';
   const src = isHouse ? HOUSE : PEOPLE[key];
@@ -4503,9 +4507,38 @@ function showEditUserForm(key) {
   document.getElementById('edit-user-color-grid').innerHTML = PERSON_COLORS.map(function(c) {
     return '<div class="color-swatch' + (c === newUserSelectedColor ? ' selected' : '') + '" style="background:' + c + '" data-color="' + c + '" onclick="selectEditUserColor(\'' + c + '\')"></div>';
   }).join('');
+  // Points row and remove button — only for real users, not house
+  const ptsRow = document.getElementById('edit-user-points-row');
+  const removeBtn = document.getElementById('edit-user-remove-btn');
+  if (!isHouse) {
+    ptsRow.style.display = 'flex';
+    document.getElementById('edit-user-pts-display').textContent = (taskPoints[key] || 0) + ' pts';
+    removeBtn.style.display = 'inline-flex';
+  } else {
+    ptsRow.style.display = 'none';
+    removeBtn.style.display = 'none';
+  }
   document.getElementById('edit-user-confirm-btn').onclick = confirmEditUser;
   document.getElementById('manage-users-edit-form').style.display = 'block';
   document.getElementById('manage-users-bottom').style.display = 'none';
+}
+function editPanelAdjustPoints() {
+  if (!editingUserKey || !_pinUnlocked) return;
+  const current = taskPoints[editingUserKey] || 0;
+  const val = prompt('Adjust points for ' + PEOPLE[editingUserKey].label + ' (current: ' + current + '):', current);
+  if (val === null) return;
+  const n = parseInt(val);
+  if (!isNaN(n) && n >= 0) {
+    taskPoints[editingUserKey] = n;
+    saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
+    document.getElementById('edit-user-pts-display').textContent = n + ' pts';
+  }
+}
+function removeEditingUser() {
+  if (!editingUserKey || !_pinUnlocked) return;
+  if (!confirm('Remove ' + PEOPLE[editingUserKey].label + '?')) return;
+  removeUser(editingUserKey);
+  cancelEditUser();
 }
 function cancelEditUser() {
   document.getElementById('manage-users-edit-form').style.display = 'none';
