@@ -1086,16 +1086,6 @@
 </div>
 
 <!-- TASK USER SELECT MODAL -->
-<div class="dim" id="task-user-select-dim">
-  <div class="modal-box" style="max-width:320px;text-align:center">
-    <div style="display:flex;align-items:center;margin-bottom:6px">
-      <button id="task-user-select-back" onclick="taskUserSelectBack()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 8px 0 0;line-height:1">‹</button>
-      <div class="modal-box-title" style="flex:1;margin:0">Who's doing tasks?</div>
-    </div>
-    <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px">Select a family member</div>
-    <div id="task-user-select-list" style="display:flex;flex-direction:column;gap:10px"></div>
-  </div>
-</div>
 
 <!-- PIN MODAL -->
 <div class="dim" id="pin-dim" onclick="if(event.target===this)closePinModal()">
@@ -2585,7 +2575,6 @@ async function addDinnerIngredientsToGrocery() {
 const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3, discover: 4 };
 
 function showPage(page) {
-  if (page === 'tasks' && currentPage !== 'tasks') _prevPage = currentPage;
   currentPage = page;
   localStorage.setItem('lastPage', page);
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
@@ -2606,7 +2595,7 @@ function showPage(page) {
   if (page === 'schedule') renderSchedule();
   else if (page === 'home') renderHome();
   else if (page === 'grocery') renderGrocery();
-  else if (page === 'tasks') { _taskViewer = null; renderTasks(); openTaskUserSelect(); }
+  else if (page === 'tasks') { _taskViewer = null; renderTasks(); }
   else if (page === 'discover') renderDiscover();
 }
 
@@ -3925,6 +3914,34 @@ function renderTasks() {
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
   const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
 
+  // Portrait with no viewer selected → show inline user-select landing page
+  if (isPortrait && !activeViewer) {
+    const kidKeys = ['son','daughter'].filter(k => PEOPLE[k]);
+    const userCards = kidKeys.map(k => {
+      const p = PEOPLE[k];
+      const pts = taskPoints[k] || 0;
+      const color = p.color || 'var(--accent)';
+      return '<div style="display:flex;align-items:center;gap:8px">' +
+        '<button onclick="selectTaskUser(\'' + k + '\')" style="display:flex;align-items:center;gap:16px;background:' + color + '18;border:2px solid ' + color + '44;border-radius:16px;padding:18px 20px;cursor:pointer;flex:1;text-align:left;-webkit-tap-highlight-color:transparent">' +
+          '<span style="font-size:44px">' + p.emoji + '</span>' +
+          '<div>' +
+            '<div style="font-size:18px;font-weight:700;color:var(--text)">' + p.label + '</div>' +
+            '<div style="font-size:14px;color:#fbbf24;font-weight:700">' + pts + ' pts</div>' +
+          '</div>' +
+        '</button>' +
+        '<button onclick="editTaskUser(\'' + k + '\')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;font-size:20px;cursor:pointer;flex-shrink:0" title="Edit">✏️</button>' +
+      '</div>';
+    }).join('');
+    document.getElementById('page-tasks').innerHTML =
+      '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
+      '<div style="display:flex;flex-direction:column;justify-content:center;flex:1;padding:0 20px calc(var(--nav-h) + env(safe-area-inset-bottom) + 20px)">' +
+        '<div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;text-align:center">Who\'s doing tasks?</div>' +
+        '<div style="font-size:14px;color:var(--text-muted);margin-bottom:28px;text-align:center">Select a family member</div>' +
+        '<div style="display:flex;flex-direction:column;gap:12px">' + userCards + '</div>' +
+      '</div>';
+    return;
+  }
+
   // Shared pill nav markup — active pill uses viewer's color
   const taskPillActive = _taskPortraitTab !== 'rewards';
   const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;flex:1">' +
@@ -4000,47 +4017,21 @@ function renderTasks() {
 }
 
 function openTaskUserSelect() {
-  const kidKeys = ['son','daughter'].filter(k => PEOPLE[k]);
-  if (!kidKeys.length) return;
-  const list = document.getElementById('task-user-select-list');
-  if (!list) return;
-  list.innerHTML = kidKeys.map(k => {
-    const p = PEOPLE[k];
-    const pts = taskPoints[k] || 0;
-    const color = p.color || 'var(--accent)';
-    return '<div style="display:flex;align-items:center;gap:6px">' +
-      '<button onclick="selectTaskUser(\'' + k + '\')" style="display:flex;align-items:center;gap:14px;background:' + color + '18;border:2px solid ' + color + '44;border-radius:14px;padding:14px 18px;cursor:pointer;flex:1;text-align:left">' +
-        '<span style="font-size:36px">' + p.emoji + '</span>' +
-        '<div>' +
-          '<div style="font-size:16px;font-weight:700;color:var(--text)">' + p.label + '</div>' +
-          '<div style="font-size:13px;color:#fbbf24;font-weight:700">' + pts + ' pts</div>' +
-        '</div>' +
-      '</button>' +
-      '<button onclick="editTaskUser(\'' + k + '\')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px;font-size:18px;cursor:pointer;flex-shrink:0" title="Edit">✏️</button>' +
-    '</div>';
-  }).join('');
-  document.getElementById('task-user-select-dim').classList.add('open');
+  _taskViewer = null;
+  renderTasks();
 }
 
 function editTaskUser(key) {
-  document.getElementById('task-user-select-dim').classList.remove('open');
   openManageUserEdit(key);
 }
 
 function selectTaskUser(key) {
-  document.getElementById('task-user-select-dim').classList.remove('open');
   _taskViewer = key;
   renderTasks();
 }
 
-function taskUserSelectBack() {
-  document.getElementById('task-user-select-dim').classList.remove('open');
-  showPage(_prevPage || 'home');
-}
-
 let _taskViewer = null;
 let _taskPortraitTab = 'tasks';
-let _prevPage = 'home';
 function setTaskViewer(key) { _taskViewer = key; renderTasks(); }
 function setTaskPortraitTab(tab) { _taskPortraitTab = tab; renderTasks(); }
 
