@@ -32,7 +32,30 @@
     #theme-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* ── LIGHT THEME OVERRIDES ── */
-    body.light { color-scheme: light; }
+    body.light {
+      color-scheme: light;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #1d4ed8;
+      --success: #166534;
+      --urgent: #b91c1c;
+      --warning: #92400e;
+    }
+    body.light .page-datetime-header { color: #334155; }
+    body.light .task-recur-badge { color: #3730a3; background: rgba(99,102,241,0.12); }
+    body.light .task-joint-badge { color: #92400e; background: rgba(251,191,36,0.15); }
+    body.light .task-card-pts { color: #166534; background: rgba(22,101,52,0.1); }
+    body.light .ev-card-time { color: #1d4ed8; }
+    body.light .local-ev-datetime { color: #1d4ed8; }
+    body.light .local-item-time { color: #1d4ed8; }
+    body.light .local-item-link { color: #1d4ed8; }
+    body.light .local-dot { background: #1d4ed8; }
+    body.light .task-tile-pts { color: #92400e; background: rgba(146,64,14,0.1); }
+    body.light .task-col-pts { color: #92400e; background: rgba(146,64,14,0.1); }
+    body.light .task-done-btn { color: #166534; background: rgba(22,101,52,0.12); border-color: rgba(22,101,52,0.3); }
+    body.light .sheet-status { color: #166534; }
+    body.light .col-header { color: #0f172a; }
+    body.light .modal-box-title { color: #0f172a; }
     body.light #bottom-nav { border-top: 1px solid rgba(0,0,0,0.10); }
     body.light .nav-btn { border-color: rgba(0,0,0,0.10); }
     body.light .nav-btn.active { background: rgba(30,58,138,0.08); border-color: rgba(30,58,138,0.3); }
