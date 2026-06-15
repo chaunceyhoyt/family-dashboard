@@ -1042,7 +1042,8 @@
       <button onclick="closeListingModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;flex-shrink:0;padding:0;line-height:1">×</button>
     </div>
     <div id="listing-modal-meta" style="font-size:13px;color:var(--text-muted);margin-bottom:14px"></div>
-    <div id="listing-modal-summary" style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:10px"></div>
+    <div id="listing-modal-summary" style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:12px;padding:12px;background:var(--surface2);border-radius:10px"></div>
+    <div id="listing-modal-specs" style="display:none;margin-bottom:16px;padding:8px 12px;background:var(--surface2);border-radius:10px"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
       <div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#4ade80;margin-bottom:8px">✅ Pros</div>
@@ -2808,7 +2809,8 @@ function renderSearchResults(results) {
   }
   bodyEl.innerHTML = results.map((item, i) => {
     const icon = LISTING_ICONS[item.category?.toLowerCase()] || '🏷️';
-    const milesLabel = item.miles ? ` · ${item.miles} mi` : '';
+    const milesRaw = item.miles || item.specs?.mileage || item.specs?.odometer || null;
+    const milesLabel = milesRaw ? ` · ${milesRaw} mi` : '';
     const saved = localListings.some(l => l.url === item.url && l.title === item.title);
     return `<div class="listing-card" style="position:relative;${saved?'opacity:0.5':''}">
       <div onclick="openSearchResultModal(${i})" style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer">
@@ -2924,9 +2926,16 @@ function openListingModalFromItem(item) {
   document.getElementById('listing-modal-source').textContent = item.source || '';
   document.getElementById('listing-modal-title').textContent = item.title;
   document.getElementById('listing-modal-price').textContent = item.price || '';
-  const meta = [item.miles ? item.miles + ' miles' : null, item.location].filter(Boolean).join('  ·  ');
+  const meta = [item.miles ? item.miles + ' miles' : (item.specs?.mileage || item.specs?.odometer || null), item.location].filter(Boolean).join('  ·  ');
   document.getElementById('listing-modal-meta').textContent = meta;
   document.getElementById('listing-modal-summary').textContent = item.summary || '';
+  // Show specs if present (new format)
+  const specsEl = document.getElementById('listing-modal-specs');
+  if (specsEl) {
+    const specs = item.specs && typeof item.specs === 'object' ? Object.entries(item.specs).filter(([,v]) => v) : [];
+    specsEl.style.display = specs.length ? '' : 'none';
+    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${v}</span></div>`).join('');
+  }
   document.getElementById('listing-modal-pros').innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${p}</div>`).join('');
   document.getElementById('listing-modal-cons').innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${c}</div>`).join('');
   const link = item.url || item.link || '#';
@@ -3586,9 +3595,16 @@ function openListingModal(idx) {
   document.getElementById('listing-modal-source').textContent = item.source || '';
   document.getElementById('listing-modal-title').textContent = item.title;
   document.getElementById('listing-modal-price').textContent = item.price || '';
-  const meta = [item.miles ? (item.miles === 'New' ? 'New vehicle' : item.miles + ' miles') : null, item.location].filter(Boolean).join('  ·  ');
+  const milesVal = item.miles || item.specs?.mileage || item.specs?.odometer || null;
+  const meta = [milesVal ? (milesVal === 'New' ? 'New vehicle' : milesVal + ' miles') : null, item.location].filter(Boolean).join('  ·  ');
   document.getElementById('listing-modal-meta').textContent = meta;
   document.getElementById('listing-modal-summary').textContent = item.summary || item.description || '';
+  const specsEl = document.getElementById('listing-modal-specs');
+  if (specsEl) {
+    const specs = item.specs && typeof item.specs === 'object' ? Object.entries(item.specs).filter(([,v]) => v) : [];
+    specsEl.style.display = specs.length ? '' : 'none';
+    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${v}</span></div>`).join('');
+  }
   const prosEl = document.getElementById('listing-modal-pros');
   const consEl = document.getElementById('listing-modal-cons');
   prosEl.innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${p}</div>`).join('');
