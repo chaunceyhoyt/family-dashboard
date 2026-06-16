@@ -2025,9 +2025,20 @@ function renderFillWeekModal() {
         '<div style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + p.meal + '</div>' +
         note +
       '</div>' +
+      '<button onclick="approveFillDay(' + i + ')" style="background:rgba(22,101,52,0.15);border:1px solid rgba(22,101,52,0.35);border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0" title="Confirm this meal">✓</button>' +
       '<button onclick="randomizeFillDay(' + i + ')" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0" title="Randomize">🎲</button>' +
     '</div>';
   }).join('');
+}
+
+function approveFillDay(idx) {
+  const p = _fillWeekPlan[idx];
+  setDinnerEntry(p.date, p.meal, []);
+  saveFamilyData('dinners', dinners);
+  renderStrip();
+  _fillWeekPlan.splice(idx, 1);
+  if (!_fillWeekPlan.length) { closeFillWeekModal(); return; }
+  renderFillWeekModal();
 }
 
 function randomizeFillDay(idx) {
