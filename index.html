@@ -754,6 +754,7 @@
         <button onclick="openSwapRecipeModeForContext()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Choose</button>
         <button id="recipe-hide-btn" onclick="toggleRecipeHidden(recipeCurrentMeal)" style="display:none;background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👁 Hide</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
+        <button id="recipe-delete-btn" onclick="deleteCurrentRecipe()" style="display:none;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑 Delete</button>
         <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
       </div>
 
@@ -786,6 +787,7 @@
 
       <div class="modal-btns" style="flex-wrap:wrap;gap:8px;margin-top:14px">
         <button class="btn-secondary" onclick="closeRecipeModalDirect()">Close</button>
+        <button id="recipe-select-day-btn" class="btn-secondary" onclick="confirmSwapFromPreview()" style="display:none">📅 Select for day</button>
         <button class="btn-primary" id="recipe-add-btn" onclick="addDinnerIngredientsToGrocery()">+ Add to grocery list</button>
       </div>
       <div id="recipe-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center;display:none"></div>
@@ -2152,6 +2154,13 @@ function toggleRecipeHidden(name) {
   if (btn) btn.textContent = recipesData[name].hidden ? '👁 Show' : '👁 Hide';
 }
 
+function toggleRecipeFavorite(name) {
+  if (!recipesData[name]) return;
+  recipesData[name].favorited = !recipesData[name].favorited;
+  saveFamilyData('recipes', recipesData);
+  renderSwapList();
+}
+
 function renderRecipeView(recipe) {
   const { description, ingredients, steps, prepTime, cookTime, category } = recipe;
   recipeCurrentIngredients = ingredients || [];
@@ -2180,6 +2189,10 @@ function renderRecipeView(recipe) {
     hideBtn.style.display = _pinUnlocked ? '' : 'none';
     hideBtn.textContent = recipe.hidden ? '👁 Show' : '👁 Hide';
   }
+  const selBtn = document.getElementById('recipe-select-day-btn');
+  if (selBtn) selBtn.style.display = 'none'; // hidden by default; previewSwapRecipe shows it
+  const deleteBtn = document.getElementById('recipe-delete-btn');
+  if (deleteBtn) deleteBtn.style.display = _pinUnlocked ? '' : 'none';
   const btn = document.getElementById('recipe-add-btn');
   btn.disabled = false;
   btn.textContent = '+ Add to grocery list';
@@ -2421,9 +2434,9 @@ function renderSwapList() {
       const desc = (r.description || '').length > 72 ? r.description.slice(0, 72) + '…' : (r.description || '');
       const tagChips = (r.tags || []).map(t => `<span class="recipe-tag">${t}</span>`).join('');
       const safeName = name.replace(/'/g, "\\'");
-      const action = _chooserMode === 'side' ? `addSideRecipe('${safeName}')` : `swapToRecipe('${safeName}')`;
+      const action = _chooserMode === 'side' ? `previewSwapRecipe('${safeName}')` : `previewSwapRecipe('${safeName}')`;
       return `<div class="recipe-swap-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px">
-        <div style="flex:1" onclick="${action}">
+        <div style="flex:1;cursor:pointer" onclick="previewSwapRecipe('${safeName}')">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
             <span>${name}${r.hidden ? ' <span title="Hidden" style="font-size:11px;opacity:0.5">👁</span>' : ''}</span>
             ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
@@ -2431,7 +2444,8 @@ function renderSwapList() {
           ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
           ${tagChips ? `<div style="margin-top:4px">${tagChips}</div>` : ''}
         </div>
-        <button onclick="deleteRecipeFromDB('${safeName}')" style="flex-shrink:0;background:none;border:none;color:rgba(248,113,113,0.5);font-size:16px;cursor:pointer;padding:4px;line-height:1;-webkit-tap-highlight-color:transparent" title="Delete recipe">🗑</button>
+        <button onclick="toggleRecipeFavorite('${safeName}')" style="flex-shrink:0;background:none;border:none;font-size:16px;cursor:pointer;padding:4px;line-height:1;-webkit-tap-highlight-color:transparent" title="Favorite">${r.favorited ? '⭐' : '☆'}</button>
+        <button onclick="deleteRecipeFromDB('${safeName}')" style="flex-shrink:0;background:none;border:none;color:rgba(248,113,113,0.5);font-size:16px;cursor:pointer;padding:4px;line-height:1;-webkit-tap-highlight-color:transparent;display:${_pinUnlocked?'':'none'}" title="Delete recipe">🗑</button>
       </div>`;
     }).join('');
     return header + items;
@@ -2514,6 +2528,29 @@ function swapToRecipe(name) {
   openMealMode();
 }
 
+let _previewSwapName = '';
+function previewSwapRecipe(name) {
+  _previewSwapName = name;
+  const r = recipesData[name];
+  if (!r) return;
+  // Show recipe view within the same modal, with back-to-swap button
+  document.getElementById('recipe-back-btn').style.display = '';
+  document.getElementById('recipe-back-btn').onclick = () => openSwapRecipeMode();
+  const titleEl = document.getElementById('recipe-title');
+  if (titleEl) titleEl.textContent = '🍽️ ' + name;
+  renderRecipeView(r);
+  setRecipeViewMode('view');
+  // Update the "select for day" button visibility
+  const selBtn = document.getElementById('recipe-select-day-btn');
+  if (selBtn) selBtn.style.display = recipeCurrentDate ? '' : 'none';
+}
+
+function confirmSwapFromPreview() {
+  if (!_previewSwapName) return;
+  swapToRecipe(_previewSwapName);
+  _previewSwapName = '';
+}
+
 function clearDinnerFromRecipeModal() {
   if (!recipeCurrentDate) return;
   if (!confirm('Clear this dinner from the day?')) return;
@@ -2532,6 +2569,12 @@ async function deleteRecipeFromDB(name) {
   saveFamilyData('dinners', dinners);
   renderStrip();
   openSwapRecipeMode(); // refresh the swap list
+}
+
+function deleteCurrentRecipe() {
+  if (!recipeCurrentMeal) return;
+  deleteRecipeFromDB(recipeCurrentMeal);
+  closeRecipeModalDirect();
 }
 
 function closeRecipeModal(e) { if (e.target === document.getElementById('recipe-dim')) closeRecipeModalDirect(); }
@@ -3395,21 +3438,38 @@ function openListingModalFromItem(item) {
 
 // ── GROCERY PAGE ──────────────────────────────────────────────────────────────
 function renderGrocery() {
-  const groceryRows = grocery.length
-    ? grocery.map(g => '<div class="list-item">' +
-        '<button class="check-btn ' + (g.done?'done':'') + '" onclick="toggleGrocery(\'' + g.id + '\')">' + (g.done?'✓':'') + '</button>' +
-        '<span class="list-label ' + (g.done?'done':'') + '">' + g.text + '</span>' +
-        '<button class="del-btn" onclick="deleteGrocery(\'' + g.id + '\')">×</button>' +
-      '</div>').join('')
-    : '<div class="empty-state" style="padding:16px 14px;font-size:13px">Nothing on the list yet</div>';
-
   const grocNow = new Date();
   const grocDateTimeLabel = grocNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
     ' · ' + grocNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
-  document.getElementById('page-grocery').innerHTML =
-    '<div class="page-datetime-header">' + grocDateTimeLabel + '</div>' +
-    '<div style="padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;flex:1;min-height:0;box-sizing:border-box;">' +
+  const pillNav = `<div style="display:flex;gap:6px;margin:10px 14px 0;flex-shrink:0">
+  <button onclick="setGroceryTab('recipes')" style="flex:1;padding:8px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='recipes'?'var(--accent)':'var(--surface2)'};color:${_groceryTab==='recipes'?'#fff':'var(--text-muted)'}">⭐ Recipes</button>
+  <button onclick="setGroceryTab('grocery')" style="flex:1;padding:8px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='grocery'?'var(--accent)':'var(--surface2)'};color:${_groceryTab==='grocery'?'#fff':'var(--text-muted)'}">🛒 Grocery List</button>
+</div>`;
+
+  let tabContent;
+  if (_groceryTab === 'recipes') {
+    const favNames = Object.keys(recipesData).filter(n => recipesData[n]?.favorited).sort();
+    const recipeTabContent = favNames.length
+      ? favNames.map(name => {
+          const safeName = name.replace(/'/g, "\\'");
+          return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
+        <span style="flex:1;font-size:14px;font-weight:600">${name}</span>
+        <button onclick="addFavRecipeToGrocery('${safeName}')" style="font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid rgba(16,185,129,0.4);background:rgba(16,185,129,0.15);color:#6ee7b7;cursor:pointer;font-weight:600;white-space:nowrap">+ Grocery</button>
+        <button onclick="openFavRecipeView('${safeName}')" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);background:rgba(59,130,246,0.12);color:var(--accent);cursor:pointer;font-weight:600">View</button>
+      </div>`;
+        }).join('')
+      : '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">No favorited recipes yet.<br>Tap ⭐ on any recipe to favorite it.</div>';
+    tabContent = `<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">${recipeTabContent}</div>`;
+  } else {
+    const groceryRows = grocery.length
+      ? grocery.map(g => '<div class="list-item">' +
+          '<button class="check-btn ' + (g.done?'done':'') + '" onclick="toggleGrocery(\'' + g.id + '\')">' + (g.done?'✓':'') + '</button>' +
+          '<span class="list-label ' + (g.done?'done':'') + '">' + g.text + '</span>' +
+          '<button class="del-btn" onclick="deleteGrocery(\'' + g.id + '\')">×</button>' +
+        '</div>').join('')
+      : '<div class="empty-state" style="padding:16px 14px;font-size:13px">Nothing on the list yet</div>';
+    tabContent =
       '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">' +
         '<span>🛒 Grocery List</span>' +
         '<div style="display:flex;gap:6px;align-items:center">' +
@@ -3431,8 +3491,46 @@ function renderGrocery() {
           '</div>' +
         '</div>' +
         '<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">' + groceryRows + '</div>' +
-      '</div>' +
+      '</div>';
+  }
+
+  document.getElementById('page-grocery').innerHTML =
+    '<div class="page-datetime-header">' + grocDateTimeLabel + '</div>' +
+    pillNav +
+    '<div style="padding:10px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;flex:1;min-height:0;box-sizing:border-box;">' +
+      tabContent +
     '</div>';
+}
+
+function setGroceryTab(tab) { _groceryTab = tab; renderGrocery(); }
+
+function addFavRecipeToGrocery(name) {
+  const r = recipesData[name];
+  if (!r?.ingredients?.length) { alert('No ingredients listed for this recipe.'); return; }
+  const existing = grocery.map(g => g.text.toLowerCase());
+  let added = 0;
+  r.ingredients.forEach(ing => {
+    if (!existing.includes(ing.toLowerCase())) {
+      grocery.push({ id: uid(), text: ing, done: false });
+      added++;
+    }
+  });
+  saveFamilyData('grocery', grocery);
+  renderGrocery();
+  if (added === 0) alert('All ingredients already on the list!');
+}
+
+function openFavRecipeView(name) {
+  // Open recipe modal in view mode without a specific date context
+  recipeCurrentMeal = name;
+  recipeCurrentDate = '';
+  recipeCurrentIngredients = [];
+  _sideViewPrev = null;
+  document.getElementById('recipe-back-btn').style.display = 'none';
+  document.getElementById('recipe-dim').classList.add('open');
+  const r = recipesData[name];
+  if (r) renderRecipeView(r);
+  setRecipeViewMode('view');
 }
 
 function reRenderCurrentPage() {
@@ -4171,6 +4269,7 @@ function resetTaskInactivityTimer() {
 let _taskViewer = null;
 let _taskPortraitTab = 'tasks';
 let _homePortraitTab = 'events';
+let _groceryTab = 'grocery';
 let _taskInactivityTimer = null;
 function setTaskViewer(key) { _taskViewer = key; renderTasks(); }
 function setTaskPortraitTab(tab) { _taskPortraitTab = tab; resetTaskInactivityTimer(); renderTasks(); }
