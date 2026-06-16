@@ -998,14 +998,11 @@
   </div>
 </div>
 
-<!-- MANAGE USERS MODAL -->
-<div class="dim" id="manage-users-dim" onclick="if(event.target===this)closeManageUsersModal()">
+<!-- EDIT USER MODAL -->
+<div class="dim" id="manage-users-dim" onclick="if(event.target===this)cancelEditUser()">
   <div class="modal-box" style="max-width:380px;max-height:90vh;overflow-y:auto">
-    <div class="modal-box-title">Manage Users</div>
-    <div id="manage-users-list"></div>
-    <!-- Shared add/edit form -->
-    <div id="manage-users-edit-form" style="display:none;margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px">
-      <div id="manage-users-edit-title" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">Edit User</div>
+    <div id="manage-users-edit-form">
+      <div id="manage-users-edit-title" class="modal-box-title">Edit User</div>
       <input class="modal-field" id="edit-user-name" type="text" placeholder="Name" style="margin-bottom:10px">
       <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Icon</div>
       <div class="icon-grid" id="edit-user-icon-grid"></div>
@@ -1023,10 +1020,6 @@
           <button class="btn-primary" id="edit-user-confirm-btn" onclick="confirmEditUser()">Save</button>
         </div>
       </div>
-    </div>
-    <div id="manage-users-bottom" style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;display:flex;justify-content:space-between">
-      <button class="btn-secondary" onclick="closeManageUsersModal()" style="flex:none;padding:10px 16px">Done</button>
-      <button class="btn-primary" onclick="showAddUserForm()" style="flex:none;padding:10px 16px">+ Add User</button>
     </div>
   </div>
 </div>
@@ -4000,7 +3993,6 @@ function renderTasks() {
           '<div class="tasks-page-header"><div class="tasks-page-title">🏆 Family Tasks</div>' +
             '<div class="tasks-page-btns">' + lsPillRow +
               '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Lock') + '</button>' +
-              '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
             '</div></div>' +
           '<div style="flex:1;overflow-y:auto;padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' + buildInlineRewards() + '</div>' +
         '</div>';
@@ -4011,7 +4003,6 @@ function renderTasks() {
           '<div class="tasks-page-header"><div class="tasks-page-title">🏆 Family Tasks</div>' +
             '<div class="tasks-page-btns">' + lsPillRow +
               '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Lock') + '</button>' +
-              '<button class="task-mgr-btn" onclick="openManageUsersModal()">Manage Users</button>' +
               (_pinUnlocked ? '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' : '') +
             '</div></div>' +
           '<div class="tasks-grid" style="padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' + cols.map(c => makeTile(c, null)).join('') + '</div>' +
@@ -4133,8 +4124,8 @@ function clearPurchase(purchaseId) {
 }
 
 function openManageUserEdit(key) {
-  openManageUsersModal();
-  setTimeout(() => showEditUserForm(key), 50);
+  document.getElementById('manage-users-dim').classList.add('open');
+  showEditUserForm(key);
 }
 
 function adjustPoints(personKey) {
@@ -4391,18 +4382,6 @@ function togglePinLock() {
   else openPinModal();
 }
 
-// ── MANAGE USERS MODAL ────────────────────────────────────────────────────────
-
-function openManageUsersModal() {
-  renderManageUsersList();
-  document.getElementById('manage-users-edit-form').style.display = 'none';
-  document.getElementById('manage-users-bottom').style.display = 'flex';
-  document.getElementById('manage-users-dim').classList.add('open');
-}
-function closeManageUsersModal() {
-  document.getElementById('manage-users-dim').classList.remove('open');
-}
-
 // ── LOCAL EVENT MODAL ─────────────────────────────────────────────────────────
 let _activeLocalEvent = null;
 function openLocalEventModal(idx) {
@@ -4515,23 +4494,6 @@ async function addLocalEventToCalendar() {
     status.style.color = 'var(--urgent)';
   }
 }
-function renderManageUsersList() {
-  const houseRow = '<div class="user-row">' +
-    '<div class="user-row-avatar" style="background:' + HOUSE.color + '">' + HOUSE.emoji + '</div>' +
-    '<div class="user-row-name">' + HOUSE.label + '</div>' +
-    '<button class="user-edit-btn" onclick="showEditUserForm(\'__house__\')">Edit</button>' +
-  '</div>';
-  const peopleRows = Object.entries(PEOPLE).map(function(entry) {
-    const k = entry[0], p = entry[1];
-    const pts = taskPoints[k] || 0;
-    return '<div class="user-row">' +
-      '<div class="user-row-avatar" style="background:' + p.color + '">' + p.emoji + '</div>' +
-      '<div class="user-row-name">' + p.label + '<span style="font-size:11px;color:#fbbf24;font-weight:700;margin-left:6px">' + pts + ' pts</span></div>' +
-      (_pinUnlocked ? '<button class="user-edit-btn" onclick="showEditUserForm(\'' + k + '\')">Edit</button>' : '') +
-    '</div>';
-  }).join('');
-  document.getElementById('manage-users-list').innerHTML = houseRow + peopleRows;
-}
 function showEditUserForm(key) {
   if (!_pinUnlocked) return; // edit panel locked
   editingUserKey = key;
@@ -4559,8 +4521,6 @@ function showEditUserForm(key) {
     removeBtn.style.display = 'none';
   }
   document.getElementById('edit-user-confirm-btn').onclick = confirmEditUser;
-  document.getElementById('manage-users-edit-form').style.display = 'block';
-  document.getElementById('manage-users-bottom').style.display = 'none';
 }
 function editPanelAdjustPoints() {
   if (!editingUserKey || !_pinUnlocked) return;
@@ -4607,37 +4567,6 @@ async function confirmEditUser() {
     await saveFamilyData('people_config', cfg);
   }
   cancelEditUser();
-  renderManageUsersList();
-  renderNavBadges();
-  if (currentPage === 'tasks') renderTasks();
-}
-function showAddUserForm() {
-  editingUserKey = null;
-  newUserSelectedIcon = PERSON_ICONS[0];
-  newUserSelectedColor = PERSON_COLORS[0];
-  document.getElementById('manage-users-edit-title').textContent = 'Add New User';
-  document.getElementById('edit-user-name').value = '';
-  document.getElementById('edit-user-icon-grid').innerHTML = PERSON_ICONS.map(function(ic) {
-    return '<div class="icon-opt' + (ic === newUserSelectedIcon ? ' selected' : '') + '" onclick="selectEditUserIcon(\'' + ic + '\')">' + ic + '</div>';
-  }).join('');
-  document.getElementById('edit-user-color-grid').innerHTML = PERSON_COLORS.map(function(c) {
-    return '<div class="color-swatch' + (c === newUserSelectedColor ? ' selected' : '') + '" style="background:' + c + '" data-color="' + c + '" onclick="selectEditUserColor(\'' + c + '\')"></div>';
-  }).join('');
-  document.getElementById('manage-users-edit-form').style.display = 'block';
-  document.getElementById('manage-users-bottom').style.display = 'none';
-  document.getElementById('edit-user-confirm-btn').onclick = confirmAddUser;
-}
-function cancelAddUser() { cancelEditUser(); }
-async function confirmAddUser() {
-  const name = document.getElementById('edit-user-name').value.trim();
-  if (!name) return;
-  const key = 'user_' + uid();
-  PEOPLE[key] = { label: name, emoji: newUserSelectedIcon, color: newUserSelectedColor };
-  const cfg = {};
-  Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
-  await saveFamilyData('people_config', cfg);
-  cancelEditUser();
-  renderManageUsersList();
   renderNavBadges();
   if (currentPage === 'tasks') renderTasks();
 }
@@ -4649,7 +4578,6 @@ async function removeUser(key) {
   var cfg = {};
   Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
   await saveFamilyData('people_config', cfg);
-  renderManageUsersList();
   renderNavBadges();
   if (currentPage === 'tasks') renderTasks();
 }
