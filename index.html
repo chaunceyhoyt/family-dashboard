@@ -2703,21 +2703,41 @@ function renderHome() {
   const dateTimeLabel = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
     ' · ' + now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
-  document.getElementById('page-home').innerHTML =
-    '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
-      '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
-      '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
-        '<div class="home-col">' +
-          '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>📅 Today\'s Events</span><div style="display:flex;gap:5px">' + homeCalBtns + '</div></div>' +
-          '<div class="home-col-body">' + eventsHtml + '</div>' +
-        '</div>' +
-        '<div class="home-col">' +
-          '<div class="col-header">✅ Today\'s Tasks</div>' +
-          '<div class="home-col-body">' + tasksHtml + '</div>' +
-        '</div>' +
-      '</div>' +
-      dinnerSection +
+  const isPortraitHome = window.matchMedia('(orientation: portrait)').matches;
+
+  if (isPortraitHome) {
+    const onEvents = _homePortraitTab === 'events';
+    const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;flex:1">' +
+      '<button onclick="setHomePortraitTab(\'events\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (onEvents ? 'var(--accent)' : 'transparent') + ';color:' + (onEvents ? '#fff' : 'var(--text-muted)') + '">📅 Events</button>' +
+      '<button onclick="setHomePortraitTab(\'tasks\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (!onEvents ? 'var(--accent)' : 'transparent') + ';color:' + (!onEvents ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>' +
     '</div>';
+    const calBtnRow = onEvents ? '<div style="display:flex;gap:5px">' + homeCalBtns + '</div>' : '';
+    document.getElementById('page-home').innerHTML =
+      '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
+        '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0">' + pillNav + calBtnRow + '</div>' +
+        '<div style="flex:1;overflow-y:auto;padding:0 12px 10px">' +
+          (onEvents ? eventsHtml : tasksHtml) +
+        '</div>' +
+        dinnerSection +
+      '</div>';
+  } else {
+    document.getElementById('page-home').innerHTML =
+      '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
+        '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
+        '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
+          '<div class="home-col">' +
+            '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>📅 Today\'s Events</span><div style="display:flex;gap:5px">' + homeCalBtns + '</div></div>' +
+            '<div class="home-col-body">' + eventsHtml + '</div>' +
+          '</div>' +
+          '<div class="home-col">' +
+            '<div class="col-header">✅ Today\'s Tasks</div>' +
+            '<div class="home-col-body">' + tasksHtml + '</div>' +
+          '</div>' +
+        '</div>' +
+        dinnerSection +
+      '</div>';
+  }
 
   // Wire dinner swipe
   const dWrap = document.getElementById('dinner-swipe-wrap');
@@ -4039,9 +4059,11 @@ function resetTaskInactivityTimer() {
 
 let _taskViewer = null;
 let _taskPortraitTab = 'tasks';
+let _homePortraitTab = 'events';
 let _taskInactivityTimer = null;
 function setTaskViewer(key) { _taskViewer = key; renderTasks(); }
 function setTaskPortraitTab(tab) { _taskPortraitTab = tab; resetTaskInactivityTimer(); renderTasks(); }
+function setHomePortraitTab(tab) { _homePortraitTab = tab; renderHome(); }
 
 function buildInlineRewards() {
   const kidKeys = ['son','daughter'].filter(k => PEOPLE[k]);
