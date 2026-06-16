@@ -3459,10 +3459,15 @@ function renderGrocery() {
       const safeTag = tag.replace(/'/g, "\\'");
       return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(255,255,255,0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${tag}</button>`;
     }).join('');
+    const activeCount = _groceryRecipeActiveTags.size;
+    const tagToggleLabel = _groceryTagsExpanded ? '🏷 Tags ▲' : `🏷 Tags${activeCount ? ' ('+activeCount+')' : ''} ▼`;
     tabContent = `<div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
       <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;display:flex;flex-direction:column;gap:6px">
-        <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
-        <div style="display:flex;flex-wrap:wrap;gap:5px">${tagChips}</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
+          <button onclick="_groceryTagsExpanded=!_groceryTagsExpanded;renderGrocery()" style="flex-shrink:0;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid ${activeCount?'var(--accent)':'rgba(255,255,255,0.15)'};background:${activeCount?'rgba(59,130,246,0.15)':'var(--surface2)'};color:${activeCount?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:600">${tagToggleLabel}</button>
+        </div>
+        ${_groceryTagsExpanded ? `<div style="display:flex;flex-wrap:wrap;gap:5px">${tagChips}</div>` : ''}
       </div>
       <div id="grocery-recipe-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
     </div>`;
@@ -3508,7 +3513,7 @@ function renderGrocery() {
   if (_groceryTab === 'recipes') renderGroceryRecipeList();
 }
 
-function setGroceryTab(tab) { _groceryTab = tab; _groceryRecipeActiveTags = new Set(); renderGrocery(); }
+function setGroceryTab(tab) { _groceryTab = tab; _groceryRecipeActiveTags = new Set(); _groceryTagsExpanded = false; renderGrocery(); }
 
 function toggleGroceryRecipeTag(tag) {
   if (_groceryRecipeActiveTags.has(tag)) _groceryRecipeActiveTags.delete(tag);
@@ -4341,6 +4346,7 @@ let _taskPortraitTab = 'tasks';
 let _homePortraitTab = 'events';
 let _groceryTab = 'grocery';
 let _groceryRecipeActiveTags = new Set();
+let _groceryTagsExpanded = false;
 let _taskInactivityTimer = null;
 function setTaskViewer(key) { _taskViewer = key; renderTasks(); }
 function setTaskPortraitTab(tab) { _taskPortraitTab = tab; resetTaskInactivityTimer(); renderTasks(); }
@@ -5020,28 +5026,6 @@ async function init() {
   document.getElementById('page-tasks').addEventListener('pointerdown', function() {
     if (_taskViewer) resetTaskInactivityTimer();
   });
-
-  // Global edge-swipe to navigate between pages
-  const PAGE_ORDER = ['home','schedule','tasks','grocery','discover'];
-  const contentArea = document.getElementById('content-area');
-  let _swipeTouchX = null, _swipeTouchY = null, _swipeStartX = null;
-  contentArea.addEventListener('touchstart', e => {
-    _swipeTouchX = _swipeStartX = e.touches[0].clientX;
-    _swipeTouchY = e.touches[0].clientY;
-  }, { passive: true });
-  contentArea.addEventListener('touchend', e => {
-    if (_swipeTouchX === null) return;
-    const dx = e.changedTouches[0].clientX - _swipeTouchX;
-    const dy = e.changedTouches[0].clientY - _swipeTouchY;
-    const edgeZone = window.innerWidth * 0.22;
-    const isEdge = _swipeStartX < edgeZone || _swipeStartX > window.innerWidth - edgeZone;
-    _swipeTouchX = null;
-    if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
-    if (!isEdge) return;
-    const idx = PAGE_ORDER.indexOf(currentPage);
-    if (dx < 0 && idx < PAGE_ORDER.length - 1) showPage(PAGE_ORDER[idx + 1]);
-    else if (dx > 0 && idx > 0) showPage(PAGE_ORDER[idx - 1]);
-  }, { passive: true });
 }
 
 // ── KROGER ───────────────────────────────────────────────────────────────────
