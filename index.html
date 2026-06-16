@@ -2740,7 +2740,7 @@ function renderHome() {
       '</div>';
   }
 
-  // Wire portrait content swipe: edge zones → page nav, middle → pill switch
+  // Wire portrait content swipe: middle zone → switch Events/Tasks pill
   const homeContent = document.getElementById('home-portrait-content');
   if (homeContent) {
     let hTouchX = null, hTouchY = null, hStartX = null;
@@ -2752,16 +2752,11 @@ function renderHome() {
       if (hTouchX === null) return;
       const dx = e.changedTouches[0].clientX - hTouchX;
       const dy = e.changedTouches[0].clientY - hTouchY;
-      if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) { hTouchX = null; return; }
       const edgeZone = window.innerWidth * 0.22;
-      if (hStartX < edgeZone || hStartX > window.innerWidth - edgeZone) {
-        // Edge swipe → page navigation
-        if (dx < 0) showPage('schedule'); else {} // nothing to the left of home
-      } else {
-        // Middle swipe → switch pill
-        setHomePortraitTab(dx < 0 ? 'tasks' : 'events');
-      }
+      const isMiddle = hStartX >= edgeZone && hStartX <= window.innerWidth - edgeZone;
       hTouchX = null;
+      if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
+      if (isMiddle) setHomePortraitTab(dx < 0 ? 'tasks' : 'events');
     }, { passive: true });
   }
 
@@ -4765,6 +4760,28 @@ async function init() {
   document.getElementById('page-tasks').addEventListener('pointerdown', function() {
     if (_taskViewer) resetTaskInactivityTimer();
   });
+
+  // Global edge-swipe to navigate between pages
+  const PAGE_ORDER = ['home','schedule','tasks','grocery','discover'];
+  const contentArea = document.getElementById('content-area');
+  let _swipeTouchX = null, _swipeTouchY = null, _swipeStartX = null;
+  contentArea.addEventListener('touchstart', e => {
+    _swipeTouchX = _swipeStartX = e.touches[0].clientX;
+    _swipeTouchY = e.touches[0].clientY;
+  }, { passive: true });
+  contentArea.addEventListener('touchend', e => {
+    if (_swipeTouchX === null) return;
+    const dx = e.changedTouches[0].clientX - _swipeTouchX;
+    const dy = e.changedTouches[0].clientY - _swipeTouchY;
+    const edgeZone = window.innerWidth * 0.22;
+    const isEdge = _swipeStartX < edgeZone || _swipeStartX > window.innerWidth - edgeZone;
+    _swipeTouchX = null;
+    if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
+    if (!isEdge) return;
+    const idx = PAGE_ORDER.indexOf(currentPage);
+    if (dx < 0 && idx < PAGE_ORDER.length - 1) showPage(PAGE_ORDER[idx + 1]);
+    else if (dx > 0 && idx > 0) showPage(PAGE_ORDER[idx - 1]);
+  }, { passive: true });
 }
 
 // ── KROGER ───────────────────────────────────────────────────────────────────
