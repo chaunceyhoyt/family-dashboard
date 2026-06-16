@@ -1,1 +1,9 @@
 .claude/
+node_modules/
+package.json
+package-lock.json
+*.sql
+*.mjs
+parsed-recipes.json
+recipe-sqls.json
+groups.json
