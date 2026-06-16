@@ -3460,7 +3460,8 @@ function renderGrocery() {
       </div>`;
         }).join('')
       : '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">No favorited recipes yet.<br>Tap ⭐ on any recipe to favorite it.</div>';
-    tabContent = `<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">${recipeTabContent}</div>`;
+    const browseBtn = `<button onclick="browseRecipesToFavorite()" style="width:100%;padding:10px;border-radius:10px;border:1px dashed rgba(255,255,255,0.2);background:var(--surface2);color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;flex-shrink:0">⭐ Browse recipes to favorite…</button>`;
+    tabContent = `<div style="display:flex;flex-direction:column;flex:1;min-height:0">${browseBtn}<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">${recipeTabContent}</div></div>`;
   } else {
     const groceryRows = grocery.length
       ? grocery.map(g => '<div class="list-item">' +
@@ -3521,7 +3522,6 @@ function addFavRecipeToGrocery(name) {
 }
 
 function openFavRecipeView(name) {
-  // Open recipe modal in view mode without a specific date context
   recipeCurrentMeal = name;
   recipeCurrentDate = '';
   recipeCurrentIngredients = [];
@@ -3531,6 +3531,14 @@ function openFavRecipeView(name) {
   const r = recipesData[name];
   if (r) renderRecipeView(r);
   setRecipeViewMode('view');
+}
+
+function browseRecipesToFavorite() {
+  recipeCurrentDate = '';
+  recipeCurrentMeal = '';
+  _previewSwapName = '';
+  document.getElementById('recipe-dim').classList.add('open');
+  openSwapRecipeMode('main');
 }
 
 function reRenderCurrentPage() {
