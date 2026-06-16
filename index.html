@@ -2983,9 +2983,9 @@ function renderSchedule() {
 
   if (isPortrait) {
     document.getElementById('page-schedule').innerHTML =
-      '<div style="display:flex;gap:0;justify-content:center;padding:8px 12px 6px;flex-shrink:0">' +
-        '<button id="sched-tab-0" onclick="scheduleShowTab(0)" style="flex:1;max-width:160px;padding:7px 0;border-radius:20px 0 0 20px;border:1px solid rgba(255,255,255,0.12);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">📅 Scheduled</button>' +
-        '<button id="sched-tab-1" onclick="scheduleShowTab(1)" style="flex:1;max-width:160px;padding:7px 0;border-radius:0 20px 20px 0;border:1px solid rgba(255,255,255,0.12);background:var(--surface);color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer">🔍 Discover</button>' +
+      '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;margin:8px 12px 6px;flex-shrink:0">' +
+        '<button id="sched-tab-0" onclick="scheduleShowTab(0)" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">📅 Scheduled</button>' +
+        '<button id="sched-tab-1" onclick="scheduleShowTab(1)" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--text-muted)">🔍 Discover</button>' +
       '</div>' +
       '<div id="sched-swipe-rail" style="display:flex;flex-direction:row;width:200%;flex:1;min-height:0;transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);will-change:transform">' +
         '<div style="width:50%;display:flex;flex-direction:column;min-height:0;overflow:hidden">' +
@@ -3030,9 +3030,9 @@ function scheduleShowTab(idx) {
   const t0 = document.getElementById('sched-tab-0');
   const t1 = document.getElementById('sched-tab-1');
   if (t0 && t1) {
-    t0.style.background = idx === 0 ? 'var(--accent)' : 'var(--surface)';
+    t0.style.background = idx === 0 ? 'var(--accent)' : 'transparent';
     t0.style.color = idx === 0 ? '#fff' : 'var(--text-muted)';
-    t1.style.background = idx === 1 ? 'var(--accent)' : 'var(--surface)';
+    t1.style.background = idx === 1 ? 'var(--accent)' : 'transparent';
     t1.style.color = idx === 1 ? '#fff' : 'var(--text-muted)';
   }
 }
@@ -3128,9 +3128,9 @@ function renderDiscover() {
   if (isPortrait) {
     document.getElementById('page-discover').innerHTML =
       '<div class="page-datetime-header">' + discLabel + '</div>' +
-      '<div style="display:flex;gap:0;justify-content:center;padding:0 0 8px;flex-shrink:0">' +
-        '<button id="disc-tab-0" onclick="discoverShowTab(0)" style="flex:1;max-width:160px;padding:7px 0;border-radius:20px 0 0 20px;border:1px solid rgba(255,255,255,0.12);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">📍 Events</button>' +
-        '<button id="disc-tab-1" onclick="discoverShowTab(1)" style="flex:1;max-width:160px;padding:7px 0;border-radius:0 20px 20px 0;border:1px solid rgba(255,255,255,0.12);background:var(--surface);color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer">🛍️ Finds</button>' +
+      '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;margin:0 12px 8px;flex-shrink:0">' +
+        '<button id="disc-tab-0" onclick="discoverShowTab(0)" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">📍 Events</button>' +
+        '<button id="disc-tab-1" onclick="discoverShowTab(1)" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--text-muted)">🛍️ Finds</button>' +
       '</div>' +
       '<div id="disc-swipe-rail" style="display:flex;flex-direction:row;width:200%;flex:1;min-height:0;transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);will-change:transform">' +
         '<div style="width:50%;display:flex;flex-direction:column;min-height:0;overflow:hidden">' +
@@ -3168,9 +3168,9 @@ function discoverShowTab(idx) {
   const t0 = document.getElementById('disc-tab-0');
   const t1 = document.getElementById('disc-tab-1');
   if (t0 && t1) {
-    t0.style.background = idx === 0 ? 'var(--accent)' : 'var(--surface)';
+    t0.style.background = idx === 0 ? 'var(--accent)' : 'transparent';
     t0.style.color = idx === 0 ? '#fff' : 'var(--text-muted)';
-    t1.style.background = idx === 1 ? 'var(--accent)' : 'var(--surface)';
+    t1.style.background = idx === 1 ? 'var(--accent)' : 'transparent';
     t1.style.color = idx === 1 ? '#fff' : 'var(--text-muted)';
   }
 }
