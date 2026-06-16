@@ -752,6 +752,7 @@
         <button id="recipe-back-btn" onclick="backToMealMode()" style="display:none;background:none;border:none;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap;flex-shrink:0">← Meal</button>
         <div class="modal-box-title" id="recipe-title" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>
         <button onclick="openSwapRecipeModeForContext()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🔄 Choose</button>
+        <button id="recipe-hide-btn" onclick="toggleRecipeHidden(recipeCurrentMeal)" style="display:none;background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👁 Hide</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
         <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
       </div>
@@ -2143,6 +2144,14 @@ function removeSide(idx) {
   openMealMode();
 }
 
+function toggleRecipeHidden(name) {
+  if (!recipesData[name]) return;
+  recipesData[name].hidden = !recipesData[name].hidden;
+  saveFamilyData('recipes', recipesData);
+  const btn = document.getElementById('recipe-hide-btn');
+  if (btn) btn.textContent = recipesData[name].hidden ? '👁 Show' : '👁 Hide';
+}
+
 function renderRecipeView(recipe) {
   const { description, ingredients, steps, prepTime, cookTime, category } = recipe;
   recipeCurrentIngredients = ingredients || [];
@@ -2166,6 +2175,11 @@ function renderRecipeView(recipe) {
     ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
     : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
   document.getElementById('recipe-status').style.display = 'none';
+  const hideBtn = document.getElementById('recipe-hide-btn');
+  if (hideBtn) {
+    hideBtn.style.display = _pinUnlocked ? '' : 'none';
+    hideBtn.textContent = recipe.hidden ? '👁 Show' : '👁 Hide';
+  }
   const btn = document.getElementById('recipe-add-btn');
   btn.disabled = false;
   btn.textContent = '+ Add to grocery list';
@@ -2366,8 +2380,9 @@ function renderSwapList() {
   const activeTags = _activeFilterTags;
 
   const names = Object.keys(recipesData).sort().filter(name => {
+    const r = recipesData[name] || {};
     if (activeTags.size > 0) {
-      const tags = recipesData[name]?.tags || [];
+      const tags = r?.tags || [];
       if (![...activeTags].every(t => tags.includes(t))) return false;
     }
     if (search) {
