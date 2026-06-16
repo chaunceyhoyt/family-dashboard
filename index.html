@@ -644,6 +644,7 @@
     <button class="week-nav-arrow" onclick="changeWeek(1)">›</button>
     <button class="week-today-btn" onclick="jumpToToday()">Today</button>
     <button class="week-today-btn" onclick="fillWeekMeals()" title="Auto-fill empty dinner slots for this week" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c4b5fd">✨ Fill</button>
+    <button class="week-today-btn" onclick="openFillSettings()" title="Fill settings" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#c4b5fd;padding:6px 8px">⚙️</button>
     <button id="strip-days-btn" class="week-today-btn" onclick="toggleStripDays()" title="Toggle 3/7 day view" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#93c5fd">3D</button>
     <button id="strip-toggle-btn" class="week-today-btn" onclick="toggleStrip()" title="Expand/collapse week strip" style="font-size:16px;padding:0 6px;min-width:28px">▾</button>
     <button class="week-cal-btn" title="Jump to date">📅<input type="date" id="week-picker" onchange="jumpToDate(this.value)"></button>
@@ -694,6 +695,23 @@
     <div class="modal-btns">
       <button class="btn-secondary" onclick="closePersonEditDirect()">Cancel</button>
       <button class="btn-primary" onclick="savePersonEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- FILL SETTINGS MODAL -->
+<div class="dim" id="fill-settings-dim" onclick="if(event.target===this)closeFillSettings()">
+  <div class="modal-box" style="max-width:400px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-box-title">⚙️ Fill / Randomize Settings</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Control which recipes are used when filling or randomizing meals.</div>
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);margin-bottom:6px">✅ Include only recipes with these tags</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Leave empty to include all recipes</div>
+    <div id="fill-settings-include" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#f87171;margin-bottom:6px">🚫 Exclude recipes with these tags</div>
+    <div id="fill-settings-exclude" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="resetFillSettings()">Reset</button>
+      <button class="btn-primary" onclick="closeFillSettings()">Done</button>
     </div>
   </div>
 </div>
@@ -1918,11 +1936,17 @@ function pickMealForDate(dateStr, alreadyPicked, preferQuick) {
     return buildRestaurantSuggestion(ev.summary || 'Event', loc);
   }
 
-  // Get all dinner-appropriate recipes (exclude Sides, Cocktails)
-  const excluded = ['Sides', 'Cocktails'];
+  // Get all dinner-appropriate recipes using fill tag settings
+  const fillExcludedCats = ['Sides', 'Sauces & Condiments', 'Drinks', 'Baked Goods & Sweets', 'Snacks & Appetizers'];
   let pool = Object.keys(recipesData).filter(name => {
-    const cat = recipesData[name]?.category || '';
-    return !excluded.includes(cat) && !alreadyPicked.has(name);
+    const r = recipesData[name] || {};
+    const cat = r.category || '';
+    if (fillExcludedCats.includes(cat)) return false;
+    if (alreadyPicked.has(name)) return false;
+    const tags = r.tags || [];
+    if (_fillTagSettings.includeTags.length && !_fillTagSettings.includeTags.some(t => tags.includes(t))) return false;
+    if (_fillTagSettings.excludeTags.length && _fillTagSettings.excludeTags.some(t => tags.includes(t))) return false;
+    return true;
   });
   if (!pool.length) return null;
 
@@ -1994,7 +2018,9 @@ async function buildWeeklyGroceryList() {
   return added;
 }
 
-let _fillWeekPlan = []; // [{ date, meal, note, isEatOut }]
+let _fillWeekPlan = [];
+let _fillTagSettings = JSON.parse(localStorage.getItem('fillTagSettings') || '{"includeTags":[],"excludeTags":[]}');
+function saveFillTagSettings() { localStorage.setItem('fillTagSettings', JSON.stringify(_fillTagSettings)); }
 
 async function fillWeekMeals() {
   if (!Object.keys(recipesData).length) {
@@ -2070,6 +2096,42 @@ function randomizeFillDay(idx) {
 
 function closeFillWeekModal() {
   document.getElementById('fill-week-dim').classList.remove('open');
+}
+
+function openFillSettings() {
+  const allTags = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
+  const renderTagGroup = (containerId, activeList, otherList) => {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = allTags.map(tag => {
+      const active = activeList.includes(tag);
+      const other = otherList.includes(tag);
+      const safeTag = tag.replace(/'/g, "\\'");
+      return `<button onclick="toggleFillTag('${safeTag}','${containerId}')" style="font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid ${active?'var(--accent)':other?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':other?'rgba(255,255,255,0.2)':'var(--text-muted)'};cursor:${other?'not-allowed':'pointer'};font-weight:${active?700:400}" ${other?'disabled':''}>${tag}</button>`;
+    }).join('');
+  };
+  renderTagGroup('fill-settings-include', _fillTagSettings.includeTags, _fillTagSettings.excludeTags);
+  renderTagGroup('fill-settings-exclude', _fillTagSettings.excludeTags, _fillTagSettings.includeTags);
+  document.getElementById('fill-settings-dim').classList.add('open');
+}
+
+function toggleFillTag(tag, containerId) {
+  const isInclude = containerId === 'fill-settings-include';
+  const list = isInclude ? _fillTagSettings.includeTags : _fillTagSettings.excludeTags;
+  const idx = list.indexOf(tag);
+  if (idx >= 0) list.splice(idx, 1); else list.push(tag);
+  saveFillTagSettings();
+  openFillSettings();
+}
+
+function resetFillSettings() {
+  _fillTagSettings = { includeTags: [], excludeTags: [] };
+  saveFillTagSettings();
+  openFillSettings();
+}
+
+function closeFillSettings() {
+  document.getElementById('fill-settings-dim').classList.remove('open');
 }
 
 async function confirmFillWeek() {
@@ -2417,10 +2479,13 @@ function renderSwapList() {
   });
   const catOrder = Object.keys(groups).sort((a, b) => {
     if (a === '⭐ Favorites') return -1; if (b === '⭐ Favorites') return 1;
-    if (a === 'Sides') return (_chooserMode === 'side') ? -1 : (b === 'Top Recipes' ? 1 : -1);
-    if (b === 'Sides') return (_chooserMode === 'side') ? 1 : (a === 'Top Recipes' ? -1 : 1);
-    if (a === 'Top Recipes') return -1; if (b === 'Top Recipes') return 1;
-    if (a === 'Uncategorized') return 1; if (b === 'Uncategorized') return -1;
+    const CAT_ORDER = ['⭐ Favorites','Top Recipes','Mains','Breakfast','Sides','Soups & Stews','Snacks & Appetizers','Sauces & Condiments','Baked Goods & Sweets','Drinks','Uncategorized'];
+    const ai = CAT_ORDER.indexOf(a), bi = CAT_ORDER.indexOf(b);
+    if (_chooserMode === 'side') {
+      if (a === 'Sides') return -1; if (b === 'Sides') return 1;
+    }
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1; if (bi !== -1) return 1;
     return a.localeCompare(b);
   });
 
@@ -2457,7 +2522,6 @@ function renderSwapList() {
 }
 
 function pickRandomForDay() {
-  const excluded = ['Sides', 'Cocktails'];
   const alreadyPicked = new Set(weekDays.map(d => getDinnerEntry(isoDate(d)).main).filter(Boolean));
   const dow = recipeCurrentDate ? new Date(recipeCurrentDate + 'T12:00:00').getDay() : new Date().getDay();
   const preferQuick = dow >= 1 && dow <= 5;
@@ -3546,8 +3610,10 @@ function renderGroceryRecipeList() {
   });
   const catOrder = Object.keys(groups).sort((a, b) => {
     if (a === '⭐ Favorites') return -1; if (b === '⭐ Favorites') return 1;
-    if (a === 'Top Recipes') return -1; if (b === 'Top Recipes') return 1;
-    if (a === 'Uncategorized') return 1; if (b === 'Uncategorized') return -1;
+    const CAT_ORDER2 = ['⭐ Favorites','Top Recipes','Mains','Breakfast','Sides','Soups & Stews','Snacks & Appetizers','Sauces & Condiments','Baked Goods & Sweets','Drinks','Uncategorized'];
+    const ai2 = CAT_ORDER2.indexOf(a), bi2 = CAT_ORDER2.indexOf(b);
+    if (ai2 !== -1 && bi2 !== -1) return ai2 - bi2;
+    if (ai2 !== -1) return -1; if (bi2 !== -1) return 1;
     return a.localeCompare(b);
   });
 
