@@ -2159,6 +2159,7 @@ function toggleRecipeFavorite(name) {
   recipesData[name].favorited = !recipesData[name].favorited;
   saveFamilyData('recipes', recipesData);
   renderSwapList();
+  if (currentPage === 'grocery') renderGroceryRecipeList();
 }
 
 function renderRecipeView(recipe) {
@@ -2407,12 +2408,15 @@ function renderSwapList() {
   });
 
   const groups = {};
+  const favs = names.filter(name => recipesData[name]?.favorited);
+  if (favs.length) groups['⭐ Favorites'] = favs;
   names.forEach(name => {
     const cat = recipesData[name]?.category || 'Uncategorized';
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(name);
   });
   const catOrder = Object.keys(groups).sort((a, b) => {
+    if (a === '⭐ Favorites') return -1; if (b === '⭐ Favorites') return 1;
     if (a === 'Sides') return (_chooserMode === 'side') ? -1 : (b === 'Top Recipes' ? 1 : -1);
     if (b === 'Sides') return (_chooserMode === 'side') ? 1 : (a === 'Top Recipes' ? -1 : 1);
     if (a === 'Top Recipes') return -1; if (b === 'Top Recipes') return 1;
@@ -3449,19 +3453,12 @@ function renderGrocery() {
 
   let tabContent;
   if (_groceryTab === 'recipes') {
-    const favNames = Object.keys(recipesData).filter(n => recipesData[n]?.favorited).sort();
-    const recipeTabContent = favNames.length
-      ? favNames.map(name => {
-          const safeName = name.replace(/'/g, "\\'");
-          return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <span style="flex:1;font-size:14px;font-weight:600">${name}</span>
-        <button onclick="addFavRecipeToGrocery('${safeName}')" style="font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid rgba(16,185,129,0.4);background:rgba(16,185,129,0.15);color:#6ee7b7;cursor:pointer;font-weight:600;white-space:nowrap">+ Grocery</button>
-        <button onclick="openFavRecipeView('${safeName}')" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);background:rgba(59,130,246,0.12);color:var(--accent);cursor:pointer;font-weight:600">View</button>
-      </div>`;
-        }).join('')
-      : '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">No favorited recipes yet.<br>Tap ⭐ on any recipe to favorite it.</div>';
-    const browseBtn = `<button onclick="browseRecipesToFavorite()" style="width:100%;padding:10px;border-radius:10px;border:1px dashed rgba(255,255,255,0.2);background:var(--surface2);color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;flex-shrink:0">⭐ Browse recipes to favorite…</button>`;
-    tabContent = `<div style="display:flex;flex-direction:column;flex:1;min-height:0">${browseBtn}<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">${recipeTabContent}</div></div>`;
+    tabContent = `<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;min-height:0">
+      <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+        <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
+      </div>
+      <div id="grocery-recipe-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+    </div>`;
   } else {
     const groceryRows = grocery.length
       ? grocery.map(g => '<div class="list-item">' +
@@ -3501,9 +3498,57 @@ function renderGrocery() {
     '<div style="padding:10px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;flex:1;min-height:0;box-sizing:border-box;">' +
       tabContent +
     '</div>';
+  if (_groceryTab === 'recipes') renderGroceryRecipeList();
 }
 
 function setGroceryTab(tab) { _groceryTab = tab; renderGrocery(); }
+
+function renderGroceryRecipeList() {
+  const el = document.getElementById('grocery-recipe-list');
+  if (!el) return;
+  const search = (document.getElementById('grocery-recipe-search')?.value || '').toLowerCase().trim();
+  const names = Object.keys(recipesData).sort().filter(name => {
+    if (!search) return true;
+    const r = recipesData[name] || {};
+    const haystack = [name, r.description||'', ...(r.ingredients||[]), ...(r.tags||[])].join(' ').toLowerCase();
+    return haystack.includes(search);
+  });
+
+  const favs = names.filter(n => recipesData[n]?.favorited);
+  const groups = {};
+  if (favs.length) groups['⭐ Favorites'] = favs;
+  names.forEach(name => {
+    const cat = recipesData[name]?.category || 'Uncategorized';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(name);
+  });
+  const catOrder = Object.keys(groups).sort((a, b) => {
+    if (a === '⭐ Favorites') return -1; if (b === '⭐ Favorites') return 1;
+    if (a === 'Top Recipes') return -1; if (b === 'Top Recipes') return 1;
+    if (a === 'Uncategorized') return 1; if (b === 'Uncategorized') return -1;
+    return a.localeCompare(b);
+  });
+
+  el.innerHTML = catOrder.map(cat => {
+    const isOpen = !!_categoryExpanded[cat];
+    const safeCat = cat.replace(/'/g, "\\'");
+    const header = `<div onclick="toggleCategory('${safeCat}');renderGroceryRecipeList()" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);padding:8px 12px 4px;cursor:pointer;user-select:none">
+      <span style="font-size:10px;transition:transform 0.15s;display:inline-block;transform:${isOpen?'rotate(90deg)':''}">▶</span>
+      ${cat} <span style="font-weight:400;opacity:0.6">(${groups[cat].length})</span>
+    </div>`;
+    if (!isOpen) return header;
+    const items = groups[cat].map(name => {
+      const r = recipesData[name] || {};
+      const safeName = name.replace(/'/g, "\\'");
+      return `<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <button onclick="toggleRecipeFavorite('${safeName}');renderGroceryRecipeList()" style="background:none;border:none;font-size:16px;cursor:pointer;padding:2px;flex-shrink:0">${r.favorited?'⭐':'☆'}</button>
+        <span onclick="openFavRecipeView('${safeName}')" style="flex:1;font-size:13px;font-weight:600;cursor:pointer">${name}</span>
+        ${r.favorited ? `<button onclick="addFavRecipeToGrocery('${safeName}')" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.4);background:rgba(16,185,129,0.15);color:#6ee7b7;cursor:pointer;font-weight:600;white-space:nowrap">+ List</button>` : ''}
+      </div>`;
+    }).join('');
+    return header + items;
+  }).join('');
+}
 
 function addFavRecipeToGrocery(name) {
   const r = recipesData[name];
