@@ -3446,10 +3446,10 @@ function renderGrocery() {
   const grocDateTimeLabel = grocNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
     ' · ' + grocNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
-  const pillNav = `<div style="display:flex;gap:6px;margin:10px 14px 0;flex-shrink:0">
-  <button onclick="setGroceryTab('recipes')" style="flex:1;padding:8px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='recipes'?'var(--accent)':'var(--surface2)'};color:${_groceryTab==='recipes'?'#fff':'var(--text-muted)'}">⭐ Recipes</button>
-  <button onclick="setGroceryTab('grocery')" style="flex:1;padding:8px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='grocery'?'var(--accent)':'var(--surface2)'};color:${_groceryTab==='grocery'?'#fff':'var(--text-muted)'}">🛒 Grocery List</button>
-</div>`;
+  const pillNav = `<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;margin:10px 14px 0;flex-shrink:0">
+    <button onclick="setGroceryTab('recipes')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='recipes'?'var(--accent)':'transparent'};color:${_groceryTab==='recipes'?'#fff':'var(--text-muted)'}">⭐ Recipes</button>
+    <button onclick="setGroceryTab('grocery')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='grocery'?'var(--accent)':'transparent'};color:${_groceryTab==='grocery'?'#fff':'var(--text-muted)'}">🛒 Grocery List</button>
+  </div>`;
 
   let tabContent;
   if (_groceryTab === 'recipes') {
