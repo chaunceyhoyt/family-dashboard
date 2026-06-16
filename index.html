@@ -2425,7 +2425,7 @@ function renderSwapList() {
       return `<div class="recipe-swap-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px">
         <div style="flex:1" onclick="${action}">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-            <span>${name}</span>
+            <span>${name}${r.hidden ? ' <span title="Hidden" style="font-size:11px;opacity:0.5">👁</span>' : ''}</span>
             ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
           </div>
           ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
