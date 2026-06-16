@@ -3909,7 +3909,7 @@ function renderTasks() {
 
   // Portrait with no viewer selected → show inline user-select landing page
   if (isPortrait && !activeViewer) {
-    const allKeys = ['mom','dad','son','daughter'].filter(k => PEOPLE[k]);
+    const allKeys = ['daughter','son','mom','dad'].filter(k => PEOPLE[k]);
     const userCards = allKeys.map(k => {
       const p = PEOPLE[k];
       const pts = taskPoints[k] || 0;
