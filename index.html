@@ -4581,8 +4581,8 @@ function removeEditingUser() {
   cancelEditUser();
 }
 function cancelEditUser() {
-  document.getElementById('manage-users-edit-form').style.display = 'none';
-  document.getElementById('manage-users-bottom').style.display = 'flex';
+  document.getElementById('manage-users-dim').classList.remove('open');
+  editingUserKey = null;
 }
 function selectEditUserIcon(icon) {
   newUserSelectedIcon = icon;
