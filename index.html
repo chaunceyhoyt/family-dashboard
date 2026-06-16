@@ -701,14 +701,29 @@
 
 <!-- FILL SETTINGS MODAL -->
 <div class="dim" id="fill-settings-dim" onclick="if(event.target===this)closeFillSettings()">
-  <div class="modal-box" style="max-width:400px;max-height:88vh;display:flex;flex-direction:column">
+  <div class="modal-box" style="max-width:400px;max-height:88vh;display:flex;flex-direction:column;overflow-y:auto">
     <div class="modal-box-title">⚙️ Fill / Randomize Settings</div>
-    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Control which recipes are used when filling or randomizing meals.</div>
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);margin-bottom:6px">✅ Include only recipes with these tags</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Leave empty to include all recipes</div>
-    <div id="fill-settings-include" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#f87171;margin-bottom:6px">🚫 Exclude recipes with these tags</div>
-    <div id="fill-settings-exclude" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Control which recipes are considered when filling or randomizing meals.</div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);margin-bottom:4px">✅ Include — only use recipes with these tags</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Leave empty to allow all recipes</div>
+    <div style="position:relative;margin-bottom:8px">
+      <input id="fill-include-search" type="text" placeholder="Search tags to include…" autocomplete="off"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"
+        oninput="renderFillTagDropdown('include')" onfocus="renderFillTagDropdown('include')" onblur="setTimeout(()=>hideFillDropdown('include'),150)">
+      <div id="fill-include-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+    </div>
+    <div id="fill-include-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:20px;margin-bottom:18px"></div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#f87171;margin-bottom:4px">🚫 Exclude — never use recipes with these tags</div>
+    <div style="position:relative;margin-bottom:8px">
+      <input id="fill-exclude-search" type="text" placeholder="Search tags to exclude…" autocomplete="off"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"
+        oninput="renderFillTagDropdown('exclude')" onfocus="renderFillTagDropdown('exclude')" onblur="setTimeout(()=>hideFillDropdown('exclude'),150)">
+      <div id="fill-exclude-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+    </div>
+    <div id="fill-exclude-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:20px;margin-bottom:18px"></div>
+
     <div class="modal-btns">
       <button class="btn-secondary" onclick="resetFillSettings()">Reset</button>
       <button class="btn-primary" onclick="closeFillSettings()">Done</button>
@@ -2099,35 +2114,71 @@ function closeFillWeekModal() {
 }
 
 function openFillSettings() {
-  const allTags = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
-  const renderTagGroup = (containerId, activeList, otherList) => {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    el.innerHTML = allTags.map(tag => {
-      const active = activeList.includes(tag);
-      const other = otherList.includes(tag);
-      const safeTag = tag.replace(/'/g, "\\'");
-      return `<button onclick="toggleFillTag('${safeTag}','${containerId}')" style="font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid ${active?'var(--accent)':other?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':other?'rgba(255,255,255,0.2)':'var(--text-muted)'};cursor:${other?'not-allowed':'pointer'};font-weight:${active?700:400}" ${other?'disabled':''}>${tag}</button>`;
-    }).join('');
-  };
-  renderTagGroup('fill-settings-include', _fillTagSettings.includeTags, _fillTagSettings.excludeTags);
-  renderTagGroup('fill-settings-exclude', _fillTagSettings.excludeTags, _fillTagSettings.includeTags);
   document.getElementById('fill-settings-dim').classList.add('open');
+  document.getElementById('fill-include-search').value = '';
+  document.getElementById('fill-exclude-search').value = '';
+  renderFillSettingsChips();
 }
 
-function toggleFillTag(tag, containerId) {
-  const isInclude = containerId === 'fill-settings-include';
-  const list = isInclude ? _fillTagSettings.includeTags : _fillTagSettings.excludeTags;
-  const idx = list.indexOf(tag);
-  if (idx >= 0) list.splice(idx, 1); else list.push(tag);
+function _allFillTags() {
+  return [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
+}
+
+function renderFillSettingsChips() {
+  const chipStyle = (color) => `font-size:12px;padding:3px 8px 3px 10px;border-radius:20px;border:1px solid ${color};background:${color.replace(')',',0.15)').replace('rgb','rgba')};color:var(--text);display:inline-flex;align-items:center;gap:5px`;
+  ['include','exclude'].forEach(type => {
+    const list = type === 'include' ? _fillTagSettings.includeTags : _fillTagSettings.excludeTags;
+    const color = type === 'include' ? 'rgba(59,130,246,0.6)' : 'rgba(248,113,113,0.6)';
+    document.getElementById(`fill-${type}-chips`).innerHTML = list.map(tag =>
+      `<span style="${chipStyle(color)}">${tag}<button onclick="removeFillTag('${tag.replace(/'/g,"\\'")}','${type}')" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:14px;line-height:1;opacity:0.7">×</button></span>`
+    ).join('');
+  });
+}
+
+function renderFillTagDropdown(type) {
+  const search = document.getElementById(`fill-${type}-search`).value.toLowerCase();
+  const otherList = type === 'include' ? _fillTagSettings.excludeTags : _fillTagSettings.includeTags;
+  const thisList = type === 'include' ? _fillTagSettings.includeTags : _fillTagSettings.excludeTags;
+  const dropdown = document.getElementById(`fill-${type}-dropdown`);
+  const matches = _allFillTags().filter(t =>
+    t.toLowerCase().includes(search) && !thisList.includes(t) && !otherList.includes(t)
+  );
+  if (!matches.length) { dropdown.style.display = 'none'; return; }
+  dropdown.style.display = '';
+  dropdown.innerHTML = matches.map(tag => {
+    const safe = tag.replace(/'/g,"\\'");
+    return `<div onmousedown="addFillTag('${safe}','${type}')" style="padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${tag}</div>`;
+  }).join('');
+}
+
+function hideFillDropdown(type) {
+  const el = document.getElementById(`fill-${type}-dropdown`);
+  if (el) el.style.display = 'none';
+}
+
+function addFillTag(tag, type) {
+  const list = type === 'include' ? _fillTagSettings.includeTags : _fillTagSettings.excludeTags;
+  if (!list.includes(tag)) list.push(tag);
   saveFillTagSettings();
-  openFillSettings();
+  document.getElementById(`fill-${type}-search`).value = '';
+  hideFillDropdown(type);
+  renderFillSettingsChips();
+}
+
+function removeFillTag(tag, type) {
+  const list = type === 'include' ? _fillTagSettings.includeTags : _fillTagSettings.excludeTags;
+  const idx = list.indexOf(tag);
+  if (idx >= 0) list.splice(idx, 1);
+  saveFillTagSettings();
+  renderFillSettingsChips();
 }
 
 function resetFillSettings() {
   _fillTagSettings = { includeTags: [], excludeTags: [] };
   saveFillTagSettings();
-  openFillSettings();
+  document.getElementById('fill-include-search').value = '';
+  document.getElementById('fill-exclude-search').value = '';
+  renderFillSettingsChips();
 }
 
 function closeFillSettings() {
