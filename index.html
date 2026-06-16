@@ -696,6 +696,19 @@
   </div>
 </div>
 
+<!-- FILL WEEK PREVIEW MODAL -->
+<div class="dim" id="fill-week-dim" onclick="if(event.target===this)closeFillWeekModal()">
+  <div class="modal-box" style="max-width:400px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-box-title" style="margin-bottom:4px">✨ Suggested Meals</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Confirm each day or randomize</div>
+    <div id="fill-week-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-secondary" onclick="closeFillWeekModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmFillWeek()">Save All ✓</button>
+    </div>
+  </div>
+</div>
+
 <!-- DINNER MODAL -->
 <div class="dim" id="dinner-dim" onclick="closeDinnerModal(event)">
   <div class="modal-box">
@@ -1964,8 +1977,9 @@ async function buildWeeklyGroceryList() {
   return added;
 }
 
+let _fillWeekPlan = []; // [{ date, meal, note, isEatOut }]
+
 async function fillWeekMeals() {
-  // Make sure recipes are loaded
   if (!Object.keys(recipesData).length) {
     const { data } = await sb.from('family_data').select('value').eq('key','recipes').single();
     if (data?.value) recipesData = data.value;
@@ -1981,47 +1995,63 @@ async function fillWeekMeals() {
     return;
   }
 
-  // Collect meals already planned this week to avoid repeats
   const alreadyPicked = new Set(weekDays.map(d => getDinnerEntry(isoDate(d)).main).filter(Boolean));
-
-  // Build plan (Mon–Fri prefer quick meals, Sat–Sun go all out)
-  const plan = [];
+  _fillWeekPlan = [];
   for (const d of emptyDays) {
-    const dow = d.getDay(); // 0=Sun, 6=Sat
+    const dow = d.getDay();
     const preferQuick = dow >= 1 && dow <= 5;
     const result = pickMealForDate(isoDate(d), alreadyPicked, preferQuick);
     if (result) {
       if (!result.isEatOut) alreadyPicked.add(result.meal);
-      plan.push({ date: isoDate(d), ...result });
+      _fillWeekPlan.push({ date: isoDate(d), ...result });
     }
   }
+  if (!_fillWeekPlan.length) { alert('Not enough recipes to fill the week. Add more recipes!'); return; }
 
-  if (!plan.length) { alert('Not enough recipes to fill the week. Add more recipes!'); return; }
+  renderFillWeekModal();
+  document.getElementById('fill-week-dim').classList.add('open');
+}
 
-  // Show preview
-  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const preview = plan.map(p => {
+function renderFillWeekModal() {
+  const DAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('fill-week-list').innerHTML = _fillWeekPlan.map((p, i) => {
     const d = new Date(p.date + 'T12:00:00');
-    const dow = d.getDay();
-    const dayType = (dow >= 1 && dow <= 5) ? '' : ' (weekend)';
-    const note = p.note ? ` — ${p.note}` : '';
-    return `${dayNames[dow]} ${d.getDate()}${dayType}: ${p.meal}${note}`;
-  }).join('\n');
+    const dayLabel = DAY_SHORT[d.getDay()] + ' ' + (d.getMonth()+1) + '/' + d.getDate();
+    const note = p.note ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + p.note + '</div>' : '';
+    return '<div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:12px;padding:10px 12px">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">' + dayLabel + '</div>' +
+        '<div style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + p.meal + '</div>' +
+        note +
+      '</div>' +
+      '<button onclick="randomizeFillDay(' + i + ')" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0" title="Randomize">🎲</button>' +
+    '</div>';
+  }).join('');
+}
 
-  if (!confirm(`Fill ${plan.length} empty day${plan.length > 1 ? 's' : ''} with:\n\n${preview}\n\nConfirm?`)) return;
+function randomizeFillDay(idx) {
+  const p = _fillWeekPlan[idx];
+  const d = new Date(p.date + 'T12:00:00');
+  const dow = d.getDay();
+  const preferQuick = dow >= 1 && dow <= 5;
+  const usedMeals = new Set(_fillWeekPlan.map((x, i) => i !== idx ? x.meal : null).filter(Boolean));
+  const result = pickMealForDate(p.date, usedMeals, preferQuick);
+  if (result) _fillWeekPlan[idx] = { date: p.date, ...result };
+  renderFillWeekModal();
+}
 
-  // Apply meals
-  for (const p of plan) {
-    if (!p.isEatOut) setDinnerEntry(p.date, p.meal, []);
-    else setDinnerEntry(p.date, p.meal, []);
-  }
+function closeFillWeekModal() {
+  document.getElementById('fill-week-dim').classList.remove('open');
+}
+
+async function confirmFillWeek() {
+  for (const p of _fillWeekPlan) setDinnerEntry(p.date, p.meal, []);
   saveFamilyData('dinners', dinners);
   renderStrip();
-
-  // Consolidate grocery list
+  closeFillWeekModal();
   const added = await buildWeeklyGroceryList();
   if (added) {
-    const go = confirm(`Meals planned! ✅\n\nAdded ${added} ingredient${added > 1 ? 's' : ''} to your grocery list from this week's recipes.\n\nGo to grocery list now?`);
+    const go = confirm(`Meals planned! ✅\n\nAdded ${added} ingredient${added > 1 ? 's' : ''} to your grocery list.\n\nGo to grocery list now?`);
     if (go) showPage('grocery');
   }
 }
