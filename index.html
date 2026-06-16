@@ -2354,7 +2354,7 @@ function openSwapRecipeMode(mode) {
   // Set which categories are expanded: in side mode, expand Sides; in main mode, expand Top Recipes
   const allCats = [...new Set(Object.values(recipesData).map(r => r.category || 'Uncategorized'))];
   _categoryExpanded = {};
-  allCats.forEach(c => { _categoryExpanded[c] = (_chooserMode === 'side') ? c === 'Sides' : c === 'Top Recipes'; });
+  allCats.forEach(c => { _categoryExpanded[c] = (_chooserMode === 'side') ? c === 'Sides' : false; });
   const titleEl = document.getElementById('recipe-swap-title');
   if (titleEl) titleEl.textContent = _chooserMode === 'side' ? '🥗 Add a Side' : 'Choose Recipe';
   renderSwapList();
@@ -3453,9 +3453,16 @@ function renderGrocery() {
 
   let tabContent;
   if (_groceryTab === 'recipes') {
-    tabContent = `<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;min-height:0">
-      <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+    const allTagsForFilter = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
+    const tagChips = allTagsForFilter.map(tag => {
+      const active = _groceryRecipeActiveTags.has(tag);
+      const safeTag = tag.replace(/'/g, "\\'");
+      return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(255,255,255,0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${tag}</button>`;
+    }).join('');
+    tabContent = `<div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;display:flex;flex-direction:column;gap:6px">
         <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
+        <div style="display:flex;flex-wrap:wrap;gap:5px">${tagChips}</div>
       </div>
       <div id="grocery-recipe-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
     </div>`;
@@ -3501,15 +3508,25 @@ function renderGrocery() {
   if (_groceryTab === 'recipes') renderGroceryRecipeList();
 }
 
-function setGroceryTab(tab) { _groceryTab = tab; renderGrocery(); }
+function setGroceryTab(tab) { _groceryTab = tab; _groceryRecipeActiveTags = new Set(); renderGrocery(); }
+
+function toggleGroceryRecipeTag(tag) {
+  if (_groceryRecipeActiveTags.has(tag)) _groceryRecipeActiveTags.delete(tag);
+  else _groceryRecipeActiveTags.add(tag);
+  renderGrocery();
+}
 
 function renderGroceryRecipeList() {
   const el = document.getElementById('grocery-recipe-list');
   if (!el) return;
   const search = (document.getElementById('grocery-recipe-search')?.value || '').toLowerCase().trim();
   const names = Object.keys(recipesData).sort().filter(name => {
-    if (!search) return true;
     const r = recipesData[name] || {};
+    if (_groceryRecipeActiveTags.size > 0) {
+      const tags = r.tags || [];
+      if (![..._groceryRecipeActiveTags].every(t => tags.includes(t))) return false;
+    }
+    if (!search) return true;
     const haystack = [name, r.description||'', ...(r.ingredients||[]), ...(r.tags||[])].join(' ').toLowerCase();
     return haystack.includes(search);
   });
@@ -4323,6 +4340,7 @@ let _taskViewer = null;
 let _taskPortraitTab = 'tasks';
 let _homePortraitTab = 'events';
 let _groceryTab = 'grocery';
+let _groceryRecipeActiveTags = new Set();
 let _taskInactivityTimer = null;
 function setTaskViewer(key) { _taskViewer = key; renderTasks(); }
 function setTaskPortraitTab(tab) { _taskPortraitTab = tab; resetTaskInactivityTimer(); renderTasks(); }
