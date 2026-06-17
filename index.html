@@ -800,6 +800,18 @@
       <div class="recipe-section-label">About</div>
       <div id="recipe-view-desc" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px"></div>
 
+      <!-- Vegetarian + Scale toolbar -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button id="recipe-veg-btn" onclick="toggleVegetarianView()" style="display:none;font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;cursor:pointer;white-space:nowrap">🥦 Vegetarian</button>
+        <div id="recipe-veg-status" style="display:none;font-size:12px;color:#4ade80;font-weight:600">🥦 Vegetarian</div>
+        <div style="flex:1"></div>
+        <div style="display:flex;background:var(--surface2);border-radius:20px;padding:2px;gap:1px">
+          <button onclick="setRecipeScale(0.5)" id="scale-btn-half" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:16px;border:none;background:transparent;color:var(--text-muted);cursor:pointer">½×</button>
+          <button onclick="setRecipeScale(1)" id="scale-btn-1" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:16px;border:none;background:var(--accent);color:#fff;cursor:pointer">1×</button>
+          <button onclick="setRecipeScale(2)" id="scale-btn-2" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:16px;border:none;background:transparent;color:var(--text-muted);cursor:pointer">2×</button>
+        </div>
+      </div>
+
       <!-- Portrait: stacked. Landscape: two columns (steps left, ingredients right) -->
       <div class="recipe-two-col">
         <div class="recipe-col-left">
@@ -2276,7 +2288,132 @@ function toggleRecipeFavorite(name) {
   if (currentPage === 'grocery') renderGroceryRecipeList();
 }
 
+// ── Recipe scale & vegetarian state ─────────────────────────────────────────
+let _recipeScale = 1;       // 0.5 / 1 / 2
+let _recipeVegMode = false; // showing vegetarian version?
+
+function setRecipeScale(s) {
+  _recipeScale = s;
+  ['half','1','2'].forEach(k => {
+    const b = document.getElementById(`scale-btn-${k}`);
+    if (b) { b.style.background = 'transparent'; b.style.color = 'var(--text-muted)'; }
+  });
+  const active = s === 0.5 ? 'half' : String(s);
+  const ab = document.getElementById(`scale-btn-${active}`);
+  if (ab) { ab.style.background = 'var(--accent)'; ab.style.color = '#fff'; }
+  renderIngredientList();
+}
+
+function scaleIngredient(ing, scale) {
+  if (scale === 1) return ing;
+  return ing.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.?\d+)/g, (match, p1, offset, str) => {
+    // Skip numbers that look like they're part of a word (e.g. "V8")
+    const before = str[offset - 1];
+    if (before && /[a-zA-Z]/.test(before)) return match;
+    const num = eval(p1.replace(' ', '+')); // handles "1 1/2" → 1+1/2
+    const scaled = num * scale;
+    // Format nicely
+    if (scaled === Math.floor(scaled)) return String(scaled);
+    // Try common fractions
+    const fracs = [[1/4,'¼'],[1/3,'⅓'],[1/2,'½'],[2/3,'⅔'],[3/4,'¾']];
+    const whole = Math.floor(scaled);
+    const frac = scaled - whole;
+    for (const [f, sym] of fracs) {
+      if (Math.abs(frac - f) < 0.05) return whole > 0 ? `${whole} ${sym}` : sym;
+    }
+    return scaled.toFixed(2).replace(/\.?0+$/, '');
+  });
+}
+
+function renderIngredientList() {
+  const recipe = recipesData[recipeCurrentMeal];
+  if (!recipe) return;
+  const isVeg = _recipeVegMode && recipe.vegetarianVersion;
+  const ings = isVeg ? (recipe.vegetarianVersion.ingredients || []) : (recipe.ingredients || []);
+  const scaled = ings.map(ing => scaleIngredient(ing, _recipeScale));
+  document.getElementById('recipe-view-ingredients').innerHTML = scaled.length
+    ? scaled.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
+    : '<div style="color:var(--text-muted);font-size:12px">No ingredients listed.</div>';
+  recipeCurrentIngredients = ings;
+}
+
+async function toggleVegetarianView() {
+  const recipe = recipesData[recipeCurrentMeal];
+  if (!recipe) return;
+  const isVeg = (recipe.tags||[]).includes('vegetarian');
+  if (isVeg) return;
+
+  if (recipe.vegetarianVersion) {
+    _recipeVegMode = !_recipeVegMode;
+    updateVegBtn(recipe);
+    renderIngredientList();
+    // Also update steps if we have them
+    const isVegNow = _recipeVegMode && recipe.vegetarianVersion;
+    const steps = isVegNow ? (recipe.vegetarianVersion.steps || recipe.steps || []) : (recipe.steps || []);
+    document.getElementById('recipe-view-steps').innerHTML = steps.length
+      ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+      : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
+    return;
+  }
+
+  // No vegetarian version — ask to generate
+  if (!confirm(`No vegetarian version exists for "${recipeCurrentMeal}". Generate one with AI?`)) return;
+  await generateVegetarianVersion(recipeCurrentMeal);
+}
+
+function updateVegBtn(recipe) {
+  const vegBtn = document.getElementById('recipe-veg-btn');
+  const vegStatus = document.getElementById('recipe-veg-status');
+  if (!vegBtn || !vegStatus) return;
+  const isVeg = (recipe.tags||[]).includes('vegetarian');
+  if (isVeg) {
+    vegBtn.style.display = 'none';
+    vegStatus.style.display = '';
+    return;
+  }
+  vegStatus.style.display = 'none';
+  vegBtn.style.display = '';
+  if (recipe.vegetarianVersion) {
+    vegBtn.textContent = _recipeVegMode ? '🥩 Original' : '🥦 Vegetarian';
+    vegBtn.style.background = _recipeVegMode ? 'rgba(74,222,128,0.25)' : 'rgba(74,222,128,0.1)';
+  } else {
+    vegBtn.textContent = '🥦 Generate Veg Version';
+    vegBtn.style.background = 'rgba(74,222,128,0.07)';
+  }
+}
+
+async function generateVegetarianVersion(name) {
+  const recipe = recipesData[name];
+  if (!recipe) return;
+  const vegBtn = document.getElementById('recipe-veg-btn');
+  if (vegBtn) { vegBtn.textContent = '⏳ Generating…'; vegBtn.disabled = true; }
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/vegetarian-version`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+      body: JSON.stringify({ name, ingredients: recipe.ingredients || [], steps: recipe.steps || [] })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Generation failed');
+    recipe.vegetarianVersion = { ingredients: data.ingredients, steps: data.steps, note: data.note };
+    await saveFamilyData('recipes', recipesData);
+    _recipeVegMode = true;
+    updateVegBtn(recipe);
+    renderIngredientList();
+    const steps = data.steps || recipe.steps || [];
+    document.getElementById('recipe-view-steps').innerHTML = steps.length
+      ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+      : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
+  } catch (err) {
+    if (vegBtn) { vegBtn.textContent = '🥦 Generate Veg Version'; vegBtn.disabled = false; }
+    alert('Failed to generate vegetarian version: ' + (err.message || err));
+  }
+}
+
 function renderRecipeView(recipe) {
+  _recipeScale = 1;
+  _recipeVegMode = false;
   const { description, ingredients, steps, prepTime, cookTime, category } = recipe;
   recipeCurrentIngredients = ingredients || [];
   const titleEl = document.getElementById('recipe-title');
@@ -2292,20 +2429,22 @@ function renderRecipeView(recipe) {
   timesEl.innerHTML = timeParts.join('');
   timesEl.style.display = timeParts.length ? 'flex' : 'none';
   document.getElementById('recipe-view-desc').textContent = description || 'No description yet.';
-  document.getElementById('recipe-view-ingredients').innerHTML = ingredients?.length
-    ? ingredients.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
-    : '<div style="color:var(--text-muted);font-size:12px">No ingredients listed.</div>';
+  renderIngredientList();
   document.getElementById('recipe-view-steps').innerHTML = steps?.length
     ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
     : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
   document.getElementById('recipe-status').style.display = 'none';
+  // Reset scale buttons
+  setRecipeScale(1);
+  // Vegetarian button
+  updateVegBtn(recipe);
   const hideBtn = document.getElementById('recipe-hide-btn');
   if (hideBtn) {
     hideBtn.style.display = _pinUnlocked ? '' : 'none';
     hideBtn.textContent = recipe.hidden ? '👁 Show' : '👁 Hide';
   }
   const selBtn = document.getElementById('recipe-select-day-btn');
-  if (selBtn) selBtn.style.display = 'none'; // hidden by default; previewSwapRecipe shows it
+  if (selBtn) selBtn.style.display = 'none';
   const deleteBtn = document.getElementById('recipe-delete-btn');
   if (deleteBtn) deleteBtn.style.display = _pinUnlocked ? '' : 'none';
   const btn = document.getElementById('recipe-add-btn');
