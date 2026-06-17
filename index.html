@@ -1953,7 +1953,7 @@ function pickMealForDate(dateStr, alreadyPicked, preferQuick) {
   }
 
   // Get all dinner-appropriate recipes using fill tag settings
-  const fillExcludedCats = ['Sides', 'Sauces & Condiments', 'Drinks', 'Baked Goods & Sweets', 'Snacks & Appetizers'];
+  const fillExcludedCats = ['Sides & Appetizers', 'Sauces & Condiments', 'Drinks', 'Snacks & Sweets'];
   let pool = Object.keys(recipesData).filter(name => {
     const r = recipesData[name] || {};
     const cat = r.category || '';
@@ -2543,7 +2543,7 @@ function renderSwapList() {
   });
   const catOrder = Object.keys(groups).sort((a, b) => {
     if (a === '⭐ Favorites') return -1; if (b === '⭐ Favorites') return 1;
-    const CAT_ORDER = ['⭐ Favorites','Top Recipes','Mains','Breakfast','Sides','Soups & Stews','Snacks & Appetizers','Sauces & Condiments','Baked Goods & Sweets','Drinks','Uncategorized'];
+    const CAT_ORDER = ['⭐ Favorites','Top Recipes','Mains','Breakfast','Sides & Appetizers','Soups & Stews','Snacks & Sweets','Sauces & Condiments','Drinks','Uncategorized'];
     const ai = CAT_ORDER.indexOf(a), bi = CAT_ORDER.indexOf(b);
     if (_chooserMode === 'side') {
       if (a === 'Sides') return -1; if (b === 'Sides') return 1;
@@ -3674,7 +3674,7 @@ function renderGroceryRecipeList() {
   });
   const catOrder = Object.keys(groups).sort((a, b) => {
     if (a === '⭐ Favorites') return -1; if (b === '⭐ Favorites') return 1;
-    const CAT_ORDER2 = ['⭐ Favorites','Top Recipes','Mains','Breakfast','Sides','Soups & Stews','Snacks & Appetizers','Sauces & Condiments','Baked Goods & Sweets','Drinks','Uncategorized'];
+    const CAT_ORDER2 = ['⭐ Favorites','Top Recipes','Mains','Breakfast','Sides & Appetizers','Soups & Stews','Snacks & Sweets','Sauces & Condiments','Drinks','Uncategorized'];
     const ai2 = CAT_ORDER2.indexOf(a), bi2 = CAT_ORDER2.indexOf(b);
     if (ai2 !== -1 && bi2 !== -1) return ai2 - bi2;
     if (ai2 !== -1) return -1; if (bi2 !== -1) return 1;
