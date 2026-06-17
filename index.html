@@ -1324,7 +1324,7 @@ let touchChip = null;
 let groceryVoiceRec = null, pendingGroceryItems = [];
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
-function isoDate(d) { return d.toISOString().split('T')[0]; }
+function isoDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function isToday(d) { return isoDate(d) === isoDate(new Date()); }
 function uid() { return Math.random().toString(36).slice(2,10); }
 
