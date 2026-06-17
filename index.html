@@ -859,8 +859,9 @@
       <label class="recipe-section-label">Steps <span style="font-weight:400;color:var(--text-muted)">(one per line)</span></label>
       <textarea id="recipe-edit-steps" class="modal-field" rows="7" style="resize:vertical;font-size:13px;line-height:1.6"></textarea>
 
-      <div class="modal-btns" style="gap:8px;margin-top:4px">
+      <div class="modal-btns" style="gap:8px;margin-top:4px;flex-wrap:wrap">
         <button class="btn-secondary" onclick="closeRecipeEditMode()">Cancel</button>
+        <button id="recipe-edit-delete-btn" class="btn-secondary" onclick="deleteCurrentRecipeFromEdit()" style="display:none;color:#f87171;border-color:#f87171">🗑 Delete</button>
         <button class="btn-primary" onclick="saveRecipeEdits()">Save</button>
       </div>
     </div>
@@ -2393,10 +2394,22 @@ function openRecipeEditMode() {
   document.getElementById('recipe-edit-desc').value = r.description || '';
   document.getElementById('recipe-edit-ingredients').value = (r.ingredients || []).join('\n');
   document.getElementById('recipe-edit-steps').value = (r.steps || []).join('\n');
+  const delBtn = document.getElementById('recipe-edit-delete-btn');
+  if (delBtn) delBtn.style.display = (_pinUnlocked && recipeCurrentMeal) ? '' : 'none';
   setRecipeViewMode('edit');
 }
 
 function closeRecipeEditMode() { setRecipeViewMode('view'); }
+
+async function deleteCurrentRecipeFromEdit() {
+  const name = recipeCurrentMeal;
+  if (!name) return;
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  delete recipesData[name];
+  await saveFamilyData('recipes', recipesData);
+  closeRecipeModalDirect();
+  renderSchedule();
+}
 
 async function saveRecipeEdits() {
   const newName = document.getElementById('recipe-edit-name').value.trim();
