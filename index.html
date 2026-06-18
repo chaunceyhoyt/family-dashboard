@@ -802,8 +802,8 @@
 
       <!-- Vegetarian + Scale toolbar -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <button id="recipe-veg-btn" onclick="toggleVegetarianView()" style="display:none;font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;cursor:pointer;white-space:nowrap">🐟 Pescatarian</button>
-        <div id="recipe-veg-status" style="display:none;font-size:12px;color:#4ade80;font-weight:600">🐟 Pescatarian</div>
+        <button id="recipe-veg-btn" onclick="toggleVegetarianView()" style="display:none;font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;cursor:pointer;white-space:nowrap">🥦 Pescatarian</button>
+        <div id="recipe-veg-status" style="display:none;font-size:12px;color:#4ade80;font-weight:600">🥦 Pescatarian</div>
         <div style="flex:1"></div>
         <div style="display:flex;background:var(--surface2);border-radius:20px;padding:2px;gap:1px">
           <button onclick="setRecipeScale(0.5)" id="scale-btn-half" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:16px;border:none;background:transparent;color:var(--text-muted);cursor:pointer">½×</button>
@@ -2347,18 +2347,25 @@ async function toggleVegetarianView() {
     _recipeVegMode = !_recipeVegMode;
     updateVegBtn(recipe);
     renderIngredientList();
-    // Also update steps if we have them
-    const isVegNow = _recipeVegMode && recipe.vegetarianVersion;
-    const steps = isVegNow ? (recipe.vegetarianVersion.steps || recipe.steps || []) : (recipe.steps || []);
+    const steps = (_recipeVegMode ? (recipe.vegetarianVersion.steps || recipe.steps || []) : (recipe.steps || []));
     document.getElementById('recipe-view-steps').innerHTML = steps.length
       ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
       : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
     return;
   }
 
-  // No vegetarian version — ask to generate
+  // No veg version — ask to generate
   if (!confirm(`No pescatarian version exists for "${recipeCurrentMeal}". Generate one with AI?`)) return;
   await generateVegetarianVersion(recipeCurrentMeal);
+}
+
+function applyVegSteps(recipe) {
+  const steps = (_recipeVegMode && recipe.vegetarianVersion)
+    ? (recipe.vegetarianVersion.steps || recipe.steps || [])
+    : (recipe.steps || []);
+  document.getElementById('recipe-view-steps').innerHTML = steps.length
+    ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+    : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
 }
 
 function updateVegBtn(recipe) {
@@ -2374,10 +2381,10 @@ function updateVegBtn(recipe) {
   vegStatus.style.display = 'none';
   vegBtn.style.display = '';
   if (recipe.vegetarianVersion) {
-    vegBtn.textContent = _recipeVegMode ? '🥩 Original' : '🐟 Pescatarian';
+    vegBtn.textContent = _recipeVegMode ? '🥩 Original' : '🥦 Pescatarian';
     vegBtn.style.background = _recipeVegMode ? 'rgba(74,222,128,0.25)' : 'rgba(74,222,128,0.1)';
   } else {
-    vegBtn.textContent = '🐟 Generate Pescatarian';
+    vegBtn.textContent = '🥦 Generate Pescatarian';
     vegBtn.style.background = 'rgba(74,222,128,0.07)';
   }
 }
@@ -2406,7 +2413,7 @@ async function generateVegetarianVersion(name) {
       ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
       : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
   } catch (err) {
-    if (vegBtn) { vegBtn.textContent = '🐟 Generate Pescatarian'; vegBtn.disabled = false; vegBtn.style.opacity = ''; }
+    if (vegBtn) { vegBtn.textContent = '🥦 Generate Pescatarian'; vegBtn.disabled = false; vegBtn.style.opacity = ''; }
     alert('Failed to generate pescatarian version: ' + (err.message || err));
   }
 }

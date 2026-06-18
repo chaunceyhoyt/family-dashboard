@@ -38,9 +38,10 @@ Deno.serve(async (req: Request) => {
     if (!apiKey) return new Response(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     const prompt = `Convert this recipe to a pescatarian version using these rules:
-- KEEP: fish (salmon, tuna, cod, tilapia, etc.), eggs, dairy, vegetables, grains, legumes
-- REMOVE: red meat (beef, pork, lamb), poultry (chicken, turkey), shellfish (shrimp, crab, lobster, scallops, clams, mussels, oysters), lard, meat-based broths/stocks
-- SUBSTITUTE removed items with fish, eggs, plant-based proteins, or vegetable broth as appropriate
+- KEEP: fish (salmon, tuna, cod, tilapia, halibut, etc.), eggs, dairy, vegetables, grains, legumes, beans, tofu, nuts
+- REMOVE: red meat (beef, pork, lamb), poultry (chicken, turkey, duck), shellfish (shrimp, crab, lobster, scallops, clams, mussels, oysters), lard, meat-based broths/stocks
+- SUBSTITUTE removed items with fish, eggs, extra vegetables, beans, or legumes as appropriate. Use vegetable broth in place of meat broth.
+- DO NOT use imitation or fake meat products (no plant-based ground beef, no mock chicken, no meat substitutes like Beyond Meat or Impossible). Use real whole foods instead.
 - Keep the recipe as close to the original as possible — only change what needs to change
 
 Recipe: ${name}
