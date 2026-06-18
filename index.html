@@ -802,8 +802,8 @@
 
       <!-- Vegetarian + Scale toolbar -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <button id="recipe-veg-btn" onclick="toggleVegetarianView()" style="display:none;font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;cursor:pointer;white-space:nowrap">🥦 Pescatarian</button>
-        <div id="recipe-veg-status" style="display:none;font-size:12px;color:#4ade80;font-weight:600">🥦 Pescatarian</div>
+        <button id="recipe-veg-btn" onclick="toggleVegetarianView()" style="display:none;font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;cursor:pointer;white-space:nowrap">🥦 Vegetarian</button>
+        <div id="recipe-veg-status" style="display:none;font-size:12px;color:#4ade80;font-weight:600">🥦 Vegetarian</div>
         <div style="flex:1"></div>
         <div style="display:flex;background:var(--surface2);border-radius:20px;padding:2px;gap:1px">
           <button onclick="setRecipeScale(0.5)" id="scale-btn-half" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:16px;border:none;background:transparent;color:var(--text-muted);cursor:pointer">½×</button>
@@ -873,8 +873,7 @@
 
       <div class="modal-btns" style="gap:8px;margin-top:4px;flex-wrap:wrap">
         <button class="btn-secondary" onclick="closeRecipeEditMode()">Cancel</button>
-        <button id="recipe-edit-delete-veg-btn" class="btn-secondary" onclick="deleteVegVersion()" style="display:none;color:#fb923c;border-color:#fb923c">🥦 Delete Pescatarian</button>
-        <button id="recipe-edit-delete-btn" class="btn-secondary" onclick="deleteCurrentRecipeFromEdit()" style="display:none;color:#f87171;border-color:#f87171">🗑 Delete Recipe</button>
+        <button id="recipe-edit-delete-btn" class="btn-secondary" onclick="deleteCurrentOrVegFromEdit()" style="display:none;color:#f87171;border-color:#f87171">🗑 Delete</button>
         <button class="btn-primary" onclick="saveRecipeEdits()">Save</button>
       </div>
     </div>
@@ -2356,7 +2355,7 @@ async function toggleVegetarianView() {
   }
 
   // No veg version — ask to generate
-  if (!confirm(`No pescatarian version exists for "${recipeCurrentMeal}". Generate one with AI?`)) return;
+  if (!confirm(`No vegetarian version exists for "${recipeCurrentMeal}". Generate one with AI?`)) return;
   await generateVegetarianVersion(recipeCurrentMeal);
 }
 
@@ -2382,10 +2381,10 @@ function updateVegBtn(recipe) {
   vegStatus.style.display = 'none';
   vegBtn.style.display = '';
   if (recipe.vegetarianVersion) {
-    vegBtn.textContent = _recipeVegMode ? '🥩 Original' : '🥦 Pescatarian';
+    vegBtn.textContent = _recipeVegMode ? '🥩 Original' : '🥦 Vegetarian';
     vegBtn.style.background = _recipeVegMode ? 'rgba(74,222,128,0.25)' : 'rgba(74,222,128,0.1)';
   } else {
-    vegBtn.textContent = '🥦 Generate Pescatarian';
+    vegBtn.textContent = '🥦 Generate Vegetarian';
     vegBtn.style.background = 'rgba(74,222,128,0.07)';
   }
 }
@@ -2414,8 +2413,8 @@ async function generateVegetarianVersion(name) {
       ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
       : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
   } catch (err) {
-    if (vegBtn) { vegBtn.textContent = '🥦 Generate Pescatarian'; vegBtn.disabled = false; vegBtn.style.opacity = ''; }
-    alert('Failed to generate pescatarian version: ' + (err.message || err));
+    if (vegBtn) { vegBtn.textContent = '🥦 Generate Vegetarian'; vegBtn.disabled = false; vegBtn.style.opacity = ''; }
+    alert('Failed to generate vegetarian version: ' + (err.message || err));
   }
 }
 
@@ -2542,34 +2541,35 @@ function openRecipeEditMode() {
   document.getElementById('recipe-edit-ingredients').value = (r.ingredients || []).join('\n');
   document.getElementById('recipe-edit-steps').value = (r.steps || []).join('\n');
   const delBtn = document.getElementById('recipe-edit-delete-btn');
-  if (delBtn) delBtn.style.display = (_pinUnlocked && recipeCurrentMeal) ? '' : 'none';
-  const delVegBtn = document.getElementById('recipe-edit-delete-veg-btn');
-  if (delVegBtn) delVegBtn.style.display = (_pinUnlocked && recipeCurrentMeal && r.vegetarianVersion) ? '' : 'none';
+  if (delBtn) {
+    delBtn.style.display = (_pinUnlocked && recipeCurrentMeal) ? '' : 'none';
+    delBtn.textContent = (_recipeVegMode && r.vegetarianVersion) ? '🥦 Delete Vegetarian' : '🗑 Delete Recipe';
+    delBtn.style.color = (_recipeVegMode && r.vegetarianVersion) ? '#fb923c' : '#f87171';
+    delBtn.style.borderColor = (_recipeVegMode && r.vegetarianVersion) ? '#fb923c' : '#f87171';
+  }
   setRecipeViewMode('edit');
 }
 
 function closeRecipeEditMode() { setRecipeViewMode('view'); }
 
-async function deleteCurrentRecipeFromEdit() {
+async function deleteCurrentOrVegFromEdit() {
   const name = recipeCurrentMeal;
   if (!name) return;
-  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
-  delete recipesData[name];
-  await saveFamilyData('recipes', recipesData);
-  closeRecipeModalDirect();
-  renderSchedule();
-}
-
-async function deleteVegVersion() {
-  const name = recipeCurrentMeal;
-  if (!name || !recipesData[name]?.vegetarianVersion) return;
-  if (!confirm(`Delete the pescatarian version of "${name}"?`)) return;
-  delete recipesData[name].vegetarianVersion;
-  await saveFamilyData('recipes', recipesData);
-  _recipeVegMode = false;
-  document.getElementById('recipe-edit-delete-veg-btn').style.display = 'none';
-  closeRecipeEditMode();
-  renderRecipeView(recipesData[name]);
+  const recipe = recipesData[name];
+  if (_recipeVegMode && recipe?.vegetarianVersion) {
+    if (!confirm(`Delete the vegetarian version of "${name}"?`)) return;
+    delete recipe.vegetarianVersion;
+    await saveFamilyData('recipes', recipesData);
+    _recipeVegMode = false;
+    closeRecipeEditMode();
+    renderRecipeView(recipe);
+  } else {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    delete recipesData[name];
+    await saveFamilyData('recipes', recipesData);
+    closeRecipeModalDirect();
+    renderSchedule();
+  }
 }
 
 async function saveRecipeEdits() {

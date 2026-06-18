@@ -37,7 +37,7 @@ Deno.serve(async (req: Request) => {
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) return new Response(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    const prompt = `Convert this recipe to a pescatarian version using these rules:
+    const prompt = `Convert this recipe to a vegetarian version (pescatarian rules — fish and eggs allowed) using these rules:
 - KEEP: fish (salmon, tuna, cod, tilapia, halibut, etc.), eggs, dairy, vegetables, grains, legumes, beans, tofu, nuts
 - REMOVE: red meat (beef, pork, lamb), poultry (chicken, turkey, duck), shellfish (shrimp, crab, lobster, scallops, clams, mussels, oysters), lard, meat-based broths/stocks
 - SUBSTITUTE removed items with fish, eggs, extra vegetables, beans, or legumes as appropriate. Use vegetable broth in place of meat broth.
