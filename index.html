@@ -2556,15 +2556,18 @@ async function deleteCurrentOrVegFromEdit() {
   const name = recipeCurrentMeal;
   if (!name) return;
   const recipe = recipesData[name];
-  if (_recipeVegMode && recipe?.vegetarianVersion) {
-    if (!confirm(`Delete the vegetarian version of "${name}"?`)) return;
+  // Re-read the button label to know which mode the user is in
+  const btn = document.getElementById('recipe-edit-delete-btn');
+  const isDeletingVeg = btn && btn.textContent.includes('Vegetarian') && recipe?.vegetarianVersion;
+  if (isDeletingVeg) {
+    if (!confirm(`Delete just the vegetarian version of "${name}"? The original recipe will remain.`)) return;
     delete recipe.vegetarianVersion;
     await saveFamilyData('recipes', recipesData);
     _recipeVegMode = false;
     closeRecipeEditMode();
     renderRecipeView(recipe);
   } else {
-    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`Permanently delete the recipe "${name}"? This cannot be undone.`)) return;
     delete recipesData[name];
     await saveFamilyData('recipes', recipesData);
     closeRecipeModalDirect();
