@@ -3806,7 +3806,7 @@ function renderGrocery() {
   if (_groceryTab === 'recipes') renderGroceryRecipeList();
 }
 
-function setGroceryTab(tab) { _groceryTab = tab; _groceryRecipeActiveTags = new Set(); _groceryTagsExpanded = false; renderGrocery(); }
+function setGroceryTab(tab) { _groceryTab = tab; localStorage.setItem('groceryTab', tab); _groceryRecipeActiveTags = new Set(); _groceryTagsExpanded = false; renderGrocery(); }
 
 function toggleGroceryRecipeTag(tag) {
   if (_groceryRecipeActiveTags.has(tag)) _groceryRecipeActiveTags.delete(tag);
@@ -4639,7 +4639,7 @@ function resetTaskInactivityTimer() {
 let _taskViewer = null;
 let _taskPortraitTab = 'tasks';
 let _homePortraitTab = 'events';
-let _groceryTab = 'grocery';
+let _groceryTab = localStorage.getItem('groceryTab') || 'recipes';
 let _groceryRecipeActiveTags = new Set();
 let _groceryTagsExpanded = false;
 let _taskInactivityTimer = null;
