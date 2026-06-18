@@ -873,7 +873,8 @@
 
       <div class="modal-btns" style="gap:8px;margin-top:4px;flex-wrap:wrap">
         <button class="btn-secondary" onclick="closeRecipeEditMode()">Cancel</button>
-        <button id="recipe-edit-delete-btn" class="btn-secondary" onclick="deleteCurrentRecipeFromEdit()" style="display:none;color:#f87171;border-color:#f87171">🗑 Delete</button>
+        <button id="recipe-edit-delete-veg-btn" class="btn-secondary" onclick="deleteVegVersion()" style="display:none;color:#fb923c;border-color:#fb923c">🥦 Delete Pescatarian</button>
+        <button id="recipe-edit-delete-btn" class="btn-secondary" onclick="deleteCurrentRecipeFromEdit()" style="display:none;color:#f87171;border-color:#f87171">🗑 Delete Recipe</button>
         <button class="btn-primary" onclick="saveRecipeEdits()">Save</button>
       </div>
     </div>
@@ -2542,6 +2543,8 @@ function openRecipeEditMode() {
   document.getElementById('recipe-edit-steps').value = (r.steps || []).join('\n');
   const delBtn = document.getElementById('recipe-edit-delete-btn');
   if (delBtn) delBtn.style.display = (_pinUnlocked && recipeCurrentMeal) ? '' : 'none';
+  const delVegBtn = document.getElementById('recipe-edit-delete-veg-btn');
+  if (delVegBtn) delVegBtn.style.display = (_pinUnlocked && recipeCurrentMeal && r.vegetarianVersion) ? '' : 'none';
   setRecipeViewMode('edit');
 }
 
@@ -2555,6 +2558,18 @@ async function deleteCurrentRecipeFromEdit() {
   await saveFamilyData('recipes', recipesData);
   closeRecipeModalDirect();
   renderSchedule();
+}
+
+async function deleteVegVersion() {
+  const name = recipeCurrentMeal;
+  if (!name || !recipesData[name]?.vegetarianVersion) return;
+  if (!confirm(`Delete the pescatarian version of "${name}"?`)) return;
+  delete recipesData[name].vegetarianVersion;
+  await saveFamilyData('recipes', recipesData);
+  _recipeVegMode = false;
+  document.getElementById('recipe-edit-delete-veg-btn').style.display = 'none';
+  closeRecipeEditMode();
+  renderRecipeView(recipesData[name]);
 }
 
 async function saveRecipeEdits() {
