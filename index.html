@@ -2540,34 +2540,30 @@ function openRecipeEditMode() {
   document.getElementById('recipe-edit-desc').value = r.description || '';
   document.getElementById('recipe-edit-ingredients').value = (r.ingredients || []).join('\n');
   document.getElementById('recipe-edit-steps').value = (r.steps || []).join('\n');
+  _editingVegVersion = !!(_recipeVegMode && r.vegetarianVersion);
   const delBtn = document.getElementById('recipe-edit-delete-btn');
-  if (delBtn) {
-    delBtn.style.display = (_pinUnlocked && recipeCurrentMeal) ? '' : 'none';
-    delBtn.textContent = (_recipeVegMode && r.vegetarianVersion) ? '🥦 Delete Vegetarian' : '🗑 Delete Recipe';
-    delBtn.style.color = (_recipeVegMode && r.vegetarianVersion) ? '#fb923c' : '#f87171';
-    delBtn.style.borderColor = (_recipeVegMode && r.vegetarianVersion) ? '#fb923c' : '#f87171';
-  }
+  if (delBtn) delBtn.style.display = (_pinUnlocked && recipeCurrentMeal) ? '' : 'none';
   setRecipeViewMode('edit');
 }
 
 function closeRecipeEditMode() { setRecipeViewMode('view'); }
 
+let _editingVegVersion = false;
+
 async function deleteCurrentOrVegFromEdit() {
   const name = recipeCurrentMeal;
   if (!name) return;
   const recipe = recipesData[name];
-  // Re-read the button label to know which mode the user is in
-  const btn = document.getElementById('recipe-edit-delete-btn');
-  const isDeletingVeg = btn && btn.textContent.includes('Vegetarian') && recipe?.vegetarianVersion;
-  if (isDeletingVeg) {
-    if (!confirm(`Delete just the vegetarian version of "${name}"? The original recipe will remain.`)) return;
+  if (_editingVegVersion && recipe?.vegetarianVersion) {
+    if (!confirm(`Delete the vegetarian version of "${name}"? The original recipe will remain.`)) return;
     delete recipe.vegetarianVersion;
     await saveFamilyData('recipes', recipesData);
     _recipeVegMode = false;
+    _editingVegVersion = false;
     closeRecipeEditMode();
     renderRecipeView(recipe);
   } else {
-    if (!confirm(`Permanently delete the recipe "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`Permanently delete "${name}"? This cannot be undone.`)) return;
     delete recipesData[name];
     await saveFamilyData('recipes', recipesData);
     closeRecipeModalDirect();
