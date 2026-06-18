@@ -37,7 +37,11 @@ Deno.serve(async (req: Request) => {
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) return new Response(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    const prompt = `Convert this recipe to a vegetarian version. Keep it as close to the original as possible — only substitute non-vegetarian ingredients (meat, poultry, seafood, meat-based broths/stocks, gelatin, lard, etc.) with good vegetarian alternatives.
+    const prompt = `Convert this recipe to a pescatarian version using these rules:
+- KEEP: fish (salmon, tuna, cod, tilapia, etc.), eggs, dairy, vegetables, grains, legumes
+- REMOVE: red meat (beef, pork, lamb), poultry (chicken, turkey), shellfish (shrimp, crab, lobster, scallops, clams, mussels, oysters), lard, meat-based broths/stocks
+- SUBSTITUTE removed items with fish, eggs, plant-based proteins, or vegetable broth as appropriate
+- Keep the recipe as close to the original as possible — only change what needs to change
 
 Recipe: ${name}
 
