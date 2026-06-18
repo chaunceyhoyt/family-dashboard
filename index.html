@@ -788,7 +788,7 @@
         <button id="recipe-hide-btn" onclick="toggleRecipeHidden(recipeCurrentMeal)" style="display:none;background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👁 Hide</button>
         <button onclick="openRecipeEditMode()" style="background:var(--surface2);border:none;color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">✏️ Edit</button>
         <button id="recipe-delete-btn" onclick="deleteCurrentRecipe()" style="display:none;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑 Delete</button>
-        <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
+        <button onclick="closeRecipeModalDirect();openCookMode(recipeCurrentDate,recipeCurrentMeal,_recipeScale,_recipeVegMode)" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0">👨‍🍳 Cook</button>
       </div>
 
       <div style="margin-bottom:8px;display:flex;flex-wrap:wrap;align-items:center;gap:5px">
@@ -2854,15 +2854,20 @@ function closeRecipeModalDirect() { document.getElementById('recipe-dim').classL
 // ── COOK MODE ─────────────────────────────────────────────────────────────────
 let cookPages = [], cookPageIdx = 0;
 
-async function openCookMode(dateStr, meal) {
+async function openCookMode(dateStr, meal, scale, vegMode) {
   const recipe = await fetchRecipe(meal);
-  const ingredients = recipe.ingredients || [];
-  const steps = recipe.steps || [];
+  const s = scale || 1;
+  const useVeg = vegMode && recipe.vegetarianVersion;
+  const rawIngredients = useVeg ? (recipe.vegetarianVersion.ingredients || recipe.ingredients || []) : (recipe.ingredients || []);
+  const rawSteps = useVeg ? (recipe.vegetarianVersion.steps || recipe.steps || []) : (recipe.steps || []);
+  const ingredients = rawIngredients.map(ing => scaleIngredient(ing, s));
+  const steps = rawSteps.map(step => scaleIngredient(step, s));
+  const scaledRecipe = { ...recipe, ingredients };
   // Build pages: [ingredients, ...steps]
   cookPages = ['__ingredients__'].concat(steps);
   cookPageIdx = 0;
-  document.getElementById('cook-meal-name').textContent = meal;
-  renderCookPage(recipe, ingredients);
+  document.getElementById('cook-meal-name').textContent = meal + (s !== 1 ? ` (${s === 0.5 ? '½' : s}×)` : '') + (useVeg ? ' 🐟' : '');
+  renderCookPage(scaledRecipe, ingredients);
   document.getElementById('cook-overlay').classList.add('open');
 }
 
