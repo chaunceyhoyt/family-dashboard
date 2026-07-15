@@ -1038,8 +1038,16 @@
         <select class="modal-field" id="task-add-assignee" style="margin-top:6px"></select>
       </div>
     </div>
-    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Deadline (optional)</label>
-    <input class="modal-field" id="task-add-deadline" type="datetime-local" style="margin-top:6px">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Starts On (optional)</label>
+        <input class="modal-field" id="task-add-start" type="date" style="margin-top:6px">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Deadline (optional)</label>
+        <input class="modal-field" id="task-add-deadline" type="datetime-local" style="margin-top:6px">
+      </div>
+    </div>
     <div style="display:flex;gap:10px;margin-top:10px">
       <div style="flex:1">
         <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Recurrence</label>
@@ -1353,6 +1361,10 @@ function isoWeekOf(d) {
   return isoDate(x);
 }
 
+function taskHasStarted(task) {
+  return !task.startDate || task.startDate <= isoDate(new Date());
+}
+
 function isTaskDue(task, personKey) {
   if (!task || !task.recurrence) return true;
   const now = new Date();
@@ -1573,7 +1585,7 @@ function renderNavBadges() {
   const tasksBtn = document.getElementById('nav-tasks');
   if (tasksBtn) {
     tasksBtn.querySelectorAll('.nav-badge').forEach(b => b.remove());
-    const count = tasks.length;
+    const count = tasks.filter(taskHasStarted).length;
     if (count > 0) {
       const icon = tasksBtn.querySelector('.nav-home-icon');
       if (icon) {
@@ -3050,7 +3062,7 @@ function renderHome() {
   const allGroups = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji }]
     .concat(Object.keys(PEOPLE).map(k => ({ key: k, label: PEOPLE[k].label, emoji: PEOPLE[k].emoji })));
   const tasksHtml = allGroups.map(g => {
-    const items = tasks.filter(t => (t.assignee || null) === g.key);
+    const items = tasks.filter(t => taskHasStarted(t) && (t.assignee || null) === g.key);
     const pts = g.key ? (taskPoints[g.key] || 0) : null;
     const header = '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 5px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.06)">' +
       '<span style="font-size:20px">' + g.emoji + '</span>' +
@@ -4451,14 +4463,28 @@ function renderTasks() {
     const dlClass = isOverdue ? 'task-card-deadline overdue' : 'task-card-deadline';
     const recurBadge = task.recurrence ? '<span class="task-recur-badge">' + (RECURRENCE_LABELS[task.recurrence]||'') + '</span>' : '';
 
+    if (!taskHasStarted(task)) {
+      // Future-scheduled task — only visible when unlocked
+      const startLabel = new Date(task.startDate + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+      const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' : '';
+      return '<div class="task-card" style="opacity:0.6;border-style:dashed">' +
+        '<div class="task-card-top"><span class="task-card-title">' + task.title + '</span>' +
+          '<span style="font-size:11px;font-weight:700;color:#93c5fd;background:rgba(59,130,246,0.15);border-radius:6px;padding:1px 7px">⏰ Starts ' + startLabel + '</span>' +
+        '</div>' +
+        (recurBadge ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + '</div>' : '') +
+        '<div class="task-card-meta"><span style="font-size:11px;color:var(--text-muted)">Scheduled</span>' + delBtn + '</div>' +
+      '</div>';
+    }
+
     if (done) {
       const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' : '';
+      const redoBtn = _pinUnlocked ? '<button onclick="redoTask(\'' + task.id + '\')" style="font-size:11px;font-weight:700;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;border-radius:6px;padding:2px 8px;cursor:pointer">↩ Assign again</button>' : '';
       return '<div class="task-card" style="opacity:0.5">' +
         '<div class="task-card-top"><span class="task-card-title" style="text-decoration:line-through">' + task.title + '</span>' +
           '<span style="font-size:11px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:6px;padding:1px 7px">✓ Done</span>' +
         '</div>' +
         (recurBadge ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + '</div>' : '') +
-        '<div class="task-card-meta"><span style="font-size:11px;color:var(--text-muted)">Completed today</span>' + delBtn + '</div>' +
+        '<div class="task-card-meta"><span style="font-size:11px;color:var(--text-muted);flex:1">Completed today</span>' + redoBtn + delBtn + '</div>' +
       '</div>';
     }
 
@@ -4484,10 +4510,10 @@ function renderTasks() {
   function getColTasks(col) {
     if (col.key === null) {
       // Unassigned: show tasks not assigned to anyone (excluding joint)
-      return tasks.filter(t => !t.isJoint && (!t.assignee || t.assignee === 'null' || t.assignee === 'undefined'));
+      return tasks.filter(t => (taskHasStarted(t) || _pinUnlocked) && !t.isJoint && (!t.assignee || t.assignee === 'null' || t.assignee === 'undefined'));
     }
-    // Person: show their tasks — due ones + ones completed today
-    return tasks.filter(t => !t.isJoint && String(t.assignee) === col.key &&
+    // Person: show their tasks — due ones + ones completed today (future-scheduled shown to unlocked parents)
+    return tasks.filter(t => (taskHasStarted(t) || _pinUnlocked) && !t.isJoint && String(t.assignee) === col.key &&
       (isTaskDue(t, col.key) || taskIsDoneToday(t, col.key)));
   }
 
@@ -4848,6 +4874,28 @@ function jointConfirm(id, personKey) {
   renderTasks();
 }
 
+function redoTask(id) {
+  // Reopen a completed task so it can be assigned/claimed again
+  var task = tasks.find(function(t) { return t.id === id; });
+  if (!task) return;
+  var today = isoDate(new Date());
+  if (task.recurrence) {
+    // Clear today's completions so it's due again for everyone
+    if (task.lastCompleted) Object.keys(task.lastCompleted).forEach(function(k) {
+      if (isoDate(new Date(task.lastCompleted[k])) === today) delete task.lastCompleted[k];
+    });
+    if (task.dailyCompletions) Object.keys(task.dailyCompletions).forEach(function(k) {
+      if (task.dailyCompletions[k] && task.dailyCompletions[k].date === today) delete task.dailyCompletions[k];
+    });
+  } else {
+    delete task.completedAt;
+    delete task.completedBy;
+  }
+  saveFamilyData('tasks', tasks);
+  renderNavBadges();
+  renderTasks();
+}
+
 function deleteTask(id) {
   tasks = tasks.filter(function(t) { return t.id !== id; });
   saveFamilyData('tasks', tasks);
@@ -4866,6 +4914,7 @@ function openTaskAddModal() {
   document.getElementById('task-add-desc').value = '';
   document.getElementById('task-add-pts').value = '10';
   document.getElementById('task-add-deadline').value = '';
+  document.getElementById('task-add-start').value = '';
   document.getElementById('task-add-dim').classList.add('open');
   setTimeout(function() { document.getElementById('task-add-title').focus(); }, 80);
 }
@@ -4884,7 +4933,9 @@ function confirmAddTask() {
   var recurrence = recurrenceEl ? (recurrenceEl.value || null) : null;
   var isJointEl = document.getElementById('task-add-joint');
   var isJoint = isJointEl ? isJointEl.checked : false;
+  var startDate = document.getElementById('task-add-start').value || null;
   var newTask = { id: uid(), title: title, desc: desc, points: points, deadline: deadline, assignee: assignee };
+  if (startDate) newTask.startDate = startDate;
   if (recurrence) newTask.recurrence = recurrence;
   if (isJoint) { newTask.isJoint = true; newTask.jointBonus = 25; newTask.pendingJoint = []; }
   tasks.push(newTask);
