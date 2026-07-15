@@ -390,6 +390,7 @@
     .modal-box-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
     .modal-field { width: 100%; background: #0a1220; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 13px 14px; color: var(--text); font-size: 16px; font-family: inherit; outline: none; margin-bottom: 16px; transition: border-color 0.15s; }
     .modal-field:focus { border-color: var(--accent); }
+    body.light .modal-field { background: #fff; border-color: rgba(0,0,0,0.15); }
     .modal-btns { display: flex; gap: 10px; }
     .btn-primary   { flex: 1; background: var(--accent); border: none; color: white; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
     .btn-secondary { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
@@ -2470,6 +2471,7 @@ async function openRecipeModal(dateStr, meal) {
 }
 
 function openMealMode() {
+  _previewSwapName = '';
   setRecipeViewMode('meal');
   const entry = getDinnerEntry(recipeCurrentDate);
   const d = new Date(recipeCurrentDate + 'T12:00:00');
@@ -2531,6 +2533,8 @@ async function fetchRecipe(meal) {
 }
 
 function openRecipeEditMode() {
+  // When previewing from the recipe browser, edit the previewed recipe (recipeCurrentMeal may be empty or stale)
+  if (_previewSwapName && recipesData[_previewSwapName]) recipeCurrentMeal = _previewSwapName;
   const r = recipesData[recipeCurrentMeal] || {};
   document.getElementById('recipe-edit-name').value = recipeCurrentMeal;
   document.getElementById('recipe-edit-category').value = r.category || '';
@@ -3885,6 +3889,7 @@ function addFavRecipeToGrocery(name) {
 }
 
 function openFavRecipeView(name) {
+  _previewSwapName = '';
   recipeCurrentMeal = name;
   recipeCurrentDate = '';
   recipeCurrentIngredients = [];
