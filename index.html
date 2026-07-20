@@ -1023,53 +1023,77 @@
 <!-- ADD TASK MODAL -->
 <div class="dim" id="task-add-dim" onclick="if(event.target===this)closeTaskAddModal()">
   <div class="modal-box" style="max-width:380px;max-height:90vh;overflow-y:auto">
-    <div class="modal-box-title">Add Task</div>
+    <div class="modal-box-title" id="task-add-modal-title">Add Task</div>
     <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Title *</label>
     <input class="modal-field" id="task-add-title" type="text" placeholder="Task name" style="margin-top:6px" onkeydown="if(event.key==='Enter')confirmAddTask()">
-    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Description</label>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Notes</label>
     <input class="modal-field" id="task-add-desc" type="text" placeholder="Optional details" style="margin-top:6px">
     <div style="display:flex;gap:10px">
       <div style="flex:1">
-        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Points</label>
-        <input class="modal-field" id="task-add-pts" type="number" value="10" min="0" style="margin-top:6px">
-      </div>
-      <div style="flex:1">
-        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Assign To</label>
-        <select class="modal-field" id="task-add-assignee" style="margin-top:6px"></select>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px">
-      <div style="flex:1">
-        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Starts On (optional)</label>
-        <input class="modal-field" id="task-add-start" type="date" style="margin-top:6px">
-      </div>
-      <div style="flex:1">
-        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Deadline (optional)</label>
-        <input class="modal-field" id="task-add-deadline" type="datetime-local" style="margin-top:6px">
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:10px">
-      <div style="flex:1">
-        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Recurrence</label>
-        <select class="modal-field" id="task-add-recurrence" style="margin-top:6px">
-          <option value="">One-time</option>
-          <option value="daily">Daily</option>
-          <option value="2xdaily">Twice Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="annual">Annual</option>
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Category</label>
+        <select class="modal-field" id="task-add-category" style="margin-top:6px">
+          <option value="house">🏠 House</option>
+          <option value="car">🚗 Car</option>
+          <option value="appliance">🔧 Appliance</option>
+          <option value="yard">🌿 Yard</option>
+          <option value="other">📌 Other</option>
         </select>
       </div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;padding-bottom:10px">
-          <input type="checkbox" id="task-add-joint" style="width:18px;height:18px;accent-color:var(--accent)">
-          🤝 Joint task
-        </label>
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Asset</label>
+        <select class="modal-field" id="task-add-asset" style="margin-top:6px"></select>
       </div>
     </div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Repeats</label>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:6px">
+      <span style="font-size:13px;color:var(--text-muted)">Every</span>
+      <input class="modal-field" id="task-add-recur-n" type="number" value="1" min="1" style="width:70px;margin-bottom:16px">
+      <select class="modal-field" id="task-add-recur-unit" style="flex:1">
+        <option value="">Does not repeat</option>
+        <option value="day">Day(s)</option>
+        <option value="week">Week(s)</option>
+        <option value="month">Month(s)</option>
+        <option value="year">Year(s)</option>
+      </select>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">First Due (optional)</label>
+    <input class="modal-field" id="task-add-start" type="date" style="margin-top:6px">
     <div class="modal-btns">
       <button class="btn-secondary" onclick="closeTaskAddModal()">Cancel</button>
-      <button class="btn-primary" onclick="confirmAddTask()">Add Task</button>
+      <button class="btn-primary" id="task-add-confirm-btn" onclick="confirmAddTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASSET ADD/EDIT MODAL -->
+<div class="dim" id="asset-dim" onclick="if(event.target===this)closeAssetModal()">
+  <div class="modal-box" style="max-width:380px;max-height:90vh;overflow-y:auto">
+    <div class="modal-box-title" id="asset-modal-title">Add Asset</div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Name *</label>
+    <input class="modal-field" id="asset-name" type="text" placeholder="e.g. Water Heater" style="margin-top:6px">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Category</label>
+        <select class="modal-field" id="asset-category" style="margin-top:6px">
+          <option value="house">🏠 House</option>
+          <option value="car">🚗 Car</option>
+          <option value="appliance">🔧 Appliance</option>
+          <option value="yard">🌿 Yard</option>
+          <option value="other">📌 Other</option>
+        </select>
+      </div>
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Year</label>
+        <input class="modal-field" id="asset-year" type="number" placeholder="e.g. 2019" style="margin-top:6px">
+      </div>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Make / Model</label>
+    <input class="modal-field" id="asset-model" type="text" placeholder="e.g. Rheem XE50T06" style="margin-top:6px">
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Notes</label>
+    <textarea class="modal-field" id="asset-notes" rows="2" placeholder="Serial #, filter size, location…" style="margin-top:6px;resize:vertical"></textarea>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeAssetModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmSaveAsset()">Save</button>
     </div>
   </div>
 </div>
@@ -1139,23 +1163,6 @@
 </div>
 
 <!-- REWARDS STORE MODAL -->
-<div class="dim" id="rewards-dim" onclick="if(event.target===this)closeRewardsModal()">
-  <div class="modal-box" style="max-width:460px;max-height:85vh;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0">
-      <div class="modal-box-title" style="margin:0">🎁 Rewards Store</div>
-      <button onclick="closeRewardsModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
-    </div>
-    <div id="rewards-points-bar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;flex-shrink:0"></div>
-    <div style="margin-bottom:12px;flex-shrink:0">
-      <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Redeeming as</label>
-      <select id="rewards-redeemer" class="modal-field" style="margin-top:6px"></select>
-    </div>
-    <div id="rewards-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
-  </div>
-</div>
-
-<!-- TASK USER SELECT MODAL -->
-
 <!-- PIN MODAL -->
 <div class="dim" id="pin-dim" onclick="if(event.target===this)closePinModal()">
   <div class="modal-box" style="max-width:300px;text-align:center">
@@ -1335,6 +1342,8 @@ let tasks = [];
 let rewards = [];
 let purchases = []; // { id, rewardId, rewardTitle, rewardEmoji, personKey, redeemedAt }
 let taskPoints = {};
+let assets = [];       // { id, name, category, model, year, notes }
+let completedLog = []; // { id, taskId, title, assetId, assetName, at }
 let taskWeek = '';
 let _pinUnlocked = false;
 const TASK_PIN = '1007';
@@ -1351,47 +1360,36 @@ function isToday(d) { return isoDate(d) === isoDate(new Date()); }
 function uid() { return Math.random().toString(36).slice(2,10); }
 
 // ── RECURRENCE / TASK DUE HELPERS ──────────────────────────────────────────────
-const RECURRENCE_LABELS = { daily:'🔁 Daily', '2xdaily':'🔁 2×/day', weekly:'🔁 Weekly', monthly:'🔁 Monthly', annual:'🔁 Annual' };
+const TASK_CATEGORIES = {
+  house:     { emoji:'🏠', label:'House' },
+  car:       { emoji:'🚗', label:'Car' },
+  appliance: { emoji:'🔧', label:'Appliance' },
+  yard:      { emoji:'🌿', label:'Yard' },
+  other:     { emoji:'📌', label:'Other' },
+};
 
-function isoWeekOf(d) {
-  // Week starts Monday
-  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = (x.getDay() + 6) % 7; // Mon=0 ... Sun=6
-  x.setDate(x.getDate() - day);
-  return isoDate(x);
+function recurLabel(t) {
+  if (!t.recurEvery || !t.recurUnit) return '';
+  const n = t.recurEvery;
+  return '🔁 Every ' + (n === 1 ? t.recurUnit : n + ' ' + t.recurUnit + 's');
 }
 
-function taskHasStarted(task) {
-  return !task.startDate || task.startDate <= isoDate(new Date());
+// Date (yyyy-mm-dd) the task is next due, or null for an un-dated one-off (due now)
+function taskNextDue(t) {
+  if (!t.recurEvery || !t.recurUnit) return t.startDate || null;
+  if (!t.lastCompleted) return t.startDate || null;
+  const d = new Date(t.lastCompleted);
+  if (t.recurUnit === 'day') d.setDate(d.getDate() + t.recurEvery);
+  else if (t.recurUnit === 'week') d.setDate(d.getDate() + t.recurEvery * 7);
+  else if (t.recurUnit === 'month') d.setMonth(d.getMonth() + t.recurEvery);
+  else if (t.recurUnit === 'year') d.setFullYear(d.getFullYear() + t.recurEvery);
+  const next = isoDate(d);
+  return (t.startDate && t.startDate > next) ? t.startDate : next;
 }
 
-function isTaskDue(task, personKey) {
-  if (!task || !task.recurrence) return true;
-  const now = new Date();
-  const today = isoDate(now);
-  const lc = (task.lastCompleted && task.lastCompleted[personKey]) || null;
-  switch (task.recurrence) {
-    case 'daily':
-      return !lc || isoDate(new Date(lc)) !== today;
-    case '2xdaily': {
-      const dc = (task.dailyCompletions && task.dailyCompletions[personKey]) || null;
-      const count = (dc && dc.date === today) ? (dc.count || 0) : 0;
-      if (count >= 2) return false;
-      if (count === 0) return true;
-      // Second slot available after noon
-      return now.getHours() >= 12;
-    }
-    case 'weekly':
-      return !lc || isoWeekOf(new Date(lc)) !== isoWeekOf(now);
-    case 'monthly':
-      if (!lc) return true;
-      { const d = new Date(lc); return !(d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()); }
-    case 'annual':
-      if (!lc) return true;
-      return new Date(lc).getFullYear() !== now.getFullYear();
-    default:
-      return true;
-  }
+function isTaskDue(t) {
+  const next = taskNextDue(t);
+  return !next || next <= isoDate(new Date());
 }
 
 function getWeekDays() {
@@ -1505,6 +1503,8 @@ async function loadFamilyData() {
         });
       }
       else if (row.key === 'tasks') tasks = row.value || [];
+      else if (row.key === 'assets') assets = row.value || [];
+      else if (row.key === 'completed_log') completedLog = row.value || [];
       else if (row.key === 'rewards') rewards = row.value || [];
       else if (row.key === 'purchases') purchases = row.value || [];
       else if (row.key === 'task_points') {
@@ -1524,54 +1524,42 @@ async function loadFamilyData() {
       else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
     }
   } catch(e) { console.error('family_data error', e); }
-  seedDefaultTasksIfEmpty();
-  seedDefaultRewardsIfEmpty();
+  migrateTasksV2();
   renderNavBadges();
 }
 
-// ── SEED DEFAULTS ──────────────────────────────────────────────────────────────
-function seedDefaultTasksIfEmpty() {
-  const hasRecurring = tasks.some(t => t.recurrence);
-  if (tasks.length > 0 && hasRecurring) return;
-  const mk = (title, assignee, recurrence, points, extra) => Object.assign({
-    id: uid(), title: title, desc: '', points: points, deadline: null,
-    assignee: assignee, recurrence: recurrence, lastCompleted: {}, dailyCompletions: {}
-  }, extra || {});
-  const defaults = [
-    // Unassigned
-    mk('Take out trash', null, 'weekly', 15),
-    mk('Vacuum living room', null, 'weekly', 20),
-    mk('Wipe down kitchen counters', null, 'daily', 10),
-    mk('Set table for dinner', null, 'daily', 10),
-    // Son
-    mk('Brush teeth', 'son', '2xdaily', 5),
-    mk('Make bed', 'son', 'daily', 10),
-    mk('Do homework', 'son', 'daily', 20),
-    mk('Clean room', 'son', 'weekly', 25),
-    // Daughter
-    mk('Brush teeth', 'daughter', '2xdaily', 5),
-    mk('Make bed', 'daughter', 'daily', 10),
-    mk('Do homework', 'daughter', 'daily', 20),
-    mk('Clean room', 'daughter', 'weekly', 25),
-    // Joint
-    mk('Clean kitchen together', 'joint', 'weekly', 20, { isJoint: true, jointBonus: 25, pendingJoint: [] }),
-    mk('Tidy living room together', 'joint', 'weekly', 15, { isJoint: true, jointBonus: 25, pendingJoint: [] }),
-  ];
-  tasks = tasks.concat(defaults);
+// ── TASK MODEL MIGRATION ───────────────────────────────────────────────────────
+// v2: single shared task list — no assignees, points, joints, or per-person
+// completion. Recurrence is { recurEvery: N, recurUnit: 'day'|'week'|'month'|'year' }.
+function migrateTasksV2() {
+  if (!tasks.length) return;
+  if (!tasks.some(t => t.recurrence !== undefined || t.assignee !== undefined || t.points !== undefined)) return;
+  const seen = new Set();
+  const RECUR_MAP = { daily:[1,'day'], '2xdaily':[1,'day'], weekly:[1,'week'], monthly:[1,'month'], annual:[1,'year'] };
+  tasks = tasks.filter(t => {
+    const k = (t.title || '').toLowerCase().trim();
+    if (seen.has(k)) return false; // drop per-kid duplicate chores
+    seen.add(k);
+    return true;
+  }).map(t => {
+    if (t.completedAt) {
+      completedLog.push({ id: uid(), taskId: t.id, title: t.title, at: t.completedAt });
+      return null;
+    }
+    const nt = { id: t.id, title: t.title, desc: t.desc || '', category: t.category || 'house' };
+    if (t.startDate) nt.startDate = t.startDate;
+    if (t.assetId) nt.assetId = t.assetId;
+    if (t.recurEvery && t.recurUnit) { nt.recurEvery = t.recurEvery; nt.recurUnit = t.recurUnit; if (t.lastCompleted && typeof t.lastCompleted === 'string') nt.lastCompleted = t.lastCompleted; }
+    else if (t.recurrence && RECUR_MAP[t.recurrence]) {
+      nt.recurEvery = RECUR_MAP[t.recurrence][0];
+      nt.recurUnit = RECUR_MAP[t.recurrence][1];
+      const lcs = (t.lastCompleted && typeof t.lastCompleted === 'object') ? Object.values(t.lastCompleted).sort() : [];
+      if (lcs.length) nt.lastCompleted = lcs[lcs.length - 1];
+    }
+    return nt;
+  }).filter(Boolean);
   saveFamilyData('tasks', tasks);
-}
-
-function seedDefaultRewardsIfEmpty() {
-  if (rewards.length > 0) return;
-  rewards = [
-    { id: uid(), name: 'Extra screen time (30 min)', cost: 50, icon: '📱', redeemed: false },
-    { id: uid(), name: 'Choose dinner tonight', cost: 75, icon: '🍕', redeemed: false },
-    { id: uid(), name: 'Stay up 30 min later', cost: 100, icon: '🌙', redeemed: false },
-    { id: uid(), name: 'Skip one chore', cost: 150, icon: '🎟️', redeemed: false },
-    { id: uid(), name: 'Movie night pick', cost: 200, icon: '🎬', redeemed: false },
-    { id: uid(), name: '$5 allowance bonus', cost: 500, icon: '💵', redeemed: false },
-  ];
-  saveFamilyData('rewards', rewards);
+  saveFamilyData('completed_log', completedLog);
 }
 
 async function saveFamilyData(key, value) {
@@ -1585,7 +1573,7 @@ function renderNavBadges() {
   const tasksBtn = document.getElementById('nav-tasks');
   if (tasksBtn) {
     tasksBtn.querySelectorAll('.nav-badge').forEach(b => b.remove());
-    const count = tasks.filter(taskHasStarted).length;
+    const count = tasks.filter(isTaskDue).length;
     if (count > 0) {
       const icon = tasksBtn.querySelector('.nav-home-icon');
       if (icon) {
@@ -3025,7 +3013,7 @@ function showPage(page) {
   if (page === 'schedule') renderSchedule();
   else if (page === 'home') renderHome();
   else if (page === 'grocery') renderGrocery();
-  else if (page === 'tasks') { _taskViewer = null; renderTasks(); }
+  else if (page === 'tasks') { renderTasks(); }
   else if (page === 'discover') renderDiscover();
 }
 
@@ -3058,36 +3046,23 @@ function renderHome() {
     }).join('');
   }
 
-  // Tasks: always show every person + House, "No Tasks Today" when empty
-  const allGroups = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji }]
-    .concat(Object.keys(PEOPLE).map(k => ({ key: k, label: PEOPLE[k].label, emoji: PEOPLE[k].emoji })));
-  const tasksHtml = allGroups.map(g => {
-    const items = tasks.filter(t => taskHasStarted(t) && (t.assignee || null) === g.key);
-    const pts = g.key ? (taskPoints[g.key] || 0) : null;
-    const header = '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 5px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.06)">' +
-      '<span style="font-size:20px">' + g.emoji + '</span>' +
-      '<span style="font-size:14px;font-weight:700;color:var(--text);flex:1">' + g.label + '</span>' +
-      (pts !== null ? '<span style="font-size:12px;font-weight:800;color:#fbbf24;background:rgba(251,191,36,0.12);border-radius:6px;padding:2px 8px">' + pts + ' pts</span>' : '') +
-    '</div>';
-    const body = items.length
-      ? items.map(t => {
-          const overdue = t.deadline && new Date(t.deadline) < new Date();
-          return '<div class="task-card" style="margin-bottom:7px">' +
-            '<div class="task-card-top">' +
-              '<span class="task-card-title">' + t.title + '</span>' +
-              '<span class="task-card-pts">+' + (t.points||0) + '</span>' +
-            '</div>' +
-            (t.desc ? '<div class="task-card-desc">' + t.desc + '</div>' : '') +
-            '<div class="task-card-meta">' +
-              (t.deadline ? '<span class="task-card-deadline' + (overdue?' overdue':'') + '">' + (overdue?'⚠️ Overdue':'⏰ '+formatTime(t.deadline)) + '</span>' : '') +
-              '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\');renderHome()">✓ Done</button>' +
-              '<button class="task-del-btn" onclick="deleteTask(\'' + t.id + '\');renderHome()">×</button>' +
-            '</div>' +
-          '</div>';
-        }).join('')
-      : '<div style="font-size:12px;color:var(--text-muted);padding:6px 0 10px;font-style:italic">No tasks today</div>';
-    return header + body;
-  }).join('');
+  // Tasks: everything due today, with its category/asset chip
+  const dueItems = tasks.filter(isTaskDue);
+  const tasksHtml = dueItems.length
+    ? dueItems.map(t => {
+        const info = taskCatInfo(t);
+        return '<div class="task-card" style="margin-bottom:7px">' +
+          '<div class="task-card-top">' +
+            '<span class="task-card-title">' + escHtml(t.title) + '</span>' +
+            '<span style="font-size:11px;font-weight:600;color:var(--text2);background:var(--surface2);border-radius:6px;padding:1px 7px">' + info.emoji + ' ' + escHtml(info.label) + '</span>' +
+          '</div>' +
+          (t.desc ? '<div class="task-card-desc">' + escHtml(t.desc) + '</div>' : '') +
+          '<div class="task-card-meta">' + dueBadge(t) +
+            '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\');renderHome()">✓ Done</button>' +
+          '</div>' +
+        '</div>';
+      }).join('')
+    : '<div style="font-size:12px;color:var(--text-muted);padding:6px 0 10px;font-style:italic">Nothing due today 🎉</div>';
 
   // Tonight's + Tomorrow's dinner (swipeable)
   const todayMeal = dinners[todayStr] || '';
@@ -4422,582 +4397,403 @@ function currentISOWeek() {
 }
 
 // ── TASKS PAGE ────────────────────────────────────────────────────────────────
-function deadlineLabel(deadline) {
-  if (!deadline) return '';
-  const diff = new Date(deadline) - new Date();
-  const overdue = diff < 0;
-  const abs = Math.abs(diff);
-  const mins = Math.floor(abs / 60000);
-  const hrs = Math.floor(abs / 3600000);
-  const days = Math.floor(abs / 86400000);
-  let label;
-  if (mins < 60) label = mins + 'm';
-  else if (hrs < 24) label = hrs + 'h';
-  else label = days + 'd';
-  return overdue ? ('OVERDUE ' + label) : ('⏰ ' + label);
-}
-
-function renderTasks() {
-  cleanupCompletedTasks();
-  seedDefaultTasksIfEmpty();
-  seedDefaultRewardsIfEmpty();
-  const kidKeys = ['son','daughter'];
-  const cols = [{ key: null, label: HOUSE.label, emoji: HOUSE.emoji, color: HOUSE.color }];
-  kidKeys.forEach(k => { if (PEOPLE[k]) cols.push({ key:k, label:PEOPLE[k].label, emoji:PEOPLE[k].emoji, color:PEOPLE[k].color }); });
-
-  const activeViewer = _taskViewer && PEOPLE[_taskViewer] ? _taskViewer : null;
-  const viewerCol = activeViewer ? cols.find(c => c.key === activeViewer) : null;
-  const accentColor = (viewerCol && viewerCol.color) ? viewerCol.color : 'var(--accent)';
-
-  function taskIsDoneToday(task, personKey) {
-    if (task.completedAt) return true; // non-recurring completed today
-    if (!task.recurrence) return false;
-    return !isTaskDue(task, personKey);
-  }
-
-  function makeTaskCard(task, viewerKey) {
-    const effectiveViewer = viewerKey || task.assignee;
-    const done = taskIsDoneToday(task, effectiveViewer);
-    const dl = task.deadline ? deadlineLabel(task.deadline) : '';
-    const isOverdue = task.deadline && new Date(task.deadline) < new Date();
-    const dlClass = isOverdue ? 'task-card-deadline overdue' : 'task-card-deadline';
-    const recurBadge = task.recurrence ? '<span class="task-recur-badge">' + (RECURRENCE_LABELS[task.recurrence]||'') + '</span>' : '';
-
-    if (!taskHasStarted(task)) {
-      // Future-scheduled task — only visible when unlocked
-      const startLabel = new Date(task.startDate + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
-      const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' : '';
-      return '<div class="task-card" style="opacity:0.6;border-style:dashed">' +
-        '<div class="task-card-top"><span class="task-card-title">' + task.title + '</span>' +
-          '<span style="font-size:11px;font-weight:700;color:#93c5fd;background:rgba(59,130,246,0.15);border-radius:6px;padding:1px 7px">⏰ Starts ' + startLabel + '</span>' +
-        '</div>' +
-        (recurBadge ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + '</div>' : '') +
-        '<div class="task-card-meta"><span style="font-size:11px;color:var(--text-muted)">Scheduled</span>' + delBtn + '</div>' +
-      '</div>';
-    }
-
-    if (done) {
-      const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' : '';
-      const redoBtn = _pinUnlocked ? '<button onclick="redoTask(\'' + task.id + '\')" style="font-size:11px;font-weight:700;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;border-radius:6px;padding:2px 8px;cursor:pointer">↩ Assign again</button>' : '';
-      return '<div class="task-card" style="opacity:0.5">' +
-        '<div class="task-card-top"><span class="task-card-title" style="text-decoration:line-through">' + task.title + '</span>' +
-          '<span style="font-size:11px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:6px;padding:1px 7px">✓ Done</span>' +
-        '</div>' +
-        (recurBadge ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + '</div>' : '') +
-        '<div class="task-card-meta"><span style="font-size:11px;color:var(--text-muted);flex:1">Completed today</span>' + redoBtn + delBtn + '</div>' +
-      '</div>';
-    }
-
-    let actionHtml = '';
-    if (!task.assignee || task.assignee === 'null') {
-      // Unassigned — complete button assigns to current viewer
-      const whoCompletes = viewerKey || null;
-      actionHtml = whoCompletes
-        ? '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\',\'' + whoCompletes + '\')">✓ Claim</button>'
-        : '<span style="font-size:11px;color:var(--text-muted);font-style:italic">Select a user to claim</span>';
-    } else {
-      actionHtml = '<button class="task-done-btn" onclick="completeTask(\'' + task.id + '\',\'' + task.assignee + '\')">✓ Done</button>';
-    }
-    const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + task.id + '\')">×</button>' : '';
-    return '<div class="task-card">' +
-      '<div class="task-card-top"><span class="task-card-title">' + task.title + '</span><span class="task-card-pts">+' + (task.points||0) + ' pts</span></div>' +
-      (task.desc ? '<div class="task-card-desc">' + task.desc + '</div>' : '') +
-      (recurBadge ? '<div style="display:flex;gap:5px;margin:4px 0">' + recurBadge + '</div>' : '') +
-      '<div class="task-card-meta">' + (dl ? '<span class="' + dlClass + '">' + dl + '</span>' : '') + actionHtml + delBtn + '</div>' +
-    '</div>';
-  }
-
-  function getColTasks(col) {
-    if (col.key === null) {
-      // Unassigned: show tasks not assigned to anyone (excluding joint)
-      return tasks.filter(t => (taskHasStarted(t) || _pinUnlocked) && !t.isJoint && (!t.assignee || t.assignee === 'null' || t.assignee === 'undefined'));
-    }
-    // Person: show their tasks — due ones + ones completed today (future-scheduled shown to unlocked parents)
-    return tasks.filter(t => (taskHasStarted(t) || _pinUnlocked) && !t.isJoint && String(t.assignee) === col.key &&
-      (isTaskDue(t, col.key) || taskIsDoneToday(t, col.key)));
-  }
-
-  function makeTile(col, viewerKey) {
-    const isWide = col.key === null;
-    const colTasks = getColTasks(col);
-    const pts = col.key ? (taskPoints[col.key] || 0) : null;
-    const ptsHtml = pts !== null ? '<span class="task-tile-pts">' + pts + ' pts</span>' : '';
-    const cardsHtml = colTasks.length ? colTasks.map(t => makeTaskCard(t, viewerKey)).join('') : '<div class="task-empty">No tasks due 🎉</div>';
-    return '<div class="task-tile' + (isWide ? ' wide' : '') + '" data-assignee="' + col.key + '">' +
-      '<div class="task-tile-header">' +
-        '<div style="background:' + col.color + ';border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px">' + col.emoji + '</div>' +
-        '<div class="task-tile-name">' + col.label + '</div>' +
-        ptsHtml +
-      '</div>' +
-      '<div class="task-tile-body" data-assignee="' + col.key + '" ondragover="taskDragOver(event)" ondragleave="taskDragLeave(event)" ondrop="taskDrop(event,\'' + col.key + '\')">' +
-        cardsHtml +
-      '</div>' +
-    '</div>';
-  }
-
-  const taskNow = new Date();
-  const taskDateTimeLabel = taskNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) + ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-  const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
-
-  // Portrait with no viewer selected → show inline user-select landing page
-  if (isPortrait && !activeViewer) {
-    const allKeys = ['daughter','son','mom','dad'].filter(k => PEOPLE[k]);
-    const userCards = allKeys.map(k => {
-      const p = PEOPLE[k];
-      const pts = taskPoints[k] || 0;
-      const color = p.color || 'var(--accent)';
-      const editBtn = _pinUnlocked
-        ? '<button onclick="editTaskUser(\'' + k + '\')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;font-size:20px;cursor:pointer;flex-shrink:0" title="Edit">✏️</button>'
-        : '';
-      return '<div style="display:flex;align-items:center;gap:8px">' +
-        '<button onclick="selectTaskUser(\'' + k + '\')" style="display:flex;align-items:center;gap:16px;background:' + color + '18;border:2px solid ' + color + '44;border-radius:16px;padding:18px 20px;cursor:pointer;flex:1;text-align:left;-webkit-tap-highlight-color:transparent">' +
-          '<span style="font-size:44px">' + p.emoji + '</span>' +
-          '<div>' +
-            '<div style="font-size:18px;font-weight:700;color:var(--text)">' + p.label + '</div>' +
-            '<div style="font-size:14px;color:#fbbf24;font-weight:700">' + pts + ' pts</div>' +
-          '</div>' +
-        '</button>' +
-        editBtn +
-      '</div>';
-    }).join('');
-    const lockBtnLanding = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 14px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Unlock') + '</button>';
-    document.getElementById('page-tasks').innerHTML =
-      '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
-      '<div style="display:flex;flex-direction:column;justify-content:center;flex:1;padding:0 20px calc(var(--nav-h) + env(safe-area-inset-bottom) + 20px)">' +
-        '<div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;text-align:center">Who\'s doing tasks?</div>' +
-        '<div style="font-size:14px;color:var(--text-muted);margin-bottom:28px;text-align:center">Select a family member</div>' +
-        '<div style="display:flex;flex-direction:column;gap:12px">' + userCards + '</div>' +
-        '<div style="margin-top:28px;text-align:center">' + lockBtnLanding + '</div>' +
-      '</div>';
-    return;
-  }
-
-  // Shared pill nav markup — active pill uses viewer's color
-  const taskPillActive = _taskPortraitTab !== 'rewards';
-  const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;flex:1">' +
-    '<button onclick="setTaskPortraitTab(\'tasks\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (taskPillActive ? accentColor : 'transparent') + ';color:' + (taskPillActive ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>' +
-    '<button onclick="setTaskPortraitTab(\'rewards\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (!taskPillActive ? accentColor : 'transparent') + ';color:' + (!taskPillActive ? '#fff' : 'var(--text-muted)') + '">🎁 Rewards</button>' +
-  '</div>';
-
-  const unassignedCol = cols.find(c => c.key === null);
-
-  if (isPortrait) {
-    if (_taskPortraitTab === 'rewards') {
-      document.getElementById('page-tasks').innerHTML =
-        '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
-        '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0">' +
-          pillNav + lockBtn +
-        '</div>' +
-        '<div style="flex:1;overflow-y:auto;padding:0 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px)">' + buildInlineRewards() + '</div>';
-    } else {
-      // Who's selected indicator strip (no Switch button)
-      const viewerStrip = viewerCol
-        ? '<div style="display:flex;align-items:center;gap:8px;padding:0 12px 8px;flex-shrink:0">' +
-            '<div style="display:flex;align-items:center;gap:6px;flex:1;background:' + viewerCol.color + '22;border:1px solid ' + viewerCol.color + '55;border-radius:10px;padding:6px 10px">' +
-              '<span style="font-size:18px">' + viewerCol.emoji + '</span>' +
-              '<span style="font-size:13px;font-weight:700;color:var(--text);flex:1">' + viewerCol.label + '\'s Tasks</span>' +
-              '<span style="font-size:12px;font-weight:800;color:#fbbf24">' + (taskPoints[viewerCol.key] || 0) + ' pts</span>' +
-            '</div>' +
-          '</div>'
-        : '';
-
-      const unassignedTile = unassignedCol ? makeTile(unassignedCol, activeViewer) : '';
-      const userTile = viewerCol ? makeTile(viewerCol, activeViewer) : '';
-
-      document.getElementById('page-tasks').innerHTML =
-        '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
-        '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0">' +
-          pillNav + lockBtn +
-        '</div>' +
-        (_pinUnlocked ? '<div style="padding:0 12px 8px;flex-shrink:0"><button class="task-add-btn" onclick="openTaskAddModal()" style="width:100%;justify-content:center">+ Add Task</button></div>' : '') +
-        viewerStrip +
-        '<div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding:0 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' +
-          unassignedTile + userTile +
-        '</div>';
-    }
-  } else {
-    // Landscape: full grid with all tiles
-    const lsPillRow = pillNav.replace('flex:1;', '').replace('border-radius:22px', 'border-radius:22px;margin-right:4px');
-    if (_taskPortraitTab === 'rewards') {
-      document.getElementById('page-tasks').innerHTML =
-        '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
-        '<div id="tasks-page-wrap">' +
-          '<div class="tasks-page-header"><div class="tasks-page-title">🏆 Family Tasks</div>' +
-            '<div class="tasks-page-btns">' + lsPillRow +
-              '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Lock') + '</button>' +
-            '</div></div>' +
-          '<div style="flex:1;overflow-y:auto;padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' + buildInlineRewards() + '</div>' +
-        '</div>';
-    } else {
-      document.getElementById('page-tasks').innerHTML =
-        '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
-        '<div id="tasks-page-wrap">' +
-          '<div class="tasks-page-header"><div class="tasks-page-title">🏆 Family Tasks</div>' +
-            '<div class="tasks-page-btns">' + lsPillRow +
-              '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer">' + (_pinUnlocked ? '🔓 Unlocked' : '🔒 Lock') + '</button>' +
-              (_pinUnlocked ? '<button class="task-add-btn" onclick="openTaskAddModal()">+ Add Task</button>' : '') +
-            '</div></div>' +
-          '<div class="tasks-grid" style="padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px)">' + cols.map(c => makeTile(c, null)).join('') + '</div>' +
-        '</div>';
-    }
-  }
-}
-
-function openTaskUserSelect() {
-  clearTimeout(_taskInactivityTimer);
-  _taskInactivityTimer = null;
-  _taskViewer = null;
-  renderTasks();
-}
-
-function editTaskUser(key) {
-  openManageUserEdit(key);
-}
-
-function selectTaskUser(key) {
-  _taskViewer = key;
-  renderTasks();
-  resetTaskInactivityTimer();
-}
-
-function resetTaskInactivityTimer() {
-  clearTimeout(_taskInactivityTimer);
-  _taskInactivityTimer = setTimeout(function() {
-    if (currentPage === 'tasks' && _taskViewer) openTaskUserSelect();
-  }, 60000);
-}
-
-let _taskViewer = null;
-let _taskPortraitTab = 'tasks';
+let _taskPortraitTab = 'tasks'; // 'tasks' | 'completed' | 'assets'
 let _homePortraitTab = 'events';
 let _groceryTab = localStorage.getItem('groceryTab') || 'recipes';
 let _groceryRecipeActiveTags = new Set();
 let _groceryTagsExpanded = false;
-let _taskInactivityTimer = null;
-function setTaskViewer(key) { _taskViewer = key; renderTasks(); }
-function setTaskPortraitTab(tab) { _taskPortraitTab = tab; resetTaskInactivityTimer(); renderTasks(); }
+let _assetDetailId = null;   // asset id when viewing an asset's detail page
+let _editingTaskId = null;   // task id when the add modal is editing
+let _editingAssetId = null;  // asset id when the asset modal is editing
+
+function setTaskPortraitTab(tab) { _taskPortraitTab = tab; _assetDetailId = null; renderTasks(); }
 function setHomePortraitTab(tab) { _homePortraitTab = tab; renderHome(); }
 
-function buildInlineRewards() {
-  const kidKeys = ['son','daughter'].filter(k => PEOPLE[k]);
-  if (!kidKeys.length) return '<div style="text-align:center;color:var(--text-muted);padding:40px">No users configured</div>';
+function escHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  // Use _taskViewer as the active redeemer; fall back to first kid
-  const redeemer = (_taskViewer && PEOPLE[_taskViewer]) ? _taskViewer : kidKeys[0];
-  const rp = PEOPLE[redeemer];
-  const pts = taskPoints[redeemer] || 0;
-  const accentColor = rp.color || 'var(--accent)';
-
-  // Viewer strip — same pattern as tasks page
-  const viewerStrip =
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">' +
-      '<div style="display:flex;align-items:center;gap:6px;flex:1;background:' + accentColor + '22;border:1px solid ' + accentColor + '55;border-radius:10px;padding:6px 10px">' +
-        '<span style="font-size:18px">' + rp.emoji + '</span>' +
-        '<div style="flex:1">' +
-          '<div style="font-size:13px;font-weight:700;color:var(--text)">' + rp.label + '</div>' +
-          '<div style="font-size:12px;font-weight:800;color:#fbbf24">' + pts + ' pts</div>' +
-        '</div>' +
-      '</div>' +
-      '</div>';
-
-  // Available rewards
-  const rewardsList = rewards.length
-    ? rewards.map(r => {
-        const canAfford = pts >= r.cost;
-        return '<div class="reward-card">' +
-          '<div style="font-size:28px">' + (r.emoji || '🎁') + '</div>' +
-          '<div style="flex:1"><div style="font-weight:600;font-size:15px">' + r.title + '</div>' +
-          '<div style="font-size:12px;color:var(--text-muted)">' + r.cost + ' pts</div></div>' +
-          '<button onclick="redeemRewardInline(\'' + r.id + '\')" style="background:' + (canAfford ? accentColor : 'var(--surface2)') + ';color:' + (canAfford ? '#fff' : 'var(--text-muted)') + ';border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '">' + (canAfford ? 'Redeem' : 'Need ' + (r.cost - pts) + ' more') + '</button>' +
-        '</div>';
-      }).join('')
-    : '<div style="text-align:center;color:var(--text-muted);padding:20px">No rewards configured</div>';
-
-  // Purchased history for this redeemer
-  const myPurchases = purchases.filter(p => p.personKey === redeemer);
-  const purchasedSection = '<div style="margin-top:20px">' +
-    '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🧾 Purchased</div>' +
-    (myPurchases.length
-      ? myPurchases.map(p => {
-          const date = new Date(p.redeemedAt).toLocaleDateString('en-US', { month:'short', day:'numeric' });
-          const clearBtn = _pinUnlocked
-            ? '<button onclick="clearPurchase(\'' + p.id + '\')" style="font-size:11px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:6px;padding:2px 7px;cursor:pointer">×</button>'
-            : '';
-          return '<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:10px 12px">' +
-            '<span style="font-size:22px">' + (p.rewardEmoji || '🎁') + '</span>' +
-            '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">' + p.rewardTitle + '</div>' +
-            '<div style="font-size:11px;color:var(--text-muted)">' + date + '</div></div>' +
-            clearBtn +
-          '</div>';
-        }).join('')
-      : '<div style="font-size:13px;color:var(--text-muted);font-style:italic;padding:8px 0">Nothing purchased yet</div>') +
-  '</div>';
-
-  return viewerStrip +
-    '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🎁 Available Rewards</div>' +
-    '<div style="display:flex;flex-direction:column;gap:10px">' + rewardsList + '</div>' +
-    purchasedSection;
+function taskCatInfo(t) {
+  const asset = t.assetId ? assets.find(a => a.id === t.assetId) : null;
+  if (asset) return { emoji: (TASK_CATEGORIES[asset.category] || TASK_CATEGORIES.other).emoji, label: asset.name, asset: asset };
+  const c = TASK_CATEGORIES[t.category] || TASK_CATEGORIES.other;
+  return { emoji: c.emoji, label: c.label, asset: null };
 }
 
-function redeemRewardInline(rewardId) {
-  const reward = rewards.find(r => r.id === rewardId);
-  if (!reward) return;
-  const redeemer = (_taskViewer && PEOPLE[_taskViewer]) ? _taskViewer : null;
-  if (!redeemer) { alert('Select a user first'); return; }
-  const pts = taskPoints[redeemer] || 0;
-  if (pts < reward.cost) { alert('Not enough points!'); return; }
-  taskPoints[redeemer] = pts - reward.cost;
-  purchases.push({ id: uid(), rewardId: reward.id, rewardTitle: reward.title, rewardEmoji: reward.emoji || '🎁', personKey: redeemer, redeemedAt: new Date().toISOString() });
-  saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
-  saveFamilyData('purchases', purchases);
-  renderTasks();
-}
-
-function clearPurchase(purchaseId) {
-  if (!_pinUnlocked) return;
-  purchases = purchases.filter(p => p.id !== purchaseId);
-  saveFamilyData('purchases', purchases);
-  renderTasks();
-}
-
-function openManageUserEdit(key) {
-  document.getElementById('manage-users-dim').classList.add('open');
-  showEditUserForm(key);
-}
-
-function adjustPoints(personKey) {
-  const current = taskPoints[personKey] || 0;
-  const val = prompt('Adjust points for ' + PEOPLE[personKey].label + ' (current: ' + current + '):', current);
-  if (val === null) return;
-  const n = parseInt(val);
-  if (!isNaN(n) && n >= 0) {
-    taskPoints[personKey] = n;
-    saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
-    renderTasks();
+function dueBadge(t) {
+  const next = taskNextDue(t);
+  const today = isoDate(new Date());
+  if (!next || next <= today) {
+    if (next && next < today) {
+      const days = Math.round((new Date(today) - new Date(next)) / 86400000);
+      return '<span style="font-size:11px;font-weight:700;color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:6px;padding:1px 7px">⚠️ ' + days + 'd overdue</span>';
+    }
+    return '<span style="font-size:11px;font-weight:700;color:#6ee7b7;background:rgba(16,185,129,0.15);border-radius:6px;padding:1px 7px">Due today</span>';
   }
+  const label = new Date(next + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  return '<span style="font-size:11px;font-weight:600;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:1px 7px">Due ' + label + '</span>';
 }
 
-// ── TASK DRAG/DROP ────────────────────────────────────────────────────────────
-let draggingTaskId = null;
-function taskDragStart(e, id) {
-  draggingTaskId = id;
-  e.dataTransfer.setData('text/plain', id);
-  e.dataTransfer.effectAllowed = 'move';
-  setTimeout(function() { var el = document.querySelector('.task-card[data-id="' + id + '"]'); if (el) el.classList.add('dragging'); }, 0);
+function makeTaskCard(t, opts) {
+  opts = opts || {};
+  const info = taskCatInfo(t);
+  const due = isTaskDue(t);
+  const recur = recurLabel(t);
+  const chips =
+    '<div style="display:flex;gap:5px;margin:4px 0;flex-wrap:wrap">' +
+      (!opts.hideAssetChip ? '<span style="font-size:11px;font-weight:600;color:var(--text2);background:var(--surface2);border-radius:6px;padding:1px 7px">' + info.emoji + ' ' + escHtml(info.label) + '</span>' : '') +
+      (recur ? '<span class="task-recur-badge">' + recur + '</span>' : '') +
+    '</div>';
+  const editBtn = _pinUnlocked ? '<button onclick="openTaskEditModal(\'' + t.id + '\')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:2px 4px;opacity:0.7">✏️</button>' : '';
+  const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteTask(\'' + t.id + '\')">×</button>' : '';
+  const doneBtn = due ? '<button class="task-done-btn" onclick="completeTask(\'' + t.id + '\')">✓ Done</button>' : '';
+  return '<div class="task-card"' + (due ? '' : ' style="opacity:0.65"') + '>' +
+    '<div class="task-card-top"><span class="task-card-title">' + escHtml(t.title) + '</span>' + dueBadge(t) + '</div>' +
+    (t.desc ? '<div class="task-card-desc">' + escHtml(t.desc) + '</div>' : '') +
+    chips +
+    '<div class="task-card-meta"><span style="flex:1"></span>' + doneBtn + editBtn + delBtn + '</div>' +
+  '</div>';
 }
-function taskDragOver(e) {
-  e.preventDefault();
-  var body = e.currentTarget;
-  body.classList.add('drag-over');
+
+function buildTasksTab() {
+  const dueTasks = tasks.filter(isTaskDue);
+  const upcoming = tasks.filter(t => !isTaskDue(t))
+    .sort((a, b) => (taskNextDue(a) || '9999').localeCompare(taskNextDue(b) || '9999'));
+
+  // Group due tasks by category (asset tasks group under the asset's category)
+  const catOrder = ['house','car','appliance','yard','other'];
+  const byCat = {};
+  dueTasks.forEach(t => {
+    const asset = t.assetId ? assets.find(a => a.id === t.assetId) : null;
+    const cat = (asset ? asset.category : t.category) || 'other';
+    (byCat[cat] = byCat[cat] || []).push(t);
+  });
+
+  let html = '';
+  if (!dueTasks.length) {
+    html += '<div class="task-empty" style="padding:30px;text-align:center">Nothing due — all caught up 🎉</div>';
+  } else {
+    catOrder.forEach(cat => {
+      if (!byCat[cat]) return;
+      const c = TASK_CATEGORIES[cat];
+      html += '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px">' + c.emoji + ' ' + c.label + '</div>' +
+        byCat[cat].map(t => makeTaskCard(t)).join('');
+    });
+  }
+
+  if (upcoming.length) {
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin:20px 0 6px">📅 Upcoming</div>' +
+      upcoming.map(t => makeTaskCard(t)).join('');
+  }
+  return html;
 }
-function taskDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
+
+function buildCompletedTab() {
+  if (!completedLog.length) return '<div class="task-empty" style="padding:30px;text-align:center">Nothing completed yet</div>';
+  const sorted = completedLog.slice().sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+  let lastDate = '';
+  let html = '';
+  sorted.forEach(e => {
+    const d = new Date(e.at);
+    const dateStr = isoDate(d);
+    if (dateStr !== lastDate) {
+      lastDate = dateStr;
+      const today = isoDate(new Date());
+      const yest = isoDate(new Date(Date.now() - 86400000));
+      const label = dateStr === today ? 'Today' : dateStr === yest ? 'Yesterday' :
+        d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+      html += '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px">' + label + '</div>';
+    }
+    const delBtn = _pinUnlocked ? '<button class="task-del-btn" onclick="deleteLogEntry(\'' + e.id + '\')">×</button>' : '';
+    html += '<div class="task-card" style="display:flex;align-items:center;gap:10px">' +
+      '<span style="color:#4ade80;font-size:15px">✓</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="task-card-title">' + escHtml(e.title) + '</div>' +
+        (e.assetName ? '<div style="font-size:11px;color:var(--text-muted)">' + escHtml(e.assetName) + '</div>' : '') +
+      '</div>' +
+      '<span style="font-size:11px;color:var(--text-muted)">' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) + '</span>' +
+      delBtn +
+    '</div>';
+  });
+  return html;
 }
-function taskDrop(e, assigneeKey) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  var id = e.dataTransfer.getData('text/plain') || draggingTaskId;
-  var task = tasks.find(function(t) { return t.id === id; });
-  if (!task) return;
-  task.assignee = assigneeKey === 'null' ? null : assigneeKey;
-  saveFamilyData('tasks', tasks);
-  renderTasks();
+
+function assetAgeLabel(a) {
+  if (!a.year) return '';
+  const age = new Date().getFullYear() - parseInt(a.year);
+  return a.year + ' · ' + (age <= 0 ? 'new' : age + ' yr' + (age === 1 ? '' : 's') + ' old');
+}
+
+function buildAssetsTab() {
+  if (_assetDetailId) {
+    const a = assets.find(x => x.id === _assetDetailId);
+    if (a) return buildAssetDetail(a);
+    _assetDetailId = null;
+  }
+  if (!assets.length) {
+    return '<div class="task-empty" style="padding:30px;text-align:center">No assets yet.<br>Add your house systems, cars, and appliances to track their maintenance.</div>' +
+      (_pinUnlocked ? '<div style="text-align:center"><button class="task-add-btn" onclick="openAssetModal()">+ Add Asset</button></div>' : '');
+  }
+  const catOrder = ['house','car','appliance','yard','other'];
+  const sorted = assets.slice().sort((x, y) => catOrder.indexOf(x.category || 'other') - catOrder.indexOf(y.category || 'other') || (x.name || '').localeCompare(y.name || ''));
+  return sorted.map(a => {
+    const c = TASK_CATEGORIES[a.category] || TASK_CATEGORIES.other;
+    const aTasks = tasks.filter(t => t.assetId === a.id);
+    const dueCount = aTasks.filter(isTaskDue).length;
+    const taskChip = aTasks.length
+      ? (dueCount
+        ? '<span style="font-size:11px;font-weight:700;color:#fca5a5;background:rgba(239,68,68,0.12);border-radius:6px;padding:1px 7px">' + dueCount + ' due</span>'
+        : '<span style="font-size:11px;font-weight:600;color:var(--text-muted)">' + aTasks.length + ' task' + (aTasks.length === 1 ? '' : 's') + '</span>')
+      : '';
+    return '<div class="task-card" onclick="openAssetDetail(\'' + a.id + '\')" style="display:flex;align-items:center;gap:12px;cursor:pointer">' +
+      '<span style="font-size:26px">' + c.emoji + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="task-card-title">' + escHtml(a.name) + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted)">' + escHtml([a.model, assetAgeLabel(a)].filter(Boolean).join(' · ')) + '</div>' +
+      '</div>' +
+      taskChip +
+      '<span style="color:var(--text-muted);font-size:16px">›</span>' +
+    '</div>';
+  }).join('');
+}
+
+function buildAssetDetail(a) {
+  const c = TASK_CATEGORIES[a.category] || TASK_CATEGORIES.other;
+  const aTasks = tasks.filter(t => t.assetId === a.id)
+    .sort((x, y) => (taskNextDue(x) || '0000').localeCompare(taskNextDue(y) || '0000'));
+  const history = completedLog.filter(e => e.assetId === a.id)
+    .sort((x, y) => (y.at || '').localeCompare(x.at || ''));
+
+  const infoRows = [
+    a.model ? ['Make / Model', a.model] : null,
+    a.year ? ['Age', assetAgeLabel(a)] : null,
+    a.notes ? ['Notes', a.notes] : null,
+  ].filter(Boolean).map(r =>
+    '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+      '<span style="font-size:12px;color:var(--text-muted);width:100px;flex-shrink:0">' + r[0] + '</span>' +
+      '<span style="font-size:13px;color:var(--text)">' + escHtml(r[1]) + '</span>' +
+    '</div>'
+  ).join('');
+
+  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+      '<button onclick="closeAssetDetail()" style="background:var(--surface2);border:none;color:var(--text);font-size:14px;padding:6px 12px;border-radius:8px;cursor:pointer">‹ Assets</button>' +
+      '<span style="font-size:24px">' + c.emoji + '</span>' +
+      '<div style="flex:1;font-size:17px;font-weight:800;color:var(--text)">' + escHtml(a.name) + '</div>' +
+      (_pinUnlocked ? '<button onclick="openAssetModal(\'' + a.id + '\')" style="background:var(--surface2);border:none;font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer">✏️</button>' : '') +
+      (_pinUnlocked ? '<button onclick="deleteAsset(\'' + a.id + '\')" style="background:rgba(239,68,68,0.12);border:none;color:#fca5a5;font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer">🗑</button>' : '') +
+    '</div>' +
+    (infoRows ? '<div style="background:var(--surface);border-radius:12px;padding:6px 14px;margin-bottom:14px">' + infoRows + '</div>' : '') +
+    '<div style="display:flex;align-items:center;margin:4px 0 6px">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;flex:1">🔧 Maintenance Tasks</div>' +
+      (_pinUnlocked ? '<button class="task-add-btn" onclick="openTaskAddModal(\'' + a.id + '\')" style="padding:4px 10px;font-size:12px">+ Add</button>' : '') +
+    '</div>' +
+    (aTasks.length ? aTasks.map(t => makeTaskCard(t, { hideAssetChip: true })).join('') : '<div style="font-size:13px;color:var(--text-muted);font-style:italic;padding:6px 0 12px">No maintenance tasks yet</div>') +
+    '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 6px">🧾 Maintenance History</div>' +
+    (history.length
+      ? history.map(e =>
+          '<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:9px 12px;margin-bottom:6px">' +
+            '<span style="color:#4ade80">✓</span>' +
+            '<span style="flex:1;font-size:13px;color:var(--text)">' + escHtml(e.title) + '</span>' +
+            '<span style="font-size:11px;color:var(--text-muted)">' + new Date(e.at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '</span>' +
+          '</div>').join('')
+      : '<div style="font-size:13px;color:var(--text-muted);font-style:italic;padding:6px 0">No history yet</div>');
+}
+
+function openAssetDetail(id) { _assetDetailId = id; renderTasks(); }
+function closeAssetDetail() { _assetDetailId = null; renderTasks(); }
+
+function renderTasks() {
+  const taskNow = new Date();
+  const taskDateTimeLabel = taskNow.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) + ' · ' + taskNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+
+  const tabs = [
+    { key: 'tasks', label: '✅ Tasks' },
+    { key: 'completed', label: '🗓 Completed' },
+    { key: 'assets', label: '🏷 Assets' },
+  ];
+  const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;flex:1">' +
+    tabs.map(t => {
+      const active = _taskPortraitTab === t.key;
+      return '<button onclick="setTaskPortraitTab(\'' + t.key + '\')" style="flex:1;padding:7px 8px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;background:' + (active ? 'var(--accent)' : 'transparent') + ';color:' + (active ? '#fff' : 'var(--text-muted)') + '">' + t.label + '</button>';
+    }).join('') +
+  '</div>';
+  const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
+
+  let addBtn = '';
+  if (_pinUnlocked && _taskPortraitTab === 'tasks') addBtn = '<div style="padding:0 12px 8px;flex-shrink:0"><button class="task-add-btn" onclick="openTaskAddModal()" style="width:100%;justify-content:center">+ Add Task</button></div>';
+  else if (_pinUnlocked && _taskPortraitTab === 'assets' && !_assetDetailId && assets.length) addBtn = '<div style="padding:0 12px 8px;flex-shrink:0"><button class="task-add-btn" onclick="openAssetModal()" style="width:100%;justify-content:center">+ Add Asset</button></div>';
+
+  const body = _taskPortraitTab === 'completed' ? buildCompletedTab()
+    : _taskPortraitTab === 'assets' ? buildAssetsTab()
+    : buildTasksTab();
+
+  document.getElementById('page-tasks').innerHTML =
+    '<div class="page-datetime-header">' + taskDateTimeLabel + '</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0;max-width:700px;width:100%;margin:0 auto">' + pillNav + lockBtn + '</div>' +
+    (addBtn ? '<div style="max-width:700px;width:100%;margin:0 auto">' + addBtn + '</div>' : '') +
+    '<div style="flex:1;overflow-y:auto;padding:0 12px calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);max-width:700px;width:100%;margin:0 auto">' + body + '</div>';
 }
 
 // ── TASK CRUD ─────────────────────────────────────────────────────────────────
-function cleanupCompletedTasks() {
-  // Remove non-recurring tasks completed on a previous day
-  const today = isoDate(new Date());
-  const before = tasks.length;
-  tasks = tasks.filter(function(t) {
-    if (!t.completedAt) return true;
-    return isoDate(new Date(t.completedAt)) === today;
-  });
-  if (tasks.length !== before) saveFamilyData('tasks', tasks);
-}
-
-function completeTask(id, personKey) {
-  var task = tasks.find(function(t) { return t.id === id; });
+function completeTask(id) {
+  const task = tasks.find(t => t.id === id);
   if (!task) return;
   const now = new Date().toISOString();
-  const today = isoDate(new Date());
-
-  // Auto-assign unassigned task to the person completing it
-  if (!task.assignee || task.assignee === 'null') {
-    task.assignee = personKey;
-  }
-
-  if (task.recurrence) {
-    if (!task.lastCompleted) task.lastCompleted = {};
-    task.lastCompleted[personKey] = now;
-    if (task.recurrence === '2xdaily') {
-      if (!task.dailyCompletions) task.dailyCompletions = {};
-      const dc = task.dailyCompletions[personKey];
-      task.dailyCompletions[personKey] = { date: today, count: (dc && dc.date === today ? (dc.count || 0) + 1 : 1) };
-    }
+  const asset = task.assetId ? assets.find(a => a.id === task.assetId) : null;
+  completedLog.push({ id: uid(), taskId: task.id, title: task.title, assetId: task.assetId || null, assetName: asset ? asset.name : null, at: now });
+  if (task.recurEvery && task.recurUnit) {
+    task.lastCompleted = now;
   } else {
-    // Mark completed — stays visible today, cleared at midnight
-    task.completedAt = now;
-    task.completedBy = personKey;
+    tasks = tasks.filter(t => t.id !== id);
   }
-
-  if (!taskPoints[personKey]) taskPoints[personKey] = 0;
-  taskPoints[personKey] += (task.points || 0);
   saveFamilyData('tasks', tasks);
-  saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
+  saveFamilyData('completed_log', completedLog);
   renderNavBadges();
-  renderTasks();
-}
-
-function jointConfirm(id, personKey) {
-  var task = tasks.find(function(t) { return t.id === id; });
-  if (!task) return;
-  if (!task.pendingJoint) task.pendingJoint = [];
-  if (!task.pendingJoint.includes(personKey)) task.pendingJoint.push(personKey);
-  const kidKeys = ['son','daughter'].filter(function(k) { return PEOPLE[k]; });
-  if (kidKeys.every(function(k) { return task.pendingJoint.includes(k); })) {
-    kidKeys.forEach(function(k) {
-      if (!taskPoints[k]) taskPoints[k] = 0;
-      taskPoints[k] += (task.points || 0) + (task.jointBonus || 25);
-    });
-    task.pendingJoint = [];
-    if (task.recurrence) {
-      if (!task.lastCompleted) task.lastCompleted = {};
-      kidKeys.forEach(function(k) { task.lastCompleted[k] = new Date().toISOString(); });
-    } else {
-      tasks = tasks.filter(function(t) { return t.id !== id; });
-    }
-    saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
-  }
-  saveFamilyData('tasks', tasks);
-  renderTasks();
-}
-
-function redoTask(id) {
-  // Reopen a completed task so it can be assigned/claimed again
-  var task = tasks.find(function(t) { return t.id === id; });
-  if (!task) return;
-  var today = isoDate(new Date());
-  if (task.recurrence) {
-    // Clear today's completions so it's due again for everyone
-    if (task.lastCompleted) Object.keys(task.lastCompleted).forEach(function(k) {
-      if (isoDate(new Date(task.lastCompleted[k])) === today) delete task.lastCompleted[k];
-    });
-    if (task.dailyCompletions) Object.keys(task.dailyCompletions).forEach(function(k) {
-      if (task.dailyCompletions[k] && task.dailyCompletions[k].date === today) delete task.dailyCompletions[k];
-    });
-  } else {
-    delete task.completedAt;
-    delete task.completedBy;
-  }
-  saveFamilyData('tasks', tasks);
-  renderNavBadges();
-  renderTasks();
+  if (currentPage === 'tasks') renderTasks();
 }
 
 function deleteTask(id) {
-  tasks = tasks.filter(function(t) { return t.id !== id; });
+  if (!confirm('Delete this task?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  saveFamilyData('tasks', tasks);
+  renderNavBadges();
+  if (currentPage === 'tasks') renderTasks();
+}
+
+function deleteLogEntry(id) {
+  completedLog = completedLog.filter(e => e.id !== id);
+  saveFamilyData('completed_log', completedLog);
+  renderTasks();
+}
+
+function deleteAsset(id) {
+  const a = assets.find(x => x.id === id);
+  if (!a) return;
+  const aTasks = tasks.filter(t => t.assetId === id);
+  if (!confirm('Delete "' + a.name + '"' + (aTasks.length ? ' and its ' + aTasks.length + ' task(s)' : '') + '? History entries are kept.')) return;
+  assets = assets.filter(x => x.id !== id);
+  tasks = tasks.filter(t => t.assetId !== id);
+  _assetDetailId = null;
+  saveFamilyData('assets', assets);
   saveFamilyData('tasks', tasks);
   renderNavBadges();
   renderTasks();
 }
 
-// ── TASK ADD MODAL ────────────────────────────────────────────────────────────
-function openTaskAddModal() {
-  var sel = document.getElementById('task-add-assignee');
-  sel.innerHTML = '<option value="null">' + HOUSE.emoji + ' ' + HOUSE.label + '</option>' +
-    Object.entries(PEOPLE).map(function(e) {
-      return '<option value="' + e[0] + '">' + e[1].emoji + ' ' + e[1].label + '</option>';
-    }).join('');
+// ── TASK ADD/EDIT MODAL ───────────────────────────────────────────────────────
+function fillTaskAssetSelect(selectedId) {
+  const sel = document.getElementById('task-add-asset');
+  sel.innerHTML = '<option value="">— None —</option>' + assets.map(a =>
+    '<option value="' + a.id + '"' + (a.id === selectedId ? ' selected' : '') + '>' + escHtml(a.name) + '</option>').join('');
+}
+
+function openTaskAddModal(assetId) {
+  _editingTaskId = null;
+  document.getElementById('task-add-modal-title').textContent = 'Add Task';
+  document.getElementById('task-add-confirm-btn').textContent = 'Add Task';
   document.getElementById('task-add-title').value = '';
   document.getElementById('task-add-desc').value = '';
-  document.getElementById('task-add-pts').value = '10';
-  document.getElementById('task-add-deadline').value = '';
+  document.getElementById('task-add-recur-n').value = '1';
+  document.getElementById('task-add-recur-unit').value = '';
   document.getElementById('task-add-start').value = '';
+  fillTaskAssetSelect(assetId || '');
+  const asset = assetId ? assets.find(a => a.id === assetId) : null;
+  document.getElementById('task-add-category').value = asset ? (asset.category || 'other') : 'house';
   document.getElementById('task-add-dim').classList.add('open');
-  setTimeout(function() { document.getElementById('task-add-title').focus(); }, 80);
+  setTimeout(() => document.getElementById('task-add-title').focus(), 80);
 }
+
+function openTaskEditModal(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  _editingTaskId = id;
+  document.getElementById('task-add-modal-title').textContent = 'Edit Task';
+  document.getElementById('task-add-confirm-btn').textContent = 'Save';
+  document.getElementById('task-add-title').value = t.title || '';
+  document.getElementById('task-add-desc').value = t.desc || '';
+  document.getElementById('task-add-category').value = t.category || 'house';
+  document.getElementById('task-add-recur-n').value = t.recurEvery || '1';
+  document.getElementById('task-add-recur-unit').value = t.recurUnit || '';
+  document.getElementById('task-add-start').value = t.startDate || '';
+  fillTaskAssetSelect(t.assetId || '');
+  document.getElementById('task-add-dim').classList.add('open');
+}
+
 function closeTaskAddModal() {
+  _editingTaskId = null;
   document.getElementById('task-add-dim').classList.remove('open');
 }
+
 function confirmAddTask() {
-  var title = document.getElementById('task-add-title').value.trim();
+  const title = document.getElementById('task-add-title').value.trim();
   if (!title) return;
-  var desc = document.getElementById('task-add-desc').value.trim();
-  var points = parseInt(document.getElementById('task-add-pts').value) || 0;
-  var deadline = document.getElementById('task-add-deadline').value || null;
-  var assigneeVal = document.getElementById('task-add-assignee').value;
-  var assignee = assigneeVal === 'null' ? null : assigneeVal;
-  var recurrenceEl = document.getElementById('task-add-recurrence');
-  var recurrence = recurrenceEl ? (recurrenceEl.value || null) : null;
-  var isJointEl = document.getElementById('task-add-joint');
-  var isJoint = isJointEl ? isJointEl.checked : false;
-  var startDate = document.getElementById('task-add-start').value || null;
-  var newTask = { id: uid(), title: title, desc: desc, points: points, deadline: deadline, assignee: assignee };
-  if (startDate) newTask.startDate = startDate;
-  if (recurrence) newTask.recurrence = recurrence;
-  if (isJoint) { newTask.isJoint = true; newTask.jointBonus = 25; newTask.pendingJoint = []; }
-  tasks.push(newTask);
+  const desc = document.getElementById('task-add-desc').value.trim();
+  const category = document.getElementById('task-add-category').value;
+  const assetId = document.getElementById('task-add-asset').value || null;
+  const recurUnit = document.getElementById('task-add-recur-unit').value || null;
+  const recurN = Math.max(1, parseInt(document.getElementById('task-add-recur-n').value) || 1);
+  const startDate = document.getElementById('task-add-start').value || null;
+
+  const t = _editingTaskId ? tasks.find(x => x.id === _editingTaskId) : null;
+  if (t) {
+    t.title = title; t.desc = desc; t.category = category;
+    if (assetId) t.assetId = assetId; else delete t.assetId;
+    if (recurUnit) { t.recurEvery = recurN; t.recurUnit = recurUnit; } else { delete t.recurEvery; delete t.recurUnit; }
+    if (startDate) t.startDate = startDate; else delete t.startDate;
+  } else {
+    const nt = { id: uid(), title, desc, category };
+    if (assetId) nt.assetId = assetId;
+    if (recurUnit) { nt.recurEvery = recurN; nt.recurUnit = recurUnit; }
+    if (startDate) nt.startDate = startDate;
+    tasks.push(nt);
+  }
   saveFamilyData('tasks', tasks);
   closeTaskAddModal();
   renderNavBadges();
   renderTasks();
 }
 
-// ── REWARDS MODAL ─────────────────────────────────────────────────────────────
-function openRewardsModal() {
-  renderRewards();
-  document.getElementById('rewards-dim').classList.add('open');
+// ── ASSET ADD/EDIT MODAL ──────────────────────────────────────────────────────
+function openAssetModal(id) {
+  _editingAssetId = id || null;
+  const a = id ? assets.find(x => x.id === id) : null;
+  document.getElementById('asset-modal-title').textContent = a ? 'Edit Asset' : 'Add Asset';
+  document.getElementById('asset-name').value = a ? (a.name || '') : '';
+  document.getElementById('asset-category').value = a ? (a.category || 'other') : 'house';
+  document.getElementById('asset-year').value = a ? (a.year || '') : '';
+  document.getElementById('asset-model').value = a ? (a.model || '') : '';
+  document.getElementById('asset-notes').value = a ? (a.notes || '') : '';
+  document.getElementById('asset-dim').classList.add('open');
+  if (!a) setTimeout(() => document.getElementById('asset-name').focus(), 80);
 }
-function closeRewardsModal() {
-  document.getElementById('rewards-dim').classList.remove('open');
+
+function closeAssetModal() {
+  _editingAssetId = null;
+  document.getElementById('asset-dim').classList.remove('open');
 }
-function renderRewards() {
-  const kidKeys = ['son','daughter'].filter(function(k) { return PEOPLE[k]; });
-  // Points bar
-  var bar = document.getElementById('rewards-points-bar');
-  bar.innerHTML = kidKeys.map(function(k) {
-    var p = PEOPLE[k];
-    var pts = taskPoints[k] || 0;
-    return '<div style="background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 14px;display:flex;gap:8px;align-items:center">' +
-      '<span style="font-size:20px">' + p.emoji + '</span>' +
-      '<div><div style="font-size:12px;color:var(--text-muted)">' + p.label + '</div><div style="font-weight:700;color:var(--accent)">' + pts + ' pts</div></div></div>';
-  }).join('');
-  // Redeemer dropdown
-  var sel = document.getElementById('rewards-redeemer');
-  var prevVal = sel.value;
-  sel.innerHTML = kidKeys.map(function(k) {
-    return '<option value="' + k + '">' + PEOPLE[k].emoji + ' ' + PEOPLE[k].label + '</option>';
-  }).join('');
-  if (prevVal && kidKeys.includes(prevVal)) sel.value = prevVal;
-  sel.onchange = function() { renderRewards(); };
-  // Rewards list
-  var list = document.getElementById('rewards-list');
-  list.innerHTML = rewards.map(function(r) {
-    var redeemer = sel.value || kidKeys[0];
-    var pts = taskPoints[redeemer] || 0;
-    var canAfford = pts >= r.cost;
-    return '<div class="reward-card">' +
-      '<div style="font-size:28px">' + (r.emoji || '🎁') + '</div>' +
-      '<div style="flex:1"><div style="font-weight:600;font-size:15px">' + r.title + '</div>' +
-      '<div style="font-size:12px;color:var(--text-muted)">' + r.cost + ' pts</div></div>' +
-      '<button onclick="redeemReward(\'' + r.id + '\')" style="background:' + (canAfford ? 'var(--accent)' : 'var(--surface2)') + ';color:' + (canAfford ? '#fff' : 'var(--text-muted)') + ';border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '">' + (canAfford ? 'Redeem' : 'Need ' + (r.cost - pts) + ' more') + '</button>' +
-      '</div>';
-  }).join('') || '<div style="text-align:center;color:var(--text-muted);padding:20px">No rewards yet</div>';
+
+function confirmSaveAsset() {
+  const name = document.getElementById('asset-name').value.trim();
+  if (!name) return;
+  const data = {
+    name: name,
+    category: document.getElementById('asset-category').value,
+    year: document.getElementById('asset-year').value.trim() || null,
+    model: document.getElementById('asset-model').value.trim(),
+    notes: document.getElementById('asset-notes').value.trim(),
+  };
+  if (_editingAssetId) {
+    const a = assets.find(x => x.id === _editingAssetId);
+    if (a) Object.assign(a, data);
+  } else {
+    assets.push(Object.assign({ id: uid() }, data));
+  }
+  saveFamilyData('assets', assets);
+  closeAssetModal();
+  renderTasks();
 }
-function redeemReward(rewardId) {
-  var reward = rewards.find(function(r) { return r.id === rewardId; });
-  if (!reward) return;
-  var sel = document.getElementById('rewards-redeemer');
-  var redeemer = sel ? sel.value : null;
-  if (!redeemer || !PEOPLE[redeemer]) return;
-  var pts = taskPoints[redeemer] || 0;
-  if (pts < reward.cost) { alert('Not enough points!'); return; }
-  taskPoints[redeemer] = pts - reward.cost;
-  saveFamilyData('task_points', { points: taskPoints, week: currentISOWeek() });
-  renderRewards();
-  alert(PEOPLE[redeemer].emoji + ' ' + PEOPLE[redeemer].label + ' redeemed: ' + reward.title + '!');
+
+function openManageUserEdit(key) {
+  document.getElementById('manage-users-dim').classList.add('open');
+  showEditUserForm(key);
 }
 
 // ── PIN MODAL ─────────────────────────────────────────────────────────────────
@@ -5172,17 +4968,9 @@ function showEditUserForm(key) {
   document.getElementById('edit-user-color-grid').innerHTML = PERSON_COLORS.map(function(c) {
     return '<div class="color-swatch' + (c === newUserSelectedColor ? ' selected' : '') + '" style="background:' + c + '" data-color="' + c + '" onclick="selectEditUserColor(\'' + c + '\')"></div>';
   }).join('');
-  // Points row and remove button — only for real users, not house
-  const ptsRow = document.getElementById('edit-user-points-row');
-  const removeBtn = document.getElementById('edit-user-remove-btn');
-  if (!isHouse) {
-    ptsRow.style.display = 'flex';
-    document.getElementById('edit-user-pts-display').textContent = (taskPoints[key] || 0) + ' pts';
-    removeBtn.style.display = 'inline-flex';
-  } else {
-    ptsRow.style.display = 'none';
-    removeBtn.style.display = 'none';
-  }
+  // Points hidden (rewards system disabled); remove button only for real users
+  document.getElementById('edit-user-points-row').style.display = 'none';
+  document.getElementById('edit-user-remove-btn').style.display = isHouse ? 'none' : 'inline-flex';
   document.getElementById('edit-user-confirm-btn').onclick = confirmEditUser;
 }
 function editPanelAdjustPoints() {
@@ -5373,11 +5161,6 @@ async function init() {
   renderStrip();
   renderHome(); renderSchedule(); renderTasks(); renderGrocery(); renderDiscover();
   showPage(currentPage); renderNavBadges();
-
-  // Reset task inactivity timer on any interaction while tasks page is active
-  document.getElementById('page-tasks').addEventListener('pointerdown', function() {
-    if (_taskViewer) resetTaskInactivityTimer();
-  });
 }
 
 // ── KROGER ───────────────────────────────────────────────────────────────────
