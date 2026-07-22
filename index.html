@@ -3205,22 +3205,36 @@ function renderSchedule() {
   } else if (!upcomingFamilyEvents.length) {
     col1 = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📅</div>No upcoming events</div>';
   } else {
+    // Group events by day with sticky-style day headers
+    const todayIso = isoDate(new Date());
+    const tomorrowIso = isoDate(new Date(Date.now() + 86400000));
+    let lastDay = '';
     col1 = upcomingFamilyEvents.map(ev => {
       const title = ev.summary || 'Event';
       const time = ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All day';
       const dateStr = ev.start?.dateTime || ev.start?.date || '';
-      const dateLabel = formatDateShort(dateStr + (ev.start?.date ? 'T12:00:00' : ''));
+      const dayIso = dateStr.slice(0, 10);
       const color = eventColor(title);
       const emoji = eventEmoji(title);
       const link = ev.htmlLink || '#';
       const desc = ev.description ? ev.description.replace(/<[^>]+>/g,'').trim() : '';
-      return `<a class="ev-card" href="${link}" target="_blank">
+      let header = '';
+      if (dayIso !== lastDay) {
+        lastDay = dayIso;
+        const d = new Date(dayIso + 'T12:00:00');
+        const label = dayIso === todayIso ? 'Today' : dayIso === tomorrowIso ? 'Tomorrow'
+          : d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+        header = `<div style="display:flex;align-items:center;gap:8px;margin:12px 0 6px">
+          <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:${dayIso === todayIso ? 'var(--accent)' : 'var(--text-muted)'}">${label}</span>
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+        </div>`;
+      }
+      return header + `<a class="ev-card" href="${link}" target="_blank">
         <div class="ev-card-icon" style="background:linear-gradient(160deg,${color}44,${color}22)">${emoji}</div>
         <div class="ev-card-body">
           <div class="ev-card-title">${title}</div>
           <div class="ev-card-when">
-            <span class="ev-card-date">${dateLabel}</span>
-            ${time !== 'All day' ? `<span style="color:var(--text-muted);font-size:11px">·</span><span class="ev-card-time">${time}</span>` : `<span class="ev-card-time">All day</span>`}
+            <span class="ev-card-time">${time}</span>
           </div>
           ${ev.location ? `<div class="ev-card-loc">📍 ${ev.location}</div>` : ''}
           ${desc ? `<div class="ev-card-desc">${desc}</div>` : ''}
