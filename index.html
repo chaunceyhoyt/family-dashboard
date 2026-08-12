@@ -5627,7 +5627,7 @@ function closeKrogerOverlay() {
 }
 
 async function krogerResolveLocation() {
-  if (krogerLocationId) return;
+  if (krogerLocationId && _krogerStoreName) return;
   try {
     const r = await fetch(`${SUPABASE_URL}/functions/v1/kroger-proxy?action=location`, {
       method: 'POST',
