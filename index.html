@@ -3860,6 +3860,18 @@ function buildPricesTab() {
     } else {
       priceHtml = '<span style="font-size:13px;font-weight:600;color:var(--text)">' + fmtPrice(r.regular) + '</span>';
     }
+    const cmp = (priceWatch.compare || {})[it.upc];
+    let cmpHtml = '';
+    if (cmp) {
+      const stores = [['WM', cmp.walmart], ['TG', cmp.target], ['HT', cmp.harristeeter]];
+      const effective = r ? (r.onSale ? r.promo : r.regular) : null;
+      const cheapest = Math.min(...stores.filter(s => s[1] != null).map(s => s[1]), effective != null ? effective : Infinity);
+      cmpHtml = '<div style="font-size:10px;color:var(--text-muted);margin-top:1px">' +
+        stores.map(([lbl, p]) => lbl + ' ' + (p != null
+          ? '<span style="' + (p <= cheapest ? 'color:#4ade80;font-weight:700' : '') + '">$' + Number(p).toFixed(2) + '</span>'
+          : '—')).join(' · ') +
+      '</div>';
+    }
     const cartBtn = (krogerToken && r && r.regular != null)
       ? '<button onclick="priceWatchAddToCart(\'' + it.upc + '\',this)" title="Add to Kroger cart" style="flex-shrink:0;background:#2055b7;border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;cursor:pointer">+🛒</button>'
       : '';
@@ -3867,6 +3879,7 @@ function buildPricesTab() {
       '<div style="flex:1;min-width:0">' +
         '<div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(it.name) + '</div>' +
         '<div style="margin-top:1px">' + priceHtml + '</div>' +
+        cmpHtml +
       '</div>' +
       cartBtn +
       '<button class="del-btn" onclick="removePriceWatchItem(\'' + it.id + '\')">×</button>' +
@@ -3877,6 +3890,7 @@ function buildPricesTab() {
       '<span>🏷 Price Watch <span style="font-size:11px;color:var(--text-muted);font-weight:400">(' + items.length + ' items' + (saleCount ? ' · <span style="color:#4ade80;font-weight:700">' + saleCount + ' on sale</span>' : '') + ')</span></span>' +
       '<div style="display:flex;gap:6px;align-items:center">' +
         (saleCount && krogerToken ? '<button onclick="priceWatchAddAllSale(this)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.12);color:#4ade80;cursor:pointer;font-weight:600">🛒 Add sale items</button>' : '') +
+        (saleCount ? '<button id="store-compare-btn" onclick="runStoreCompare()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(251,191,36,0.4);background:rgba(251,191,36,0.1);color:#fbbf24;cursor:pointer;font-weight:600">⚖ Compare stores</button>' : '') +
         '<button id="price-check-btn" onclick="runPriceCheck()" ' + (_priceCheckRunning ? 'disabled' : '') + ' style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:600">' + (_priceCheckRunning ? 'Checking…' : '↺ Check prices') + '</button>' +
       '</div>' +
     '</div>' +
@@ -3958,11 +3972,43 @@ async function runPriceCheck() {
       if (btn) btn.textContent = `Checking… ${Math.min(i + 25, upcs.length)}/${upcs.length}`;
     }
     priceWatch.lastCheck = new Date().toISOString();
+    if (krogerLocationId) priceWatch.locationId = krogerLocationId; // cron reuses the store
     await savePriceWatch();
   } catch (e) {
     alert('Price check failed: ' + (e.message || e));
   } finally {
     _priceCheckRunning = false;
+    renderGrocery();
+  }
+}
+
+async function runStoreCompare() {
+  // Best-effort Walmart/Target/Harris Teeter comparison for items currently on sale at Kroger
+  const saleItems = priceWatch.items.filter(i => priceWatch.results[i.upc]?.onSale);
+  if (!saleItems.length) { alert('No sale items to compare — run a price check first.'); return; }
+  const btn = document.getElementById('store-compare-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Comparing…'; }
+  try {
+    if (!priceWatch.compare) priceWatch.compare = {};
+    for (let i = 0; i < saleItems.length; i += 12) {
+      const batch = saleItems.slice(i, i + 12);
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/store-compare`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({ items: batch.map(it => ({ name: it.name, krogerPrice: priceWatch.results[it.upc]?.promo })) })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Compare failed');
+      (data.results || []).forEach((res, idx) => {
+        const it = batch[idx];
+        if (it) priceWatch.compare[it.upc] = { walmart: res.walmart ?? null, target: res.target ?? null, harristeeter: res.harristeeter ?? null, notes: res.notes || '', checkedAt: data.checkedAt };
+      });
+      if (btn) btn.textContent = `Comparing… ${Math.min(i + 12, saleItems.length)}/${saleItems.length}`;
+    }
+    await savePriceWatch();
+  } catch (e) {
+    alert('Store comparison failed: ' + (e.message || e));
+  } finally {
     renderGrocery();
   }
 }

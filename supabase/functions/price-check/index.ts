@@ -3,13 +3,42 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Bulk price check: POST { upcs: ["0001111086062", ...], locationId: "..." }
-// Returns { results: { [upc]: { description, regular, promo, onSale } }, errors: [...] }
+// Bulk price check.
+//  POST { upcs: [...], locationId }  → returns results (app merges + saves)
+//  POST { cron: true, locationId? } → loads price_watch from DB, checks all
+//    items, merges results + lowest-price history, saves back. Used by pg_cron.
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { upcs, locationId } = await req.json();
+    const body = await req.json();
+    const cronMode = !!body.cron;
+    let upcs: string[] = body.upcs || [];
+    let locationId: string | undefined = body.locationId;
+    let watch: Record<string, unknown> | null = null;
+
+    const supaUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const db = (path: string, init?: RequestInit) =>
+      fetch(`${supaUrl}/rest/v1/${path}`, {
+        ...init,
+        headers: {
+          'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json', ...(init?.headers || {}),
+        },
+      });
+
+    if (cronMode) {
+      const r = await db(`family_data?key=eq.price_watch&select=value`);
+      const rows = await r.json();
+      watch = rows?.[0]?.value || null;
+      if (!watch || !Array.isArray(watch.items) || !watch.items.length) {
+        return new Response(JSON.stringify({ error: 'no price_watch items' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      upcs = (watch.items as { upc: string }[]).map(i => i.upc);
+      locationId = locationId || (watch.locationId as string | undefined);
+    }
+
     if (!Array.isArray(upcs) || !upcs.length) {
       return new Response(JSON.stringify({ error: 'upcs array required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -61,8 +90,27 @@ Deno.serve(async (req: Request) => {
       }
     });
     await Promise.all(workers);
+    const checkedAt = new Date().toISOString();
 
-    return new Response(JSON.stringify({ results, errors, checkedAt: new Date().toISOString() }), {
+    if (cronMode && watch) {
+      // Merge into stored price_watch and save
+      const w = watch as { results?: Record<string, unknown>; lowest?: Record<string, number>; lastCheck?: string };
+      w.results = w.results || {};
+      w.lowest = w.lowest || {};
+      for (const [upc, res] of Object.entries(results)) {
+        const r = res as { regular: number | null; promo: number | null; onSale: boolean };
+        w.results[upc] = { ...r, checkedAt };
+        const effective = r.onSale ? r.promo : r.regular;
+        if (effective != null && (w.lowest[upc] == null || effective < w.lowest[upc])) w.lowest[upc] = effective;
+      }
+      w.lastCheck = checkedAt;
+      await db(`family_data?key=eq.price_watch`, {
+        method: 'PATCH',
+        body: JSON.stringify({ value: watch, updated_at: checkedAt }),
+      });
+    }
+
+    return new Response(JSON.stringify({ results, errors, checkedAt }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
