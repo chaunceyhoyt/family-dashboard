@@ -1505,6 +1505,7 @@ async function loadFamilyData() {
       else if (row.key === 'tasks') tasks = row.value || [];
       else if (row.key === 'assets') assets = row.value || [];
       else if (row.key === 'completed_log') completedLog = row.value || [];
+      else if (row.key === 'price_watch') priceWatch = Object.assign({ items: [], results: {}, lowest: {}, lastCheck: null }, row.value || {});
       else if (row.key === 'rewards') rewards = row.value || [];
       else if (row.key === 'purchases') purchases = row.value || [];
       else if (row.key === 'task_points') {
@@ -3748,10 +3749,13 @@ function renderGrocery() {
   const pillNav = `<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;margin:10px 14px 0;flex-shrink:0">
     <button onclick="setGroceryTab('recipes')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='recipes'?'var(--accent)':'transparent'};color:${_groceryTab==='recipes'?'#fff':'var(--text-muted)'}">⭐ Recipes</button>
     <button onclick="setGroceryTab('grocery')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='grocery'?'var(--accent)':'transparent'};color:${_groceryTab==='grocery'?'#fff':'var(--text-muted)'}">🛒 Grocery List</button>
+    <button onclick="setGroceryTab('prices')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='prices'?'var(--accent)':'transparent'};color:${_groceryTab==='prices'?'#fff':'var(--text-muted)'}">🏷 Prices</button>
   </div>`;
 
   let tabContent;
-  if (_groceryTab === 'recipes') {
+  if (_groceryTab === 'prices') {
+    tabContent = buildPricesTab();
+  } else if (_groceryTab === 'recipes') {
     const allTagsForFilter = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
     const tagChips = allTagsForFilter.map(tag => {
       const active = _groceryRecipeActiveTags.has(tag);
@@ -3813,6 +3817,178 @@ function renderGrocery() {
 }
 
 function setGroceryTab(tab) { _groceryTab = tab; localStorage.setItem('groceryTab', tab); _groceryRecipeActiveTags = new Set(); _groceryTagsExpanded = false; renderGrocery(); }
+
+// ── PRICE WATCH ───────────────────────────────────────────────────────────────
+// priceWatch = { items: [{id, upc, name}], results: {upc: {regular, promo, onSale, checkedAt}},
+//               lowest: {upc: number}, lastCheck: iso }
+let priceWatch = { items: [], results: {}, lowest: {}, lastCheck: null };
+let _priceCheckRunning = false;
+
+function fmtPrice(n) { return n == null ? '—' : '$' + Number(n).toFixed(2); }
+
+function buildPricesTab() {
+  const items = priceWatch.items || [];
+  const results = priceWatch.results || {};
+  const lastCheck = priceWatch.lastCheck
+    ? new Date(priceWatch.lastCheck).toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' ' + new Date(priceWatch.lastCheck).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' })
+    : 'never';
+
+  // Sort: on sale first (biggest % off first), then alphabetical
+  const sorted = items.slice().sort((a, b) => {
+    const ra = results[a.upc], rb = results[b.upc];
+    const sa = ra?.onSale ? (ra.regular - ra.promo) / ra.regular : -1;
+    const sb2 = rb?.onSale ? (rb.regular - rb.promo) / rb.regular : -1;
+    if (sa !== sb2) return sb2 - sa;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  const saleCount = items.filter(i => results[i.upc]?.onSale).length;
+
+  const rows = sorted.length ? sorted.map(it => {
+    const r = results[it.upc];
+    const lowest = (priceWatch.lowest || {})[it.upc];
+    const isLowest = r?.onSale && lowest != null && r.promo <= lowest;
+    let priceHtml;
+    if (!r || r.regular == null) {
+      priceHtml = '<span style="font-size:12px;color:var(--text-muted)">' + (priceWatch.lastCheck ? 'n/a' : 'not checked') + '</span>';
+    } else if (r.onSale) {
+      const pct = Math.round((1 - r.promo / r.regular) * 100);
+      priceHtml = '<span style="font-size:14px;font-weight:800;color:#4ade80">' + fmtPrice(r.promo) + '</span>' +
+        '<span style="font-size:11px;color:var(--text-muted);text-decoration:line-through;margin-left:5px">' + fmtPrice(r.regular) + '</span>' +
+        '<span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px;margin-left:5px">-' + pct + '%</span>' +
+        (isLowest ? '<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,0.15);border-radius:5px;padding:1px 5px;margin-left:4px">🔥 lowest</span>' : '');
+    } else {
+      priceHtml = '<span style="font-size:13px;font-weight:600;color:var(--text)">' + fmtPrice(r.regular) + '</span>';
+    }
+    const cartBtn = (krogerToken && r && r.regular != null)
+      ? '<button onclick="priceWatchAddToCart(\'' + it.upc + '\',this)" title="Add to Kroger cart" style="flex-shrink:0;background:#2055b7;border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;cursor:pointer">+🛒</button>'
+      : '';
+    return '<div class="list-item" style="gap:8px">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(it.name) + '</div>' +
+        '<div style="margin-top:1px">' + priceHtml + '</div>' +
+      '</div>' +
+      cartBtn +
+      '<button class="del-btn" onclick="removePriceWatchItem(\'' + it.id + '\')">×</button>' +
+    '</div>';
+  }).join('') : '<div class="empty-state" style="padding:16px 14px;font-size:13px">No products yet — add items you buy regularly to track their prices</div>';
+
+  return '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">' +
+      '<span>🏷 Price Watch <span style="font-size:11px;color:var(--text-muted);font-weight:400">(' + items.length + ' items' + (saleCount ? ' · <span style="color:#4ade80;font-weight:700">' + saleCount + ' on sale</span>' : '') + ')</span></span>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+        (saleCount && krogerToken ? '<button onclick="priceWatchAddAllSale(this)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.12);color:#4ade80;cursor:pointer;font-weight:600">🛒 Add sale items</button>' : '') +
+        '<button id="price-check-btn" onclick="runPriceCheck()" ' + (_priceCheckRunning ? 'disabled' : '') + ' style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:600">' + (_priceCheckRunning ? 'Checking…' : '↺ Check prices') + '</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">' +
+      '<div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">' +
+        '<div style="display:flex;gap:6px">' +
+          '<input id="price-watch-input" type="text" placeholder="Add product (searches Kroger)…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addPriceWatchItem()">' +
+          '<button onclick="addPriceWatchItem()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">Add</button>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Last checked: ' + lastCheck + '</div>' +
+      '</div>' +
+      '<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">' + rows + '</div>' +
+    '</div>';
+}
+
+async function loadPriceWatch() {
+  const { data } = await sb.from('family_data').select('value').eq('key', 'price_watch').maybeSingle();
+  if (data?.value) priceWatch = Object.assign({ items: [], results: {}, lowest: {}, lastCheck: null }, data.value);
+}
+
+async function savePriceWatch() {
+  await saveFamilyData('price_watch', priceWatch);
+}
+
+async function addPriceWatchItem() {
+  const input = document.getElementById('price-watch-input');
+  const term = input.value.trim();
+  if (!term) return;
+  input.disabled = true;
+  try {
+    const product = await krogerSearchProduct(null, term);
+    if (!product) { alert('No Kroger product found for "' + term + '"'); return; }
+    const upc = product.upc;
+    if (priceWatch.items.some(i => i.upc === upc)) { alert('Already tracking: ' + (product.description || term)); return; }
+    priceWatch.items.push({ id: uid(), upc: upc, name: product.description || term });
+    await savePriceWatch();
+    input.value = '';
+    renderGrocery();
+  } catch (e) {
+    alert('Search failed — try again');
+  } finally {
+    input.disabled = false;
+  }
+}
+
+async function removePriceWatchItem(id) {
+  priceWatch.items = priceWatch.items.filter(i => i.id !== id);
+  await savePriceWatch();
+  renderGrocery();
+}
+
+async function runPriceCheck() {
+  if (_priceCheckRunning || !priceWatch.items.length) return;
+  _priceCheckRunning = true;
+  renderGrocery();
+  try {
+    await krogerResolveLocation();
+    const upcs = priceWatch.items.map(i => i.upc);
+    // Batch in groups of 25 to keep each function call quick
+    for (let i = 0; i < upcs.length; i += 25) {
+      const batch = upcs.slice(i, i + 25);
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/price-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({ upcs: batch, locationId: krogerLocationId || undefined })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Price check failed');
+      Object.entries(data.results || {}).forEach(([upc, res]) => {
+        priceWatch.results[upc] = Object.assign({}, res, { checkedAt: data.checkedAt });
+        const effective = res.onSale ? res.promo : res.regular;
+        if (effective != null) {
+          const prev = (priceWatch.lowest || {})[upc];
+          if (!priceWatch.lowest) priceWatch.lowest = {};
+          if (prev == null || effective < prev) priceWatch.lowest[upc] = effective;
+        }
+      });
+      const btn = document.getElementById('price-check-btn');
+      if (btn) btn.textContent = `Checking… ${Math.min(i + 25, upcs.length)}/${upcs.length}`;
+    }
+    priceWatch.lastCheck = new Date().toISOString();
+    await savePriceWatch();
+  } catch (e) {
+    alert('Price check failed: ' + (e.message || e));
+  } finally {
+    _priceCheckRunning = false;
+    renderGrocery();
+  }
+}
+
+async function priceWatchAddToCart(upc, btn) {
+  if (!krogerToken) { alert('Connect Kroger first (Grocery List tab → Kroger)'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  const result = await krogerAddToCart(upc);
+  if (btn) { btn.textContent = result.ok ? '✓' : '✗'; setTimeout(() => { btn.textContent = '+🛒'; btn.disabled = false; }, 1500); }
+}
+
+async function priceWatchAddAllSale(btn) {
+  if (!krogerToken) { alert('Connect Kroger first'); return; }
+  const saleItems = priceWatch.items.filter(i => priceWatch.results[i.upc]?.onSale);
+  if (!saleItems.length) return;
+  if (!confirm('Add ' + saleItems.length + ' sale item(s) to your Kroger cart?')) return;
+  btn.disabled = true;
+  let ok = 0;
+  for (let i = 0; i < saleItems.length; i++) {
+    btn.textContent = `Adding ${i + 1}/${saleItems.length}…`;
+    const result = await krogerAddToCart(saleItems[i].upc);
+    if (result.ok) ok++;
+  }
+  btn.textContent = `✓ ${ok} added`;
+  setTimeout(() => renderGrocery(), 2000);
+}
 
 function toggleGroceryRecipeTag(tag) {
   if (_groceryRecipeActiveTags.has(tag)) _groceryRecipeActiveTags.delete(tag);
