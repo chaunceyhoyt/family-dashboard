@@ -3827,6 +3827,12 @@ let _priceCheckRunning = false;
 
 function fmtPrice(n) { return n == null ? '—' : '$' + Number(n).toFixed(2); }
 
+function isFlaggedPromo(upc) { return (priceWatch.flaggedPromo || []).includes(upc); }
+function isOnSale(upc) {
+  const r = (priceWatch.results || {})[upc];
+  return !!(r?.onSale && !isFlaggedPromo(upc));
+}
+
 function buildPricesTab() {
   const items = priceWatch.items || [];
   const results = priceWatch.results || {};
@@ -3837,21 +3843,22 @@ function buildPricesTab() {
   // Sort: on sale first (biggest % off first), then alphabetical
   const sorted = items.slice().sort((a, b) => {
     const ra = results[a.upc], rb = results[b.upc];
-    const sa = ra?.onSale ? (ra.regular - ra.promo) / ra.regular : -1;
-    const sb2 = rb?.onSale ? (rb.regular - rb.promo) / rb.regular : -1;
+    const sa = isOnSale(a.upc) ? (ra.regular - ra.promo) / ra.regular : -1;
+    const sb2 = isOnSale(b.upc) ? (rb.regular - rb.promo) / rb.regular : -1;
     if (sa !== sb2) return sb2 - sa;
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  const saleCount = items.filter(i => results[i.upc]?.onSale).length;
+  const saleCount = items.filter(i => isOnSale(i.upc)).length;
 
   const rows = sorted.length ? sorted.map(it => {
     const p = storePrices(it.upc);
     const r = results[it.upc];
+    const onSale = isOnSale(it.upc);
     const lowestEver = (priceWatch.lowest || {})[it.upc];
-    const isLowest = r?.onSale && lowestEver != null && r.promo <= lowestEver;
+    const isLowest = onSale && lowestEver != null && r.promo <= lowestEver;
     const badges =
-      (r?.onSale ? '<span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px;margin-left:5px">-' + Math.round((1 - r.promo / r.regular) * 100) + '%</span>' : '') +
+      (onSale ? '<span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px;margin-left:5px">-' + Math.round((1 - r.promo / r.regular) * 100) + '%</span>' : '') +
       (isLowest ? '<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,0.15);border-radius:5px;padding:1px 5px;margin-left:4px">🔥 lowest</span>' : '');
     const cartBtn = (krogerToken && p.kr != null)
       ? '<button onclick="event.stopPropagation();priceWatchAddToCart(\'' + it.upc + '\',this)" title="Add to Kroger cart" style="flex-shrink:0;background:#2055b7;border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;cursor:pointer">+🛒</button>'
@@ -3896,8 +3903,9 @@ const PRICE_STORES = [
 function storePrices(upc) {
   const r = (priceWatch.results || {})[upc];
   const c = (priceWatch.compare || {})[upc];
+  const flagged = (priceWatch.flaggedPromo || []).includes(upc);
   return {
-    kr: r ? (r.onSale ? r.promo : r.regular) : null,
+    kr: r ? ((r.onSale && !flagged) ? r.promo : r.regular) : null,
     wm: c?.walmart ?? null,
     tg: c?.target ?? null,
     ht: c?.harristeeter ?? null,
@@ -3960,6 +3968,14 @@ function openPriceHistory(upc) {
     ? '<a href="' + best.url(it.name) + '" target="_blank" style="display:block;text-align:center;background:' + (best.key === 'kr' ? '#2055b7' : 'var(--accent)') + ';color:#fff;border-radius:10px;padding:11px;font-size:14px;font-weight:700;text-decoration:none;margin-top:10px">Open ' + best.label + ' — ' + fmtPrice(p[best.key]) + ' ↗</a>'
     : '';
 
+  const rawR = (priceWatch.results || {})[upc];
+  const flagged = (priceWatch.flaggedPromo || []).includes(upc);
+  const flagBtn = (rawR && rawR.onSale && !flagged)
+    ? '<button onclick="flagBadPromo(\'' + upc + '\')" style="display:block;width:100%;text-align:center;background:none;border:1px solid rgba(248,113,113,0.4);color:#fca5a5;border-radius:10px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px">🚩 This sale price looks wrong — ignore it</button>'
+    : flagged
+    ? '<div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">Sale price flagged as inaccurate — showing regular price. <button onclick="unflagBadPromo(\'' + upc + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;text-decoration:underline;padding:0">undo</button></div>'
+    : '';
+
   let dim = document.getElementById('price-history-dim');
   if (!dim) {
     dim = document.createElement('div');
@@ -3976,10 +3992,26 @@ function openPriceHistory(upc) {
     (lowestEver != null ? '<div style="font-size:12px;color:#fbbf24;margin-bottom:10px">🔥 Lowest ever paid: <b>' + fmtPrice(lowestEver) + '</b></div>' : '') +
     storeRows +
     bestBtn +
+    flagBtn +
     '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 4px">📈 Price History</div>' +
     histRows +
   '</div>';
   dim.classList.add('open');
+}
+
+async function flagBadPromo(upc) {
+  if (!priceWatch.flaggedPromo) priceWatch.flaggedPromo = [];
+  if (!priceWatch.flaggedPromo.includes(upc)) priceWatch.flaggedPromo.push(upc);
+  await savePriceWatch();
+  renderGrocery();
+  openPriceHistory(upc);
+}
+
+async function unflagBadPromo(upc) {
+  priceWatch.flaggedPromo = (priceWatch.flaggedPromo || []).filter(u => u !== upc);
+  await savePriceWatch();
+  renderGrocery();
+  openPriceHistory(upc);
 }
 
 async function loadPriceWatch() {
@@ -4040,7 +4072,7 @@ async function runPriceCheck() {
       if (!r.ok) throw new Error(data.error || 'Price check failed');
       Object.entries(data.results || {}).forEach(([upc, res]) => {
         priceWatch.results[upc] = Object.assign({}, res, { checkedAt: data.checkedAt });
-        const effective = res.onSale ? res.promo : res.regular;
+        const effective = (res.onSale && !isFlaggedPromo(upc)) ? res.promo : res.regular;
         if (effective != null) {
           if (!priceWatch.lowest) priceWatch.lowest = {};
           if (priceWatch.lowest[upc] == null || effective < priceWatch.lowest[upc]) priceWatch.lowest[upc] = effective;
@@ -4103,7 +4135,7 @@ async function priceWatchAddToCart(upc, btn) {
 
 async function priceWatchAddAllSale(btn) {
   if (!krogerToken) { alert('Connect Kroger first'); return; }
-  const saleItems = priceWatch.items.filter(i => priceWatch.results[i.upc]?.onSale);
+  const saleItems = priceWatch.items.filter(i => isOnSale(i.upc));
   if (!saleItems.length) return;
   if (!confirm('Add ' + saleItems.length + ' sale item(s) to your Kroger cart?')) return;
   btn.disabled = true;
