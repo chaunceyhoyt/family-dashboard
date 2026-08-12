@@ -3878,7 +3878,7 @@ function buildPricesTab() {
           '<input id="price-watch-input" type="text" placeholder="Add product (searches Kroger)…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addPriceWatchItem()">' +
           '<button onclick="addPriceWatchItem()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">Add</button>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Last checked: ' + lastCheck + ' · tap an item for price history</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Last checked: ' + lastCheck + (_krogerStoreName ? ' · Kroger store: ' + escHtml(_krogerStoreName) : '') + ' · tap an item for price history</div>' +
       '</div>' +
       '<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">' + rows + '</div>' +
     '</div>';
@@ -5639,9 +5639,12 @@ async function krogerResolveLocation() {
     if (loc) {
       krogerLocationId = loc.locationId;
       sessionStorage.setItem('kroger_location', krogerLocationId);
+      const name = (loc.name || '') + (loc.address?.addressLine1 ? ' — ' + loc.address.addressLine1 : '');
+      if (name) { _krogerStoreName = name; sessionStorage.setItem('kroger_store_name', name); }
     }
   } catch(e) { console.warn('Kroger location lookup failed', e); }
 }
+let _krogerStoreName = sessionStorage.getItem('kroger_store_name') || '';
 
 async function loadKrogerHistory() {
   const { data } = await sb.from('family_data').select('value').eq('key', 'kroger_history').maybeSingle();
