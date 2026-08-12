@@ -3855,18 +3855,21 @@ function buildPricesTab() {
     const p = storePrices(it.upc);
     const r = results[it.upc];
     const onSale = isOnSale(it.upc);
-    const lowestEver = (priceWatch.lowest || {})[it.upc];
-    const isLowest = onSale && lowestEver != null && r.promo <= lowestEver;
-    const badges =
-      (onSale ? '<span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px;margin-left:5px">-' + Math.round((1 - r.promo / r.regular) * 100) + '%</span>' : '') +
-      (isLowest ? '<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,0.15);border-radius:5px;padding:1px 5px;margin-left:4px">🔥 lowest</span>' : '');
+    const badges = onSale
+      ? '<span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px;margin-left:5px">Kroger -' + Math.round((1 - r.promo / r.regular) * 100) + '%</span>'
+      : '';
     const cartBtn = (krogerToken && p.kr != null)
       ? '<button onclick="event.stopPropagation();priceWatchAddToCart(\'' + it.upc + '\',this)" title="Add to Kroger cart" style="flex-shrink:0;background:#2055b7;border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;cursor:pointer">+🛒</button>'
       : '';
+    const best = cheapestStore(p);
+    const headline = best
+      ? '<span style="font-size:14px;font-weight:800;color:#4ade80">' + fmtPrice(p[best.key]) + '</span> <span style="font-size:10px;color:var(--text-muted);font-weight:600">@ ' + best.short + '</span>'
+      : '<span style="font-size:12px;color:var(--text-muted)">' + (priceWatch.lastCheck ? 'n/a' : 'not checked') + '</span>';
     return '<div class="list-item" style="gap:8px;cursor:pointer" onclick="openPriceHistory(\'' + it.upc + '\')">' +
       '<div style="flex:1;min-width:0">' +
         '<div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(it.name) + badges + '</div>' +
-        '<div style="margin-top:2px">' + storePriceLine(p, '11px') + '</div>' +
+        '<div style="margin-top:2px">' + headline + '</div>' +
+        '<div style="margin-top:1px">' + storePriceLine(p, '10px') + '</div>' +
       '</div>' +
       cartBtn +
       '<button class="del-btn" onclick="event.stopPropagation();removePriceWatchItem(\'' + it.id + '\')">×</button>' +
