@@ -3755,6 +3755,7 @@ function renderGrocery() {
   let tabContent;
   if (_groceryTab === 'prices') {
     tabContent = buildPricesTab();
+    if (!_krogerStoreName) krogerResolveLocation().then(() => { if (_krogerStoreName && _groceryTab === 'prices') renderGrocery(); });
   } else if (_groceryTab === 'recipes') {
     const allTagsForFilter = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
     const tagChips = allTagsForFilter.map(tag => {
