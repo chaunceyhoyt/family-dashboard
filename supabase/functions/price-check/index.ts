@@ -94,14 +94,20 @@ Deno.serve(async (req: Request) => {
 
     if (cronMode && watch) {
       // Merge into stored price_watch and save
-      const w = watch as { results?: Record<string, unknown>; lowest?: Record<string, number>; lastCheck?: string };
+      const w = watch as { results?: Record<string, unknown>; lowest?: Record<string, number>; history?: Record<string, unknown[]>; lastCheck?: string };
       w.results = w.results || {};
       w.lowest = w.lowest || {};
+      w.history = w.history || {};
       for (const [upc, res] of Object.entries(results)) {
         const r = res as { regular: number | null; promo: number | null; onSale: boolean };
         w.results[upc] = { ...r, checkedAt };
         const effective = r.onSale ? r.promo : r.regular;
         if (effective != null && (w.lowest[upc] == null || effective < w.lowest[upc])) w.lowest[upc] = effective;
+        if (effective != null) {
+          const arr = (w.history[upc] = w.history[upc] || []);
+          arr.push({ at: checkedAt, kr: effective, wm: null, tg: null, ht: null });
+          if (arr.length > 60) arr.splice(0, arr.length - 60);
+        }
       }
       w.lastCheck = checkedAt;
       await db(`family_data?key=eq.price_watch`, {

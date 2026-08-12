@@ -3845,44 +3845,23 @@ function buildPricesTab() {
   const saleCount = items.filter(i => results[i.upc]?.onSale).length;
 
   const rows = sorted.length ? sorted.map(it => {
+    const p = storePrices(it.upc);
     const r = results[it.upc];
-    const lowest = (priceWatch.lowest || {})[it.upc];
-    const isLowest = r?.onSale && lowest != null && r.promo <= lowest;
-    let priceHtml;
-    if (!r || r.regular == null) {
-      priceHtml = '<span style="font-size:12px;color:var(--text-muted)">' + (priceWatch.lastCheck ? 'n/a' : 'not checked') + '</span>';
-    } else if (r.onSale) {
-      const pct = Math.round((1 - r.promo / r.regular) * 100);
-      priceHtml = '<span style="font-size:14px;font-weight:800;color:#4ade80">' + fmtPrice(r.promo) + '</span>' +
-        '<span style="font-size:11px;color:var(--text-muted);text-decoration:line-through;margin-left:5px">' + fmtPrice(r.regular) + '</span>' +
-        '<span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px;margin-left:5px">-' + pct + '%</span>' +
-        (isLowest ? '<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,0.15);border-radius:5px;padding:1px 5px;margin-left:4px">🔥 lowest</span>' : '');
-    } else {
-      priceHtml = '<span style="font-size:13px;font-weight:600;color:var(--text)">' + fmtPrice(r.regular) + '</span>';
-    }
-    const cmp = (priceWatch.compare || {})[it.upc];
-    let cmpHtml = '';
-    if (cmp) {
-      const stores = [['WM', cmp.walmart], ['TG', cmp.target], ['HT', cmp.harristeeter]];
-      const effective = r ? (r.onSale ? r.promo : r.regular) : null;
-      const cheapest = Math.min(...stores.filter(s => s[1] != null).map(s => s[1]), effective != null ? effective : Infinity);
-      cmpHtml = '<div style="font-size:10px;color:var(--text-muted);margin-top:1px">' +
-        stores.map(([lbl, p]) => lbl + ' ' + (p != null
-          ? '<span style="' + (p <= cheapest ? 'color:#4ade80;font-weight:700' : '') + '">$' + Number(p).toFixed(2) + '</span>'
-          : '—')).join(' · ') +
-      '</div>';
-    }
-    const cartBtn = (krogerToken && r && r.regular != null)
-      ? '<button onclick="priceWatchAddToCart(\'' + it.upc + '\',this)" title="Add to Kroger cart" style="flex-shrink:0;background:#2055b7;border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;cursor:pointer">+🛒</button>'
+    const lowestEver = (priceWatch.lowest || {})[it.upc];
+    const isLowest = r?.onSale && lowestEver != null && r.promo <= lowestEver;
+    const badges =
+      (r?.onSale ? '<span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px;margin-left:5px">-' + Math.round((1 - r.promo / r.regular) * 100) + '%</span>' : '') +
+      (isLowest ? '<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,0.15);border-radius:5px;padding:1px 5px;margin-left:4px">🔥 lowest</span>' : '');
+    const cartBtn = (krogerToken && p.kr != null)
+      ? '<button onclick="event.stopPropagation();priceWatchAddToCart(\'' + it.upc + '\',this)" title="Add to Kroger cart" style="flex-shrink:0;background:#2055b7;border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;cursor:pointer">+🛒</button>'
       : '';
-    return '<div class="list-item" style="gap:8px">' +
+    return '<div class="list-item" style="gap:8px;cursor:pointer" onclick="openPriceHistory(\'' + it.upc + '\')">' +
       '<div style="flex:1;min-width:0">' +
-        '<div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(it.name) + '</div>' +
-        '<div style="margin-top:1px">' + priceHtml + '</div>' +
-        cmpHtml +
+        '<div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(it.name) + badges + '</div>' +
+        '<div style="margin-top:2px">' + storePriceLine(p, '11px') + '</div>' +
       '</div>' +
       cartBtn +
-      '<button class="del-btn" onclick="removePriceWatchItem(\'' + it.id + '\')">×</button>' +
+      '<button class="del-btn" onclick="event.stopPropagation();removePriceWatchItem(\'' + it.id + '\')">×</button>' +
     '</div>';
   }).join('') : '<div class="empty-state" style="padding:16px 14px;font-size:13px">No products yet — add items you buy regularly to track their prices</div>';
 
@@ -3890,7 +3869,6 @@ function buildPricesTab() {
       '<span>🏷 Price Watch <span style="font-size:11px;color:var(--text-muted);font-weight:400">(' + items.length + ' items' + (saleCount ? ' · <span style="color:#4ade80;font-weight:700">' + saleCount + ' on sale</span>' : '') + ')</span></span>' +
       '<div style="display:flex;gap:6px;align-items:center">' +
         (saleCount && krogerToken ? '<button onclick="priceWatchAddAllSale(this)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.12);color:#4ade80;cursor:pointer;font-weight:600">🛒 Add sale items</button>' : '') +
-        (saleCount ? '<button id="store-compare-btn" onclick="runStoreCompare()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(251,191,36,0.4);background:rgba(251,191,36,0.1);color:#fbbf24;cursor:pointer;font-weight:600">⚖ Compare stores</button>' : '') +
         '<button id="price-check-btn" onclick="runPriceCheck()" ' + (_priceCheckRunning ? 'disabled' : '') + ' style="font-size:11px;padding:4px 10px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:600">' + (_priceCheckRunning ? 'Checking…' : '↺ Check prices') + '</button>' +
       '</div>' +
     '</div>' +
@@ -3900,10 +3878,107 @@ function buildPricesTab() {
           '<input id="price-watch-input" type="text" placeholder="Add product (searches Kroger)…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addPriceWatchItem()">' +
           '<button onclick="addPriceWatchItem()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">Add</button>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Last checked: ' + lastCheck + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Last checked: ' + lastCheck + ' · tap an item for price history</div>' +
       '</div>' +
       '<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">' + rows + '</div>' +
     '</div>';
+}
+
+const PRICE_STORES = [
+  { key: 'kr', label: 'Kroger',        short: 'KR', url: n => 'https://www.kroger.com/search?query=' + encodeURIComponent(n) },
+  { key: 'wm', label: 'Walmart',       short: 'WM', url: n => 'https://www.walmart.com/search?q=' + encodeURIComponent(n) },
+  { key: 'tg', label: 'Target',        short: 'TG', url: n => 'https://www.target.com/s?searchTerm=' + encodeURIComponent(n) },
+  { key: 'ht', label: 'Harris Teeter', short: 'HT', url: n => 'https://www.harristeeter.com/search?query=' + encodeURIComponent(n) },
+];
+
+// Current effective price at each store for a UPC: {kr, wm, tg, ht}
+function storePrices(upc) {
+  const r = (priceWatch.results || {})[upc];
+  const c = (priceWatch.compare || {})[upc];
+  return {
+    kr: r ? (r.onSale ? r.promo : r.regular) : null,
+    wm: c?.walmart ?? null,
+    tg: c?.target ?? null,
+    ht: c?.harristeeter ?? null,
+  };
+}
+
+function cheapestStore(p) {
+  let best = null;
+  PRICE_STORES.forEach(s => {
+    if (p[s.key] != null && (best === null || p[s.key] < p[best.key])) best = s;
+  });
+  return best;
+}
+
+// Inline 4-store price line; cheapest is bold green
+function storePriceLine(p, fontSize) {
+  const best = cheapestStore(p);
+  const anyPrice = PRICE_STORES.some(s => p[s.key] != null);
+  if (!anyPrice) return '<span style="font-size:' + fontSize + ';color:var(--text-muted)">' + (priceWatch.lastCheck ? 'n/a' : 'not checked') + '</span>';
+  return '<span style="font-size:' + fontSize + ';color:var(--text-muted)">' +
+    PRICE_STORES.map(s => {
+      const v = p[s.key];
+      if (v == null) return s.short + ' —';
+      const isBest = best && s.key === best.key;
+      return s.short + ' <span style="' + (isBest ? 'color:#4ade80;font-weight:800' : 'color:var(--text2)') + '">$' + Number(v).toFixed(2) + '</span>';
+    }).join(' · ') +
+  '</span>';
+}
+
+// ── PRICE HISTORY MODAL ───────────────────────────────────────────────────────
+function openPriceHistory(upc) {
+  const it = (priceWatch.items || []).find(i => i.upc === upc);
+  if (!it) return;
+  const p = storePrices(upc);
+  const best = cheapestStore(p);
+  const lowestEver = (priceWatch.lowest || {})[upc];
+  const hist = ((priceWatch.history || {})[upc] || []).slice().reverse();
+
+  const storeRows = PRICE_STORES.map(s => {
+    const v = p[s.key];
+    const isBest = best && s.key === best.key;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;margin-bottom:6px' + (isBest ? ';border:1px solid rgba(74,222,128,0.5)' : '') + '">' +
+      '<span style="flex:1;font-size:13px;font-weight:600;color:var(--text)">' + s.label + (isBest ? ' <span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px">best</span>' : '') + '</span>' +
+      '<span style="font-size:14px;font-weight:' + (isBest ? '800' : '600') + ';color:' + (isBest ? '#4ade80' : 'var(--text)') + '">' + fmtPrice(v) + '</span>' +
+      '<a href="' + s.url(it.name) + '" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">open ↗</a>' +
+    '</div>';
+  }).join('');
+
+  const histRows = hist.length
+    ? '<div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:4px;font-size:11px;color:var(--text-muted);padding:4px 2px;font-weight:700">' +
+        '<span>Date</span><span>KR</span><span>WM</span><span>TG</span><span>HT</span></div>' +
+      hist.slice(0, 30).map(h =>
+        '<div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:4px;font-size:12px;padding:5px 2px;border-top:1px solid rgba(255,255,255,0.05)">' +
+          '<span style="color:var(--text-muted)">' + new Date(h.at).toLocaleDateString('en-US', { month:'short', day:'numeric' }) + '</span>' +
+          ['kr','wm','tg','ht'].map(k => '<span style="color:var(--text)">' + (h[k] != null ? '$' + Number(h[k]).toFixed(2) : '—') + '</span>').join('') +
+        '</div>').join('')
+    : '<div style="font-size:12px;color:var(--text-muted);font-style:italic;padding:8px 2px">No history yet — each price check adds a snapshot</div>';
+
+  const bestBtn = best
+    ? '<a href="' + best.url(it.name) + '" target="_blank" style="display:block;text-align:center;background:' + (best.key === 'kr' ? '#2055b7' : 'var(--accent)') + ';color:#fff;border-radius:10px;padding:11px;font-size:14px;font-weight:700;text-decoration:none;margin-top:10px">Open ' + best.label + ' — ' + fmtPrice(p[best.key]) + ' ↗</a>'
+    : '';
+
+  let dim = document.getElementById('price-history-dim');
+  if (!dim) {
+    dim = document.createElement('div');
+    dim.className = 'dim';
+    dim.id = 'price-history-dim';
+    dim.onclick = e => { if (e.target === dim) dim.classList.remove('open'); };
+    document.body.appendChild(dim);
+  }
+  dim.innerHTML = '<div class="modal-box" style="max-width:420px;max-height:88vh;overflow-y:auto">' +
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px">' +
+      '<div class="modal-box-title" style="margin:0;font-size:16px">' + escHtml(it.name) + '</div>' +
+      '<button onclick="document.getElementById(\'price-history-dim\').classList.remove(\'open\')" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>' +
+    '</div>' +
+    (lowestEver != null ? '<div style="font-size:12px;color:#fbbf24;margin-bottom:10px">🔥 Lowest ever paid: <b>' + fmtPrice(lowestEver) + '</b></div>' : '') +
+    storeRows +
+    bestBtn +
+    '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 4px">📈 Price History</div>' +
+    histRows +
+  '</div>';
+  dim.classList.add('open');
 }
 
 async function loadPriceWatch() {
@@ -3942,14 +4017,17 @@ async function removePriceWatchItem(id) {
   renderGrocery();
 }
 
+// Full check: Kroger exact prices, then all-store comparison, then a history snapshot
 async function runPriceCheck() {
   if (_priceCheckRunning || !priceWatch.items.length) return;
   _priceCheckRunning = true;
   renderGrocery();
+  const setBtn = txt => { const b = document.getElementById('price-check-btn'); if (b) b.textContent = txt; };
   try {
     await krogerResolveLocation();
     const upcs = priceWatch.items.map(i => i.upc);
-    // Batch in groups of 25 to keep each function call quick
+
+    // Phase 1: Kroger exact prices (batches of 25)
     for (let i = 0; i < upcs.length; i += 25) {
       const batch = upcs.slice(i, i + 25);
       const r = await fetch(`${SUPABASE_URL}/functions/v1/price-check`, {
@@ -3963,52 +4041,54 @@ async function runPriceCheck() {
         priceWatch.results[upc] = Object.assign({}, res, { checkedAt: data.checkedAt });
         const effective = res.onSale ? res.promo : res.regular;
         if (effective != null) {
-          const prev = (priceWatch.lowest || {})[upc];
           if (!priceWatch.lowest) priceWatch.lowest = {};
-          if (prev == null || effective < prev) priceWatch.lowest[upc] = effective;
+          if (priceWatch.lowest[upc] == null || effective < priceWatch.lowest[upc]) priceWatch.lowest[upc] = effective;
         }
       });
-      const btn = document.getElementById('price-check-btn');
-      if (btn) btn.textContent = `Checking… ${Math.min(i + 25, upcs.length)}/${upcs.length}`;
+      setBtn(`Kroger… ${Math.min(i + 25, upcs.length)}/${upcs.length}`);
     }
-    priceWatch.lastCheck = new Date().toISOString();
+
+    // Phase 2: other stores via web search (batches of 12) — best-effort
+    if (!priceWatch.compare) priceWatch.compare = {};
+    const all = priceWatch.items;
+    for (let i = 0; i < all.length; i += 12) {
+      const batch = all.slice(i, i + 12);
+      setBtn(`Stores… ${Math.min(i + 12, all.length)}/${all.length}`);
+      try {
+        const r = await fetch(`${SUPABASE_URL}/functions/v1/store-compare`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+          body: JSON.stringify({ items: batch.map(it => ({ name: it.name, krogerPrice: storePrices(it.upc).kr || undefined })) })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'compare failed');
+        (data.results || []).forEach((res, idx) => {
+          const it = batch[idx];
+          if (it) priceWatch.compare[it.upc] = { walmart: res.walmart ?? null, target: res.target ?? null, harristeeter: res.harristeeter ?? null, notes: res.notes || '', checkedAt: data.checkedAt };
+        });
+      } catch (e) {
+        console.warn('store-compare batch failed', e); // keep going — Kroger data is still good
+      }
+    }
+
+    // Phase 3: history snapshot
+    const now = new Date().toISOString();
+    if (!priceWatch.history) priceWatch.history = {};
+    priceWatch.items.forEach(it => {
+      const p = storePrices(it.upc);
+      if (p.kr == null && p.wm == null && p.tg == null && p.ht == null) return;
+      const arr = priceWatch.history[it.upc] = priceWatch.history[it.upc] || [];
+      arr.push({ at: now, kr: p.kr, wm: p.wm, tg: p.tg, ht: p.ht });
+      if (arr.length > 60) arr.splice(0, arr.length - 60);
+    });
+
+    priceWatch.lastCheck = now;
     if (krogerLocationId) priceWatch.locationId = krogerLocationId; // cron reuses the store
     await savePriceWatch();
   } catch (e) {
     alert('Price check failed: ' + (e.message || e));
   } finally {
     _priceCheckRunning = false;
-    renderGrocery();
-  }
-}
-
-async function runStoreCompare() {
-  // Best-effort Walmart/Target/Harris Teeter comparison for items currently on sale at Kroger
-  const saleItems = priceWatch.items.filter(i => priceWatch.results[i.upc]?.onSale);
-  if (!saleItems.length) { alert('No sale items to compare — run a price check first.'); return; }
-  const btn = document.getElementById('store-compare-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Comparing…'; }
-  try {
-    if (!priceWatch.compare) priceWatch.compare = {};
-    for (let i = 0; i < saleItems.length; i += 12) {
-      const batch = saleItems.slice(i, i + 12);
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/store-compare`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
-        body: JSON.stringify({ items: batch.map(it => ({ name: it.name, krogerPrice: priceWatch.results[it.upc]?.promo })) })
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Compare failed');
-      (data.results || []).forEach((res, idx) => {
-        const it = batch[idx];
-        if (it) priceWatch.compare[it.upc] = { walmart: res.walmart ?? null, target: res.target ?? null, harristeeter: res.harristeeter ?? null, notes: res.notes || '', checkedAt: data.checkedAt };
-      });
-      if (btn) btn.textContent = `Comparing… ${Math.min(i + 12, saleItems.length)}/${saleItems.length}`;
-    }
-    await savePriceWatch();
-  } catch (e) {
-    alert('Store comparison failed: ' + (e.message || e));
-  } finally {
     renderGrocery();
   }
 }
