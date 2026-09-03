@@ -4094,7 +4094,7 @@ async function runPriceCheck() {
         const r = await fetch(`${SUPABASE_URL}/functions/v1/store-compare`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
-          body: JSON.stringify({ items: batch.map(it => ({ name: it.name, krogerPrice: storePrices(it.upc).kr || undefined })) })
+          body: JSON.stringify({ items: batch.map(it => ({ name: it.name, upc: it.upc, krogerPrice: storePrices(it.upc).kr || undefined })) })
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || 'compare failed');

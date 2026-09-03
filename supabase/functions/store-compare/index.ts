@@ -4,7 +4,7 @@ const corsHeaders = {
 };
 
 // Best-effort cross-store price comparison via Gemini + Google Search.
-// POST { items: [{ name, krogerPrice }], location? }
+// POST { items: [{ name, upc, krogerPrice }], location? }
 // Returns { results: [{ name, walmart, target, harristeeter, notes }], checkedAt }
 // Prices are search-derived estimates, not live store data.
 Deno.serve(async (req: Request) => {
@@ -25,21 +25,26 @@ Deno.serve(async (req: Request) => {
     }
 
     const loc = location || 'Chesapeake VA 23322';
-    const list = items.map((it: { name: string; krogerPrice?: number }, i: number) =>
-      `${i + 1}. ${it.name}${it.krogerPrice ? ` (Kroger price: $${it.krogerPrice})` : ''}`).join('\n');
+    const list = items.map((it: { name: string; upc?: string; krogerPrice?: number }, i: number) =>
+      `${i + 1}. ${it.name}${it.upc ? ` — UPC/barcode: ${it.upc}` : ''}${it.krogerPrice ? ` (Kroger price: $${it.krogerPrice})` : ''}`).join('\n');
 
-    const prompt = `Find current prices for these grocery products at Walmart, Target, and Harris Teeter near ${loc}. Search for each product's price at each store.
+    const prompt = `Find current prices for these grocery products at Walmart, Target, and Harris Teeter near ${loc}.
 
 Products:
 ${list}
 
+Product names can differ slightly between retailers (different wording, capitalization, or listing title) even for the exact same item, so DO NOT rely on the name text matching exactly. For each product that has a UPC/barcode listed, treat that UPC as the authoritative identifier:
+- Prefer searching each store's site directly by the UPC/barcode number (e.g. "site:walmart.com <UPC>", "site:target.com <UPC>", "site:harristeeter.com <UPC>", or a general web search for the UPC) — this returns the exact matching product regardless of title wording.
+- Only fall back to searching by product name/description if the UPC search returns nothing.
+- If a UPC-based result and a name-based result disagree, trust the UPC match.
+
 Rules:
 - Report the price for the SAME product and size where possible; if only a comparable size is found, note it.
-- If a store doesn't carry the item or no price is found, use null.
+- If a store doesn't carry the item or no confident match is found, use null rather than guessing.
 - Prices should be current regular or sale prices from your search results.
 
 Return ONLY a JSON array (no markdown), one object per product in the same order:
-[{ "name": "product name", "walmart": 3.99, "target": null, "harristeeter": 4.29, "notes": "brief note only if size differs or price is a sale" }]`;
+[{ "name": "product name", "walmart": 3.99, "target": null, "harristeeter": 4.29, "notes": "brief note only if size differs, price is a sale, or match was by UPC not name" }]`;
 
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
