@@ -1,6 +1,6 @@
 {
-  "name": "Hoyt Family Dashboard",
-  "short_name": "Hoyt Family",
+  "name": "Family Dashboard",
+  "short_name": "Family Dashboard",
   "start_url": "/family-dashboard/",
   "display": "standalone",
   "background_color": "#0f172a",
