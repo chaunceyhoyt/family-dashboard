@@ -94,14 +94,15 @@ Deno.serve(async (req: Request) => {
 
     if (cronMode && watch) {
       // Merge into stored price_watch and save
-      const w = watch as { results?: Record<string, unknown>; lowest?: Record<string, number>; history?: Record<string, unknown[]>; lastCheck?: string };
+      const w = watch as { results?: Record<string, unknown>; lowest?: Record<string, number>; history?: Record<string, unknown[]>; flaggedPromo?: string[]; lastCheck?: string };
+      const flagged = new Set(w.flaggedPromo || []); // promos the family marked as wrong
       w.results = w.results || {};
       w.lowest = w.lowest || {};
       w.history = w.history || {};
       for (const [upc, res] of Object.entries(results)) {
         const r = res as { regular: number | null; promo: number | null; onSale: boolean };
         w.results[upc] = { ...r, checkedAt };
-        const effective = r.onSale ? r.promo : r.regular;
+        const effective = (r.onSale && !flagged.has(upc)) ? r.promo : r.regular;
         if (effective != null && (w.lowest[upc] == null || effective < w.lowest[upc])) w.lowest[upc] = effective;
         if (effective != null) {
           const arr = (w.history[upc] = w.history[upc] || []);

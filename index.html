@@ -4082,13 +4082,15 @@ function storePrices(upc) {
     wm: c?.walmart ?? null,
     tg: c?.target ?? null,
     ht: c?.harristeeter ?? null,
+    // Stores whose web-search match wasn't confirmed as the exact product/size
+    fuzzy: new Set(c ? [['wm', c.walmart_match], ['tg', c.target_match], ['ht', c.harristeeter_match]].filter(m => m[1] === 'similar').map(m => m[0]) : []),
   };
 }
 
 function cheapestStore(p) {
   let best = null;
   PRICE_STORES.forEach(s => {
-    if (p[s.key] != null && (best === null || p[s.key] < p[best.key])) best = s;
+    if (p[s.key] != null && !(p.fuzzy && p.fuzzy.has(s.key)) && (best === null || p[s.key] < p[best.key])) best = s;
   });
   return best;
 }
@@ -4102,6 +4104,7 @@ function storePriceLine(p, fontSize) {
     PRICE_STORES.map(s => {
       const v = p[s.key];
       if (v == null) return s.short + ' —';
+      if (p.fuzzy && p.fuzzy.has(s.key)) return s.short + ' <span title="Possibly a different size or variety" style="opacity:0.6">~$' + Number(v).toFixed(2) + '</span>';
       const isBest = best && s.key === best.key;
       return s.short + ' <span style="' + (isBest ? 'color:#4ade80;font-weight:800' : 'color:var(--text2)') + '">$' + Number(v).toFixed(2) + '</span>';
     }).join(' · ') +
@@ -4122,7 +4125,7 @@ function openPriceHistory(upc) {
     const isBest = best && s.key === best.key;
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;margin-bottom:6px' + (isBest ? ';border:1px solid rgba(74,222,128,0.5)' : '') + '">' +
       '<span style="flex:1;font-size:13px;font-weight:600;color:var(--text)">' + s.label + (isBest ? ' <span style="font-size:10px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);border-radius:5px;padding:1px 5px">best</span>' : '') + '</span>' +
-      '<span style="font-size:14px;font-weight:' + (isBest ? '800' : '600') + ';color:' + (isBest ? '#4ade80' : 'var(--text)') + '">' + fmtPrice(v) + '</span>' +
+      '<span style="font-size:14px;font-weight:' + (isBest ? '800' : '600') + ';color:' + (isBest ? '#4ade80' : 'var(--text)') + '">' + (p.fuzzy && p.fuzzy.has(s.key) && v != null ? '<span title="Possibly a different size or variety" style="opacity:0.6">~' + fmtPrice(v) + '</span>' : fmtPrice(v)) + '</span>' +
       '<a href="' + s.url(it.name) + '" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">open ↗</a>' +
     '</div>';
   }).join('');
@@ -4254,9 +4257,14 @@ async function runPriceCheck() {
       setBtn(`Kroger… ${Math.min(i + 25, upcs.length)}/${upcs.length}`);
     }
 
-    // Phase 2: other stores via web search (batches of 12) — best-effort
+    // Phase 2: other stores via web search (batches of 12) — best-effort.
+    // Store prices move slowly, so skip anything compared in the last 6 days.
     if (!priceWatch.compare) priceWatch.compare = {};
-    const all = priceWatch.items;
+    const freshCutoff = Date.now() - 6 * 86400000;
+    const all = priceWatch.items.filter(it => {
+      const c = priceWatch.compare[it.upc];
+      return !(c && c.checkedAt && new Date(c.checkedAt).getTime() > freshCutoff);
+    });
     for (let i = 0; i < all.length; i += 12) {
       const batch = all.slice(i, i + 12);
       setBtn(`Stores… ${Math.min(i + 12, all.length)}/${all.length}`);
@@ -4270,7 +4278,12 @@ async function runPriceCheck() {
         if (!r.ok) throw new Error(data.error || 'compare failed');
         (data.results || []).forEach((res, idx) => {
           const it = batch[idx];
-          if (it) priceWatch.compare[it.upc] = { walmart: res.walmart ?? null, target: res.target ?? null, harristeeter: res.harristeeter ?? null, notes: res.notes || '', checkedAt: data.checkedAt };
+          if (it) priceWatch.compare[it.upc] = {
+            walmart: res.walmart ?? null, walmart_match: res.walmart_match || null,
+            target: res.target ?? null, target_match: res.target_match || null,
+            harristeeter: res.harristeeter ?? null, harristeeter_match: res.harristeeter_match || null,
+            notes: res.notes || '', checkedAt: data.checkedAt,
+          };
         });
       } catch (e) {
         console.warn('store-compare batch failed', e); // keep going — Kroger data is still good

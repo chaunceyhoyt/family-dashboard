@@ -43,8 +43,12 @@ Rules:
 - If a store doesn't carry the item or no confident match is found, use null rather than guessing.
 - Prices should be current regular or sale prices from your search results.
 
+For each store also say how sure you are that the price is for this exact product and size:
+- "exact": found by UPC, or the listing clearly shows the same brand, product and size
+- "similar": a close match (different size, variety or wording you couldn't confirm)
+
 Return ONLY a JSON array (no markdown), one object per product in the same order:
-[{ "name": "product name", "walmart": 3.99, "target": null, "harristeeter": 4.29, "notes": "brief note only if size differs, price is a sale, or match was by UPC not name" }]`;
+[{ "name": "product name", "walmart": 3.99, "walmart_match": "exact", "target": null, "target_match": null, "harristeeter": 4.29, "harristeeter_match": "similar", "notes": "brief note only if size differs or price is a sale" }]`;
 
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,

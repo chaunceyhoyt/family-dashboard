@@ -1,0 +1,49 @@
+name: Deploy Supabase edge functions
+
+# Deploys any edge function whose code changed on main, so functions never
+# drift from the repo. Needs a repo secret SUPABASE_ACCESS_TOKEN (create one
+# at supabase.com/dashboard/account/tokens).
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/functions/**']
+  workflow_dispatch:
+    inputs:
+      function:
+        description: 'Function to deploy (blank = all)'
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: qhvzfgsfkqrnykgryvej
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Pick functions to deploy
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.function }}" ]; then
+              names="${{ github.event.inputs.function }}"
+            else
+              names=$(ls supabase/functions)
+            fi
+          else
+            names=$(git diff --name-only HEAD~1 HEAD -- supabase/functions | cut -d/ -f3 | sort -u)
+          fi
+          echo "names=$(echo $names | xargs)" >> "$GITHUB_OUTPUT"
+      - name: Deploy
+        if: steps.pick.outputs.names != ''
+        run: |
+          for fn in ${{ steps.pick.outputs.names }}; do
+            [ -f "supabase/functions/$fn/index.ts" ] || continue
+            echo "Deploying $fn"
+            supabase functions deploy "$fn" --project-ref "$PROJECT_REF" --no-verify-jwt
+          done

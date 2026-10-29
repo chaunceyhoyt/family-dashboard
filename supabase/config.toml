@@ -1,0 +1,22 @@
+# Supabase CLI config, used by .github/workflows/deploy-functions.yml.
+# Every function is called from the browser or pg_cron without a user JWT,
+# so JWT verification stays off (matching how they were deployed by hand).
+project_id = "qhvzfgsfkqrnykgryvej"
+
+[functions.kroger-proxy]
+verify_jwt = false
+
+[functions.price-check]
+verify_jwt = false
+
+[functions.store-compare]
+verify_jwt = false
+
+[functions.marketplace-search]
+verify_jwt = false
+
+[functions.vegetarian-version]
+verify_jwt = false
+
+[functions.consolidate-grocery]
+verify_jwt = false
