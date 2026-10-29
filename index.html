@@ -18,6 +18,8 @@
       --radius: 12px; --nav-h: 68px;
       --header-bg-start: #0c1525; --header-bg-end: #0f1a2e;
       --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      /* Theme-aware tints: faint overlays/borders use rgba(var(--fg-rgb),a) */
+      --fg-rgb: 255,255,255; --bg-rgb: 15,23,42; --input-bg: #0a1220;
     }
 
     /* ── PAGE DATE/TIME HEADER ── */
@@ -43,6 +45,52 @@
       --urgent: #b91c1c;
       --warning: #92400e;
     }
+    /* Light theme: pastel accents picked for the dark background are too faint
+       on cream, so inline uses of them get a deeper shade of the same hue. */
+    body.light [style*="color: #4ADE80"],
+    body.light [style*="color: #4ade80"],
+    body.light [style*="color:#4ADE80"],
+    body.light [style*="color:#4ade80"] { color: #15803d !important; }
+    body.light [style*="color: #6EE7B7"],
+    body.light [style*="color: #6ee7b7"],
+    body.light [style*="color:#6EE7B7"],
+    body.light [style*="color:#6ee7b7"] { color: #047857 !important; }
+    body.light [style*="color: #FBBF24"],
+    body.light [style*="color: #fbbf24"],
+    body.light [style*="color:#FBBF24"],
+    body.light [style*="color:#fbbf24"] { color: #b45309 !important; }
+    body.light [style*="color: #FCA5A5"],
+    body.light [style*="color: #fca5a5"],
+    body.light [style*="color:#FCA5A5"],
+    body.light [style*="color:#fca5a5"] { color: #b91c1c !important; }
+    body.light [style*="color: #F87171"],
+    body.light [style*="color: #f87171"],
+    body.light [style*="color:#F87171"],
+    body.light [style*="color:#f87171"] { color: #b91c1c !important; }
+    body.light [style*="color: #94A3B8"],
+    body.light [style*="color: #94a3b8"],
+    body.light [style*="color:#94A3B8"],
+    body.light [style*="color:#94a3b8"] { color: #6b5d50 !important; }
+    body.light [style*="color: #C4B5FD"],
+    body.light [style*="color: #c4b5fd"],
+    body.light [style*="color:#C4B5FD"],
+    body.light [style*="color:#c4b5fd"] { color: #6d28d9 !important; }
+    body.light [style*="color: #CBD5E1"],
+    body.light [style*="color: #cbd5e1"],
+    body.light [style*="color:#CBD5E1"],
+    body.light [style*="color:#cbd5e1"] { color: #475569 !important; }
+    body.light [style*="color: #93C5FD"],
+    body.light [style*="color: #93c5fd"],
+    body.light [style*="color:#93C5FD"],
+    body.light [style*="color:#93c5fd"] { color: #1d4ed8 !important; }
+    body.light [style*="color: #60A5FA"],
+    body.light [style*="color: #60a5fa"],
+    body.light [style*="color:#60A5FA"],
+    body.light [style*="color:#60a5fa"] { color: #1d4ed8 !important; }
+    body.light [style*="color: #818CF8"],
+    body.light [style*="color: #818cf8"],
+    body.light [style*="color:#818CF8"],
+    body.light [style*="color:#818cf8"] { color: #4338ca !important; }
     body.light .page-datetime-header { color: #334155; }
     body.light .task-recur-badge { color: #3730a3; background: rgba(99,102,241,0.12); }
     body.light .task-joint-badge { color: #92400e; background: rgba(251,191,36,0.15); }
@@ -95,7 +143,7 @@
     #dashboard { display: none; flex-direction: column; height: 100%; }
 
     /* ── WEEK NAV BAR ── */
-    #week-nav { flex-shrink: 0; background: var(--header-bg-start, #0c1525); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+    #week-nav { flex-shrink: 0; background: var(--header-bg-start, #0c1525); border-bottom: 1px solid rgba(var(--fg-rgb),0.06); display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
     .week-nav-arrow { background: var(--surface2); border: none; color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 19px; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; flex-shrink: 0; transition: background 0.15s; }
     .week-nav-arrow:active { background: var(--surface3); }
     #week-label { flex: 1; font-size: 17px; font-weight: 700; text-align: center; color: var(--text); letter-spacing: -0.2px; }
@@ -106,9 +154,9 @@
     #week-picker { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; }
 
     /* ── WEEKLY STRIP ── */
-    #weekly-strip { flex-shrink: 0; background: linear-gradient(180deg, var(--header-bg-start, #0c1525) 0%, var(--header-bg-end, #111e35) 100%); border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: calc(env(safe-area-inset-top) + 8px) 8px 10px; }
+    #weekly-strip { flex-shrink: 0; background: linear-gradient(180deg, var(--header-bg-start, #0c1525) 0%, var(--header-bg-end, #111e35) 100%); border-bottom: 1px solid rgba(var(--fg-rgb),0.07); display: flex; gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: calc(env(safe-area-inset-top) + 8px) 8px 10px; }
     #weekly-strip::-webkit-scrollbar { display: none; }
-    .day-col { flex: 1 0 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: background 0.15s, border-color 0.15s; min-width: 0; }
+    .day-col { flex: 1 0 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(var(--fg-rgb),0.05); transition: background 0.15s, border-color 0.15s; min-width: 0; }
     .day-col.today { border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.08); }
     .day-col-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1px; }
     .day-col-name { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
@@ -119,7 +167,7 @@
     .day-weather-icon { font-size: 22px; }
     .day-events-wrap { flex-shrink: 0; height: 26px; overflow: hidden; }
     .day-events { display: flex; flex-direction: column; gap: 3px; }
-    .day-more-indicator { font-size: 16px; color: rgba(255,255,255,0.55); text-align: center; line-height: 1; flex-shrink: 0; display: block; margin-top: 1px; }
+    .day-more-indicator { font-size: 16px; color: rgba(var(--fg-rgb),0.55); text-align: center; line-height: 1; flex-shrink: 0; display: block; margin-top: 1px; }
     /* Strip wrapper */
     #strip-wrapper { flex-shrink: 0; display: flex; flex-direction: column; }
     #strip-wrapper.expanded { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
@@ -130,7 +178,7 @@
     #strip-wrapper.expanded .day-events { overflow: visible; }
     #strip-wrapper.expanded .day-more-indicator { display: none; }
     /* Dinner row — sits below weekly strip, always aligned */
-    #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, var(--header-bg-end, #111e35) 0%, var(--header-bg-start, #0d1a2e) 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, var(--header-bg-end, #111e35) 0%, var(--header-bg-start, #0d1a2e) 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(var(--fg-rgb),0.07); }
     #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery, #strip-wrapper.page-discover { display: none; }
     #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery, #week-nav.page-discover { display: none; }
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
@@ -138,28 +186,28 @@
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
     .day-ev-chip:active { background: rgba(59,130,246,0.32); }
     .dinner-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; opacity: 0.7; }
-    .dinner-slot { margin-top: 0; min-height: 44px; flex-shrink: 0; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.13); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
+    .dinner-slot { margin-top: 0; min-height: 44px; flex-shrink: 0; border-radius: 8px; border: 1px dashed rgba(var(--fg-rgb),0.13); display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
     .dinner-slot.drag-over { background: rgba(16,185,129,0.12); border-color: var(--success); border-style: solid; }
     .dinner-chip { width: 100%; min-height: 44px; border-radius: 8px; display: flex; align-items: center; gap: 4px; padding: 6px 7px; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.3); font-size: 11px; font-weight: 700; color: #6ee7b7; user-select: none; transition: opacity 0.15s; cursor: pointer; overflow: hidden; }
     .dinner-chip.dragging { opacity: 0.3; }
     .dinner-chip.today-meal { background: rgba(16,185,129,0.28); border-color: #6ee7b7; box-shadow: 0 0 0 2px rgba(110,231,183,0.3); color: #fff; }
     .recipe-modal-box { max-height: 88vh; overflow-y: auto; padding-bottom: 16px; }
     .recipe-section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
-    .recipe-ingredient { font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; align-items: baseline; }
+    .recipe-ingredient { font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(var(--fg-rgb),0.05); display: flex; gap: 8px; align-items: baseline; }
     .recipe-ingredient::before { content: "•"; color: var(--accent); flex-shrink: 0; }
-    .recipe-step { font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 10px; align-items: baseline; line-height: 1.5; }
+    .recipe-step { font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(var(--fg-rgb),0.05); display: flex; gap: 10px; align-items: baseline; line-height: 1.5; }
     .recipe-step-num { font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(59,130,246,0.15); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .recipe-swap-item { padding: 10px 12px; border-radius: 8px; background: var(--surface2); margin-bottom: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
     .recipe-swap-item:active { background: rgba(59,130,246,0.2); }
-    .recipe-tag { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:var(--text-muted); margin:1px; }
-    .filter-tag-chip { font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,0.15); background:var(--surface2); color:var(--text-muted); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:all 0.15s; white-space:nowrap; }
+    .recipe-tag { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:rgba(var(--fg-rgb),0.07); border:1px solid rgba(var(--fg-rgb),0.12); color:var(--text-muted); margin:1px; }
+    .filter-tag-chip { font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; border:1px solid rgba(var(--fg-rgb),0.15); background:var(--surface2); color:var(--text-muted); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:all 0.15s; white-space:nowrap; }
     .filter-tag-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
     body.light .recipe-tag { background:rgba(0,0,0,0.06); border-color:rgba(0,0,0,0.12); }
     body.light .filter-tag-chip { background:var(--surface2); border-color:rgba(0,0,0,0.15); }
     /* Portrait: steps left (70%), ingredients right (30%) */
     .recipe-two-col { display: grid; grid-template-columns: 7fr 3fr; gap: 0 14px; }
     .recipe-col-left { max-height: 45vh; overflow-y: auto; }
-    .recipe-col-right { border-left: 1px solid rgba(255,255,255,0.07); padding-left: 14px; max-height: 45vh; overflow-y: auto; }
+    .recipe-col-right { border-left: 1px solid rgba(var(--fg-rgb),0.07); padding-left: 14px; max-height: 45vh; overflow-y: auto; }
     /* Portrait: taller weekly strip, compact home grid */
     @media (orientation: portrait) {
       #weekly-strip { padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 12px; }
@@ -205,13 +253,13 @@
       .recipe-modal-box { max-height: 94vh; }
       .recipe-two-col { display: grid; grid-template-columns: 5fr 2fr; gap: 0 16px; }
       .recipe-col-left { max-height: 42vh; overflow-y: auto; }
-      .recipe-col-right { border-left: 1px solid rgba(255,255,255,0.07); padding-left: 16px; max-height: 42vh; overflow-y: auto; }
+      .recipe-col-right { border-left: 1px solid rgba(var(--fg-rgb),0.07); padding-left: 16px; max-height: 42vh; overflow-y: auto; }
     }
     .dinner-chip-label { flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; min-width: 0; }
     .dinner-drag-handle { font-size: 12px; opacity: 0.45; cursor: grab; touch-action: none; padding: 2px; flex-shrink: 0; }
-    .dinner-add-btn { background: none; border: none; color: rgba(255,255,255,0.2); font-size: 20px; cursor: pointer; width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; transition: color 0.15s; }
+    .dinner-add-btn { background: none; border: none; color: rgba(var(--fg-rgb),0.2); font-size: 20px; cursor: pointer; width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; transition: color 0.15s; }
     .dinner-add-btn:active { color: var(--text-muted); }
-    .day-col-mic { background: none; border: none; color: rgba(255,255,255,0.2); font-size: 13px; cursor: pointer; padding: 2px; -webkit-tap-highlight-color: transparent; transition: color 0.15s; line-height: 1; }
+    .day-col-mic { background: none; border: none; color: rgba(var(--fg-rgb),0.2); font-size: 13px; cursor: pointer; padding: 2px; -webkit-tap-highlight-color: transparent; transition: color 0.15s; line-height: 1; }
     .day-col-mic:active { color: var(--accent); }
 
     /* ── CONTENT AREA ── */
@@ -221,8 +269,8 @@
     .page-panel.panel-flex { overflow: hidden; padding: 0; display: flex; flex-direction: column; }
 
     /* ── BOTTOM NAV ── */
-    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid rgba(255,255,255,0.07); display: flex; align-items: stretch; z-index: 200; gap: 4px; padding-left: 6px; padding-right: 6px; }
-    .nav-btn { flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; background: none; border: 1px solid rgba(255,255,255,0.09); cursor: pointer; color: var(--text-muted); font-size: 15px; font-weight: 700; letter-spacing: 0.2px; -webkit-tap-highlight-color: transparent; transition: color 0.15s, background 0.15s, border-color 0.15s; padding: 8px 10px; border-radius: 12px; margin: 6px 0; }
+    #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid rgba(var(--fg-rgb),0.07); display: flex; align-items: stretch; z-index: 200; gap: 4px; padding-left: 6px; padding-right: 6px; }
+    .nav-btn { flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; background: none; border: 1px solid rgba(var(--fg-rgb),0.09); cursor: pointer; color: var(--text-muted); font-size: 15px; font-weight: 700; letter-spacing: 0.2px; -webkit-tap-highlight-color: transparent; transition: color 0.15s, background 0.15s, border-color 0.15s; padding: 8px 10px; border-radius: 12px; margin: 6px 0; }
     .nav-btn.active { color: var(--accent); background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.35); }
     .nav-home-icon { font-size: 26px; line-height: 1; flex-shrink: 0; }
     .nav-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.15s, box-shadow 0.15s; position: relative; flex-shrink: 0; }
@@ -250,22 +298,22 @@
     .tasks-page-btns { display:flex; gap:8px; }
     .tasks-cols-wrap { flex:1; display:flex; gap:10px; overflow-x:auto; overflow-y:hidden; padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px); align-items:flex-start; -webkit-overflow-scrolling:touch; scrollbar-width:none; min-height:0; }
     .tasks-cols-wrap::-webkit-scrollbar { display:none; }
-    .task-col { flex:1 0 200px; min-width:200px; max-width:340px; display:flex; flex-direction:column; background:var(--surface); border-radius:14px; border:1px solid rgba(255,255,255,0.07); overflow:hidden; }
-    .task-col-header { padding:10px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+    .task-col { flex:1 0 200px; min-width:200px; max-width:340px; display:flex; flex-direction:column; background:var(--surface); border-radius:14px; border:1px solid rgba(var(--fg-rgb),0.07); overflow:hidden; }
+    .task-col-header { padding:10px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(var(--fg-rgb),0.07); flex-shrink:0; }
     .task-col-avatar { font-size:22px; line-height:1; }
     .task-col-name { flex:1; font-size:14px; font-weight:700; color:var(--text); }
     .task-col-pts { font-size:13px; font-weight:800; color:#fbbf24; background:rgba(251,191,36,0.12); border-radius:8px; padding:2px 8px; }
     .task-col-body { flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:80px; -webkit-overflow-scrolling:touch; }
     .task-col-body.drag-over { background:rgba(59,130,246,0.08); }
     .tasks-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; overflow-y:auto; padding:0 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px); align-content:start; flex:1; }
-    .task-tile { background:var(--surface); border-radius:14px; border:1px solid rgba(255,255,255,0.07); overflow:hidden; display:flex; flex-direction:column; }
+    .task-tile { background:var(--surface); border-radius:14px; border:1px solid rgba(var(--fg-rgb),0.07); overflow:hidden; display:flex; flex-direction:column; }
     .task-tile.wide { grid-column:1 / -1; }
-    .task-tile-header { padding:10px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+    .task-tile-header { padding:10px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(var(--fg-rgb),0.07); flex-shrink:0; }
     .task-tile-name { flex:1; font-size:13px; font-weight:700; color:var(--text); }
     .task-tile-pts { font-size:12px; font-weight:800; color:#fbbf24; background:rgba(251,191,36,0.12); border-radius:8px; padding:2px 7px; }
     .task-tile-body { overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:60px; max-height:220px; -webkit-overflow-scrolling:touch; }
     .task-tile-body.drag-over { background:rgba(59,130,246,0.08); }
-    .task-card { background:var(--surface2); border-radius:10px; padding:10px; border:1px solid rgba(255,255,255,0.07); cursor:grab; user-select:none; }
+    .task-card { background:var(--surface2); border-radius:10px; padding:10px; border:1px solid rgba(var(--fg-rgb),0.07); cursor:grab; user-select:none; }
     .task-card.dragging { opacity:0.3; }
     .task-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; margin-bottom:4px; }
     .task-card-title { font-size:13px; font-weight:700; color:var(--text); flex:1; }
@@ -277,9 +325,9 @@
     .task-done-btn { font-size:11px; font-weight:700; background:rgba(74,222,128,0.15); border:1px solid rgba(74,222,128,0.35); color:#4ade80; border-radius:6px; padding:2px 8px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .task-recur-badge { font-size:10px; font-weight:700; background:rgba(99,102,241,0.2); color:#818cf8; border-radius:4px; padding:1px 6px; }
     .task-joint-badge { font-size:10px; font-weight:700; background:rgba(251,191,36,0.2); color:#fbbf24; border-radius:4px; padding:1px 6px; }
-    .pin-btn { background:var(--surface); border:1px solid rgba(255,255,255,0.12); color:var(--text); font-size:20px; font-weight:700; border-radius:12px; padding:14px; cursor:pointer; }
+    .pin-btn { background:var(--surface); border:1px solid rgba(var(--fg-rgb),0.12); color:var(--text); font-size:20px; font-weight:700; border-radius:12px; padding:14px; cursor:pointer; }
     .pin-btn:active { background:var(--accent); color:#fff; }
-    .reward-card { background:var(--surface); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; }
+    .reward-card { background:var(--surface); border:1px solid rgba(var(--fg-rgb),0.07); border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; }
     .reward-icon { font-size:28px; flex-shrink:0; }
     .reward-body { flex:1; min-width:0; }
     .reward-name { font-size:14px; font-weight:700; color:var(--text); }
@@ -287,21 +335,21 @@
     .joint-confirm-btn { font-size:11px; font-weight:700; border-radius:6px; padding:4px 10px; cursor:pointer; border:1px solid; }
     .joint-confirm-btn.pending { background:rgba(251,191,36,0.15); border-color:rgba(251,191,36,0.4); color:#fbbf24; }
     .joint-confirm-btn.done { background:rgba(74,222,128,0.15); border-color:rgba(74,222,128,0.4); color:#4ade80; }
-    .task-del-btn { font-size:13px; font-weight:700; background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; padding:2px 4px; margin-left:auto; -webkit-tap-highlight-color:transparent; }
+    .task-del-btn { font-size:13px; font-weight:700; background:none; border:none; color:rgba(var(--fg-rgb),0.2); cursor:pointer; padding:2px 4px; margin-left:auto; -webkit-tap-highlight-color:transparent; }
     .task-del-btn:active { color:#f87171; }
     .task-empty { font-size:12px; color:var(--text-muted); text-align:center; padding:16px 8px; opacity:0.6; }
     .task-add-btn { background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.35); color:var(--accent); font-size:13px; font-weight:700; border-radius:10px; padding:6px 14px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-    .task-mgr-btn { background:var(--surface2); border:1px solid rgba(255,255,255,0.12); color:var(--text-muted); font-size:13px; font-weight:700; border-radius:10px; padding:6px 14px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .task-mgr-btn { background:var(--surface2); border:1px solid rgba(var(--fg-rgb),0.12); color:var(--text-muted); font-size:13px; font-weight:700; border-radius:10px; padding:6px 14px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     /* Manage users modal */
-    .user-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .user-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(var(--fg-rgb),0.06); }
     .user-row-avatar { font-size:24px; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .user-row-name { flex:1; font-size:14px; font-weight:600; color:var(--text); }
     .user-edit-btn { font-size:12px; font-weight:700; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--accent); border-radius:7px; padding:4px 10px; cursor:pointer; }
     .user-remove-btn { font-size:12px; font-weight:700; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:7px; padding:4px 10px; cursor:pointer; }
 
     /* ── EVENT CARDS ── */
-    a.ev-card { display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.08); text-decoration: none; color: var(--text); transition: transform 0.1s, border-color 0.15s; -webkit-tap-highlight-color: transparent; background: var(--surface); }
-    a.ev-card:active { transform: scale(0.98); border-color: rgba(255,255,255,0.22); }
+    a.ev-card { display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; margin-bottom: 10px; border: 1px solid rgba(var(--fg-rgb),0.08); text-decoration: none; color: var(--text); transition: transform 0.1s, border-color 0.15s; -webkit-tap-highlight-color: transparent; background: var(--surface); }
+    a.ev-card:active { transform: scale(0.98); border-color: rgba(var(--fg-rgb),0.22); }
     .ev-card-icon { width: 58px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; }
     .ev-card-body { flex: 1; padding: 11px 14px 11px 0; min-width: 0; }
     .ev-card-title { font-size: 15px; font-weight: 700; line-height: 1.3; margin-bottom: 5px; }
@@ -313,7 +361,7 @@
 
     /* Non-linked briefing items in local events */
     /* Local event cards (Week page) */
-    .local-ev-card { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; transition:background 0.15s; -webkit-tap-highlight-color:transparent; }
+    .local-ev-card { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid rgba(var(--fg-rgb),0.07); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; transition:background 0.15s; -webkit-tap-highlight-color:transparent; }
     .local-ev-card:active { background:var(--surface2); }
     .local-ev-icon { font-size:24px; flex-shrink:0; width:36px; text-align:center; }
     .local-ev-body { flex:1; min-width:0; }
@@ -323,7 +371,7 @@
     .local-ev-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
     body.light .local-ev-card { border-color:rgba(0,0,0,0.08); }
     /* Marketplace listing cards */
-    .listing-card { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:12px; margin-bottom:8px; text-decoration:none; color:inherit; transition:background 0.15s; -webkit-tap-highlight-color:transparent; }
+    .listing-card { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid rgba(var(--fg-rgb),0.07); border-radius:12px; padding:12px; margin-bottom:8px; text-decoration:none; color:inherit; transition:background 0.15s; -webkit-tap-highlight-color:transparent; }
     .listing-card:active { background:var(--surface2); }
     .listing-icon { font-size:24px; flex-shrink:0; width:36px; text-align:center; }
     .listing-body { flex:1; min-width:0; }
@@ -332,7 +380,7 @@
     .listing-meta { font-size:11px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .listing-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
     body.light .listing-card { border-color:rgba(0,0,0,0.08); }
-    .local-item { background: var(--surface); border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.07); padding: 10px 12px; }
+    .local-item { background: var(--surface); border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(var(--fg-rgb),0.07); padding: 10px 12px; }
     .local-item-dot-row { display: flex; align-items: flex-start; gap: 8px; }
     .local-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
     .local-dot.urgent  { background: var(--urgent); }
@@ -345,16 +393,16 @@
     .local-item-time   { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
 
     /* ── LIST (grocery / chores) ── */
-    .card { background: var(--surface); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 12px; }
-    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .card { background: var(--surface); border-radius: var(--radius); border: 1px solid rgba(var(--fg-rgb),0.06); overflow: hidden; margin-bottom: 12px; }
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid rgba(var(--fg-rgb),0.04); }
     .list-item:last-child { border-bottom: none; }
-    .check-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); background: none; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; -webkit-tap-highlight-color: transparent; font-size: 12px; font-weight: 700; color: white; }
+    .check-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(var(--fg-rgb),0.2); background: none; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; -webkit-tap-highlight-color: transparent; font-size: 12px; font-weight: 700; color: white; }
     .check-btn.done { background: var(--success); border-color: var(--success); }
     .list-label { flex: 1; font-size: 15px; line-height: 1.4; transition: color 0.15s; }
     .list-label.done { text-decoration: line-through; color: var(--text-muted); }
     .del-btn { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px 6px; -webkit-tap-highlight-color: transparent; opacity: 0.35; transition: opacity 0.15s; line-height: 1; }
     .del-btn:active { opacity: 1; color: var(--urgent); }
-    .list-add-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .list-add-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid rgba(var(--fg-rgb),0.06); }
     .list-add-input { flex: 1; background: none; border: none; color: var(--text); font-size: 15px; outline: none; font-family: inherit; min-width: 0; }
     .list-add-input::placeholder { color: var(--text-muted); }
     .list-add-btn { background: var(--accent); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
@@ -378,7 +426,7 @@
     /* ── EMPTY / LOADING ── */
     .empty-state { padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 14px; }
     .empty-icon  { font-size: 36px; margin-bottom: 10px; }
-    .spinner { width: 26px; height: 26px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+    .spinner { width: 26px; height: 26px; border: 3px solid rgba(var(--fg-rgb),0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── DINNER MODAL ── */
@@ -388,9 +436,8 @@
     .modal-box.recipe-modal-box { width: min(92vw, 640px) !important; max-width: min(92vw, 640px) !important; }
     @media (orientation: landscape) { .modal-box.recipe-modal-box { width: min(92vw, 900px) !important; max-width: min(92vw, 900px) !important; } }
     .modal-box-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
-    .modal-field { width: 100%; background: #0a1220; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 13px 14px; color: var(--text); font-size: 16px; font-family: inherit; outline: none; margin-bottom: 16px; transition: border-color 0.15s; }
+    .modal-field { width: 100%; background: var(--input-bg); border: 1px solid rgba(var(--fg-rgb),0.12); border-radius: 10px; padding: 13px 14px; color: var(--text); font-size: 16px; font-family: inherit; outline: none; margin-bottom: 16px; transition: border-color 0.15s; }
     .modal-field:focus { border-color: var(--accent); }
-    body.light .modal-field { background: #fff; border-color: rgba(0,0,0,0.15); }
     .modal-btns { display: flex; gap: 10px; }
     .btn-primary   { flex: 1; background: var(--accent); border: none; color: white; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
     .btn-secondary { flex: 1; background: var(--surface2); border: none; color: var(--text-muted); padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
@@ -401,19 +448,19 @@
     .sheet-overlay.open { display: flex; }
     .sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 0 0 env(safe-area-inset-bottom); width: 100%; max-width: 600px; margin: 0 auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); max-height: 90vh; overflow-y: auto; }
     .sheet-overlay.open .sheet { transform: translateY(0); }
-    .sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 12px auto 0; }
+    .sheet-handle { width: 36px; height: 4px; background: rgba(var(--fg-rgb),0.2); border-radius: 2px; margin: 12px auto 0; }
     .sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; }
     .sheet-title  { font-size: 18px; font-weight: 700; }
-    .sheet-close  { background: rgba(255,255,255,0.1); border: none; color: var(--text); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .sheet-close  { background: rgba(var(--fg-rgb),0.1); border: none; color: var(--text); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .sheet-body   { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; }
     .field-label  { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .field-input  { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .field-input  { width: 100%; background: var(--input-bg); border: 1px solid rgba(var(--fg-rgb),0.1); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.15s; }
     .field-input:focus { border-color: var(--accent); }
     .field-row    { display: flex; gap: 10px; }
     .field-row > div { flex: 1; }
     .allday-row   { display: flex; align-items: center; gap: 10px; }
     .allday-row label { font-size: 14px; color: var(--text-muted); cursor: pointer; }
-    .toggle       { width: 44px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; border: none; }
+    .toggle       { width: 44px; height: 26px; background: rgba(var(--fg-rgb),0.1); border-radius: 13px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; border: none; }
     .toggle.on    { background: var(--accent); }
     .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: left 0.2s; }
     .toggle.on::after { left: 21px; }
@@ -426,7 +473,7 @@
     .sheet-status.error { color: var(--urgent); }
 
     /* ── CALENDAR VOICE OVERLAY ── */
-    #voice-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
+    #voice-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(var(--bg-rgb),0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
     #voice-overlay.open { display: flex; }
     .voice-date-label { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; letter-spacing: 0.3px; }
     .voice-pulse-wrap { position: relative; width: 110px; height: 110px; margin: 0 auto 24px; }
@@ -436,10 +483,10 @@
     @keyframes vring { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
     .voice-mic-btn { position: absolute; inset: 0; margin: auto; width: 74px; height: 74px; border-radius: 50%; background: var(--accent); border: none; font-size: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(59,130,246,0.5); }
     .voice-status { font-size: 16px; font-weight: 600; margin-bottom: 8px; min-height: 24px; }
-    .voice-transcript-box { background: var(--surface); border-radius: 12px; padding: 14px 18px; margin: 12px 0 20px; font-size: 15px; line-height: 1.5; min-height: 52px; max-width: 380px; width: 100%; color: var(--text); border: 1px solid rgba(255,255,255,0.08); }
+    .voice-transcript-box { background: var(--surface); border-radius: 12px; padding: 14px 18px; margin: 12px 0 20px; font-size: 15px; line-height: 1.5; min-height: 52px; max-width: 380px; width: 100%; color: var(--text); border: 1px solid rgba(var(--fg-rgb),0.08); }
     .voice-transcript-box.empty { color: var(--text-muted); font-style: italic; }
-    .voice-confirm-card { background: var(--surface); border-radius: 14px; padding: 16px; margin: 0 0 20px; max-width: 380px; width: 100%; border: 1px solid rgba(255,255,255,0.08); text-align: left; }
-    .vc-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .voice-confirm-card { background: var(--surface); border-radius: 14px; padding: 16px; margin: 0 0 20px; max-width: 380px; width: 100%; border: 1px solid rgba(var(--fg-rgb),0.08); text-align: left; }
+    .vc-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(var(--fg-rgb),0.05); }
     .vc-row:last-child { border-bottom: none; }
     .vc-icon  { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
     .vc-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
@@ -454,7 +501,7 @@
     .kroger-cart-item-price { color:var(--success); font-size:12px; min-width:48px; text-align:right; font-weight:600; }
     .kroger-cart-total { display:flex; justify-content:space-between; padding:10px 0 0; font-weight:700; color:var(--text); font-size:14px; border-top:2px solid var(--surface2); margin-top:4px; }
     /* ── KROGER OVERLAY ── */
-    #kroger-overlay { position: fixed; inset: 0; z-index: 950; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
+    #kroger-overlay { position: fixed; inset: 0; z-index: 950; background: rgba(var(--bg-rgb),0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
     #kroger-overlay.open { display: flex; }
     .kroger-logo { font-size: 48px; margin-bottom: 12px; }
     .kroger-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
@@ -470,7 +517,7 @@
     .kroger-btn-primary { background: #2055b7; color: #fff; }
     .kroger-btn-close { background: var(--surface2); color: var(--text); }
     /* ── GROCERY VOICE OVERLAY ── */
-    #grocery-voice { position: fixed; inset: 0; z-index: 900; background: rgba(10,15,30,0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
+    #grocery-voice { position: fixed; inset: 0; z-index: 900; background: rgba(var(--bg-rgb),0.97); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
     #grocery-voice.open { display: flex; }
     .gv-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
     .gv-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
@@ -492,22 +539,22 @@
     /* ── DRAG GHOST ── */
     /* Home dinner bar */
     .home-dinner-bar { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:28px 28px calc(var(--nav-h) + env(safe-area-inset-bottom) + 28px); background:linear-gradient(180deg,#0d1a2e,#091220); border-top:2px solid rgba(16,185,129,0.2); cursor:pointer; -webkit-tap-highlight-color:transparent; }
-    .home-dinner-bar:active { background:#091220; }
+    .home-dinner-bar:active { background:var(--surface2); }
     /* ── COOK MODE ── */
-    #cook-overlay { position: fixed; inset: 0; z-index: 600; background: #060d18; display: none; flex-direction: column; }
+    #cook-overlay { position: fixed; inset: 0; z-index: 600; background: var(--bg); display: none; flex-direction: column; }
     #cook-overlay.open { display: flex; }
-    #cook-header { flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 14px) 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); background: #0c1525; }
-    #cook-close { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 15px; font-weight: 700; padding: 8px 14px; border-radius: 10px; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+    #cook-header { flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 14px) 20px 14px; border-bottom: 1px solid rgba(var(--fg-rgb),0.08); background: #0c1525; }
+    #cook-close { background: rgba(var(--fg-rgb),0.07); border: 1px solid rgba(var(--fg-rgb),0.1); color: var(--text-muted); font-size: 15px; font-weight: 700; padding: 8px 14px; border-radius: 10px; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
     #cook-meal-name { flex: 1; font-size: 18px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #cook-step-counter { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 8px; }
+    #cook-step-counter { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text-muted); background: rgba(var(--fg-rgb),0.06); padding: 4px 10px; border-radius: 8px; }
     #cook-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 28px 20px; display: flex; flex-direction: column; }
     #cook-page-title { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; flex-shrink: 0; }
     #cook-page-content { flex: 1; }
     /* Ingredients page */
     .cook-ing-list { display: flex; flex-direction: column; gap: 10px; }
-    .cook-ing-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface); border-radius: 14px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.15s; }
+    .cook-ing-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface); border-radius: 14px; border: 1px solid rgba(var(--fg-rgb),0.07); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.15s; }
     .cook-ing-item.checked { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
-    .cook-ing-check { width: 26px; height: 26px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: background 0.15s, border-color 0.15s; }
+    .cook-ing-check { width: 26px; height: 26px; border-radius: 8px; border: 2px solid rgba(var(--fg-rgb),0.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: background 0.15s, border-color 0.15s; }
     .cook-ing-item.checked .cook-ing-check { background: var(--success); border-color: var(--success); }
     .cook-ing-text { font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.3; }
     .cook-ing-item.checked .cook-ing-text { color: var(--text-muted); text-decoration: line-through; }
@@ -515,13 +562,13 @@
     .cook-step-num { font-size: 64px; font-weight: 900; color: rgba(59,130,246,0.15); line-height: 1; margin-bottom: 14px; }
     .cook-step-text { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1.55; }
     /* Footer */
-    #cook-footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px calc(env(safe-area-inset-bottom) + 16px); border-top: 1px solid rgba(255,255,255,0.08); background: #0c1525; gap: 16px; }
+    #cook-footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px calc(env(safe-area-inset-bottom) + 16px); border-top: 1px solid rgba(var(--fg-rgb),0.08); background: #0c1525; gap: 16px; }
     #cook-prev, #cook-next { font-size: 17px; font-weight: 800; padding: 14px 28px; border-radius: 14px; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s, background 0.15s; }
     #cook-prev { background: var(--surface2); color: var(--text-muted); }
     #cook-next { background: var(--accent); color: #fff; }
     #cook-prev:disabled, #cook-next:disabled { opacity: 0.25; cursor: default; }
     #cook-dots { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; justify-content: center; }
-    .cook-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.18); transition: background 0.2s, transform 0.2s; flex-shrink: 0; }
+    .cook-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(var(--fg-rgb),0.18); transition: background 0.2s, transform 0.2s; flex-shrink: 0; }
     .cook-dot.active { background: var(--accent); transform: scale(1.4); }
     @media (min-width: 960px) {
       #cook-body { padding: 40px 60px 30px; }
@@ -710,18 +757,18 @@
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Leave empty to allow all recipes</div>
     <div style="position:relative;margin-bottom:8px">
       <input id="fill-include-search" type="text" placeholder="Search tags to include…" autocomplete="off"
-        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"
         oninput="renderFillTagDropdown('include')" onfocus="renderFillTagDropdown('include')" onblur="setTimeout(()=>hideFillDropdown('include'),150)">
-      <div id="fill-include-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+      <div id="fill-include-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
     </div>
     <div id="fill-include-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:20px;margin-bottom:18px"></div>
 
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#f87171;margin-bottom:4px">🚫 Exclude — never use recipes with these tags</div>
     <div style="position:relative;margin-bottom:8px">
       <input id="fill-exclude-search" type="text" placeholder="Search tags to exclude…" autocomplete="off"
-        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"
         oninput="renderFillTagDropdown('exclude')" onfocus="renderFillTagDropdown('exclude')" onblur="setTimeout(()=>hideFillDropdown('exclude'),150)">
-      <div id="fill-exclude-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+      <div id="fill-exclude-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
     </div>
     <div id="fill-exclude-chips" style="display:flex;flex-wrap:wrap;gap:5px;min-height:20px;margin-bottom:18px"></div>
 
@@ -772,7 +819,7 @@
       <div id="meal-entree-area" style="margin-bottom:18px"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div class="recipe-section-label" style="margin-bottom:0">Sides</div>
-        <button onclick="openSwapRecipeMode('side')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;cursor:pointer">+ Add Side</button>
+        <button onclick="openSwapRecipeMode('side')" style="background:none;border:1px solid rgba(var(--fg-rgb),0.15);color:var(--text-muted);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;cursor:pointer">+ Add Side</button>
       </div>
       <div id="meal-sides-area" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px"></div>
       <div class="modal-btns">
@@ -824,7 +871,7 @@
             <div class="recipe-section-label" style="margin-bottom:0">Ingredients</div>
             <div style="display:flex;gap:6px">
               <button onclick="selectAllIngredients(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px">All</button>
-              <button onclick="selectAllIngredients(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px">None</button>
+              <button onclick="selectAllIngredients(false)" style="background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.1);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px">None</button>
             </div>
           </div>
           <div id="recipe-view-ingredients"></div>
@@ -942,11 +989,11 @@
       <div>
         <div class="field-label">Invite</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-          <label style="display:flex;align-items:center;gap:7px;background:#0f172a;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 13px;cursor:pointer;transition:border-color 0.15s" id="attendee-label-chauncey">
+          <label style="display:flex;align-items:center;gap:7px;background:var(--input-bg);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:9px 13px;cursor:pointer;transition:border-color 0.15s" id="attendee-label-chauncey">
             <input type="checkbox" id="attendee-chauncey" value="chaunceyhoyt@gmail.com" checked style="accent-color:var(--accent);width:16px;height:16px;flex-shrink:0">
             <span style="font-size:14px;color:var(--text)">🏠 Chauncey <span style="font-size:12px;color:var(--text-muted)">chaunceyhoyt@gmail.com</span></span>
           </label>
-          <label style="display:flex;align-items:center;gap:7px;background:#0f172a;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 13px;cursor:pointer;transition:border-color 0.15s" id="attendee-label-brit">
+          <label style="display:flex;align-items:center;gap:7px;background:var(--input-bg);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:9px 13px;cursor:pointer;transition:border-color 0.15s" id="attendee-label-brit">
             <input type="checkbox" id="attendee-brit" value="britmp11@gmail.com" checked style="accent-color:var(--accent);width:16px;height:16px;flex-shrink:0">
             <span style="font-size:14px;color:var(--text)">👩 Brit <span style="font-size:12px;color:var(--text-muted)">britmp11@gmail.com</span></span>
           </label>
@@ -1015,7 +1062,7 @@
     <div id="consolidate-uncertain-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
     <div style="display:flex;gap:8px;flex-shrink:0">
       <button onclick="applyConsolidation()" class="btn-primary" style="flex:1">Apply</button>
-      <button onclick="cancelConsolidation()" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text);border-radius:10px;padding:10px;font-size:14px;font-weight:600;cursor:pointer">Cancel</button>
+      <button onclick="cancelConsolidation()" style="flex:1;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.1);color:var(--text);border-radius:10px;padding:10px;font-size:14px;font-weight:600;cursor:pointer">Cancel</button>
     </div>
   </div>
 </div>
@@ -1188,10 +1235,10 @@
       <button onclick="closeManualListingModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <input id="ml-title" type="text" placeholder="Title *" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <input id="ml-title" type="text" placeholder="Title *" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <input id="ml-price" type="text" placeholder="Price (e.g. $1,200)" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
-        <select id="ml-category" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+        <input id="ml-price" type="text" placeholder="Price (e.g. $1,200)" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+        <select id="ml-category" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
           <option value="car">🚗 Car</option>
           <option value="furniture">🪑 Furniture</option>
           <option value="electronics">📱 Electronics</option>
@@ -1200,10 +1247,10 @@
           <option value="other" selected>🏷️ Other</option>
         </select>
       </div>
-      <input id="ml-location" type="text" placeholder="Location" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
-      <input id="ml-source" type="text" placeholder="Source (e.g. Facebook Marketplace)" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
-      <input id="ml-url" type="url" placeholder="Link URL" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
-      <textarea id="ml-summary" placeholder="Notes / description" rows="3" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
+      <input id="ml-location" type="text" placeholder="Location" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <input id="ml-source" type="text" placeholder="Source (e.g. Facebook Marketplace)" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <input id="ml-url" type="url" placeholder="Link URL" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box">
+      <textarea id="ml-summary" placeholder="Notes / description" rows="3" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
     </div>
     <button onclick="confirmManualListing()" class="btn-primary" style="width:100%;margin-top:16px">Add to Finds</button>
   </div>
@@ -1572,7 +1619,7 @@ function showUndo(message, onUndo) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'undo-toast';
-    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);z-index:2000;display:none;align-items:center;gap:14px;background:#1e293b;color:#f1f5f9;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:10px 12px 10px 16px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:calc(100vw - 32px)';
+    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);z-index:2000;display:none;align-items:center;gap:14px;background:#1e293b;color:#f1f5f9;border:1px solid rgba(var(--fg-rgb),0.12);border-radius:12px;padding:10px 12px 10px 16px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:calc(100vw - 32px)';
     document.body.appendChild(el);
   }
   el.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button style="background:none;border:none;color:#60a5fa;font-weight:800;font-size:14px;cursor:pointer;padding:4px 6px">Undo</button>';
@@ -1895,13 +1942,13 @@ async function openWeatherModal(dateStr, dayIdx) {
             <div><span style="color:var(--text-muted)">Sky</span><div style="font-weight:700;margin-top:2px">${WMO_DESC[w?.code]||'–'}</div></div>
           </div>
           ${uvWarn?`<div style="font-size:12px;color:#fbbf24;margin-top:10px">⚠️ High UV — apply SPF 50+ and reapply every 2 hours</div>`:''}
-          ${tides.length ? `<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.07);padding-top:10px">
+          ${tides.length ? `<div style="margin-top:10px;border-top:1px solid rgba(var(--fg-rgb),0.07);padding-top:10px">
             <div style="font-size:11px;font-weight:700;color:#6ee7b7;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🌊 Tides</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px">
               ${tides.map(t => {
                 const time = new Date('2000-01-01T'+t.t.split(' ')[1]).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
                 const isHigh = t.type === 'H';
-                return `<div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:6px 10px;font-size:12px;text-align:center">
+                return `<div style="background:rgba(var(--fg-rgb),0.06);border-radius:8px;padding:6px 10px;font-size:12px;text-align:center">
                   <div style="font-weight:700;color:${isHigh?'#93c5fd':'#94a3b8'}">${isHigh?'▲ High':'▼ Low'}</div>
                   <div style="font-weight:600;margin:2px 0">${time}</div>
                   <div style="color:var(--text-muted)">${parseFloat(t.v).toFixed(1)} ft</div>
@@ -2308,7 +2355,7 @@ function renderFillWeekModal() {
         note +
       '</div>' +
       '<button onclick="approveFillDay(' + i + ')" style="background:rgba(22,101,52,0.15);border:1px solid rgba(22,101,52,0.35);border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0" title="Confirm this meal">✓</button>' +
-      '<button onclick="randomizeFillDay(' + i + ')" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0" title="Randomize">🎲</button>' +
+      '<button onclick="randomizeFillDay(' + i + ')" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;flex-shrink:0" title="Randomize">🎲</button>' +
     '</div>';
   }).join('');
 }
@@ -2372,7 +2419,7 @@ function renderFillTagDropdown(type) {
   dropdown.style.display = '';
   dropdown.innerHTML = matches.map(tag => {
     const safe = jsq(tag);
-    return `<div onmousedown="addFillTag('${safe}','${type}')" style="padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${escHtml(tag)}</div>`;
+    return `<div onmousedown="addFillTag('${safe}','${type}')" style="padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(var(--fg-rgb),0.06)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${escHtml(tag)}</div>`;
   }).join('');
 }
 
@@ -2697,7 +2744,7 @@ function openMealMode() {
         <span onclick="openRecipeFromMeal('${safeMain}',false,-1)" style="padding:8px 14px;font-size:14px;font-weight:700;color:#6ee7b7;cursor:pointer;flex:1">${main}</span>
         <button onclick="openSwapRecipeMode('main')" style="background:none;border:none;border-left:1px solid rgba(16,185,129,0.3);color:rgba(110,231,183,0.7);cursor:pointer;font-size:12px;padding:8px 12px;white-space:nowrap">🔄 Swap</button>
       </div>`
-    : `<button onclick="openSwapRecipeMode('main')" style="background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.2);color:var(--text-muted);font-size:13px;padding:8px 18px;border-radius:12px;cursor:pointer">+ Choose Entrée</button>`;
+    : `<button onclick="openSwapRecipeMode('main')" style="background:rgba(var(--fg-rgb),0.06);border:1px dashed rgba(var(--fg-rgb),0.2);color:var(--text-muted);font-size:13px;padding:8px 18px;border-radius:12px;cursor:pointer">+ Choose Entrée</button>`;
 
   // Side chips
   const sidesEl = document.getElementById('meal-sides-area');
@@ -3335,9 +3382,9 @@ function renderHome() {
     '</div>';
 
   const homeCalBtns = gcalToken
-    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
-      '<button onclick="signOutCalendar()" title="Sign out" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
-    : '<button onclick="signIn()" title="Sign in" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
+    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(var(--fg-rgb),0.06);border:1px solid rgba(var(--fg-rgb),0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
+      '<button onclick="signOutCalendar()" title="Sign out" style="background:rgba(var(--fg-rgb),0.06);border:1px solid rgba(var(--fg-rgb),0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
+    : '<button onclick="signIn()" title="Sign in" style="background:rgba(var(--fg-rgb),0.06);border:1px solid rgba(var(--fg-rgb),0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
 
   const now = new Date();
   const dateTimeLabel = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) +
@@ -3409,8 +3456,8 @@ function renderHome() {
       dRail.style.transform = 'translateX(-' + (idx * 50) + '%)';
       const d0 = document.getElementById('dinner-dot-0');
       const d1 = document.getElementById('dinner-dot-1');
-      if (d0) d0.style.background = idx === 0 ? 'rgba(110,231,183,0.9)' : 'rgba(255,255,255,0.25)';
-      if (d1) d1.style.background = idx === 1 ? 'rgba(110,231,183,0.9)' : 'rgba(255,255,255,0.25)';
+      if (d0) d0.style.background = idx === 0 ? 'rgba(110,231,183,0.9)' : 'rgba(var(--fg-rgb),0.25)';
+      if (d1) d1.style.background = idx === 1 ? 'rgba(110,231,183,0.9)' : 'rgba(var(--fg-rgb),0.25)';
     }
     switchDinnerSlide(dSlide);
     let dTouchX = null;
@@ -3456,7 +3503,7 @@ function renderSchedule() {
           : d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
         header = `<div style="display:flex;align-items:center;gap:8px;margin:12px 0 6px">
           <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:${dayIso === todayIso ? 'var(--accent)' : 'var(--text-muted)'}">${label}</span>
-          <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+          <div style="flex:1;height:1px;background:rgba(var(--fg-rgb),0.08)"></div>
         </div>`;
       }
       return header + `<a class="ev-card" href="${escHtml(link)}" target="_blank">
@@ -3504,9 +3551,9 @@ function renderSchedule() {
   }
 
   const calBtns = gcalToken
-    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
-      '<button onclick="signOutCalendar()" title="Sign out" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
-    : '<button onclick="signIn()" title="Sign in" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
+    ? '<button onclick="reloadCalendar()" title="Reload" style="background:rgba(var(--fg-rgb),0.06);border:1px solid rgba(var(--fg-rgb),0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">↺</button>' +
+      '<button onclick="signOutCalendar()" title="Sign out" style="background:rgba(var(--fg-rgb),0.06);border:1px solid rgba(var(--fg-rgb),0.1);color:#94a3b8;font-size:13px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>'
+    : '<button onclick="signIn()" title="Sign in" style="background:rgba(var(--fg-rgb),0.06);border:1px solid rgba(var(--fg-rgb),0.1);color:#94a3b8;font-size:15px;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🔑</button>';
 
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
 
@@ -3638,9 +3685,9 @@ function renderDiscover() {
   const listingsHeader =
     '<div style="display:flex;align-items:center;gap:8px;padding:0 0 8px;flex-shrink:0">' +
       '<input id="listing-search-input" type="text" placeholder="Search anything — cars, furniture…" ' +
-        'style="flex:1;min-width:0;background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text);outline:none" ' +
+        'style="flex:1;min-width:0;background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text);outline:none" ' +
         'onkeydown="if(event.key===\'Enter\')runListingSearch()" />' +
-      '<select id="listing-search-radius" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 6px;font-size:12px;color:var(--text-muted);font-weight:600;outline:none;cursor:pointer;flex-shrink:0">' +
+      '<select id="listing-search-radius" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:10px;padding:8px 6px;font-size:12px;color:var(--text-muted);font-weight:600;outline:none;cursor:pointer;flex-shrink:0">' +
         '<option value="25">25 mi</option>' +
         '<option value="50">50 mi</option>' +
         '<option value="100" selected>100 mi</option>' +
@@ -3733,7 +3780,7 @@ function renderSearchHistory() {
   el.innerHTML = _searchHistory.map((h, i) => {
     const active = _activeHistoryIdx === i;
     return `<button id="hist-pill-${i}" data-idx="${i}"
-      style="flex-shrink:0;background:${active?'var(--accent)':'var(--surface)'};border:1px solid rgba(255,255,255,0.12);color:${active?'#fff':'var(--text-muted)'};border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none"
+      style="flex-shrink:0;background:${active?'var(--accent)':'var(--surface)'};border:1px solid rgba(var(--fg-rgb),0.12);color:${active?'#fff':'var(--text-muted)'};border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none"
       >${h.query}</button>`;
   }).join('');
 
@@ -3959,7 +4006,7 @@ function openListingModalFromItem(item) {
   if (specsEl) {
     const specs = item.specs && typeof item.specs === 'object' ? Object.entries(item.specs).filter(([,v]) => v) : [];
     specsEl.style.display = specs.length ? '' : 'none';
-    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${escHtml(v)}</span></div>`).join('');
+    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${escHtml(v)}</span></div>`).join('');
   }
   document.getElementById('listing-modal-pros').innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${escHtml(p)}</div>`).join('');
   document.getElementById('listing-modal-cons').innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${escHtml(c)}</div>`).join('');
@@ -3990,15 +4037,15 @@ function renderGrocery() {
     const tagChips = allTagsForFilter.map(tag => {
       const active = _groceryRecipeActiveTags.has(tag);
       const safeTag = jsq(tag);
-      return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(255,255,255,0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${escHtml(tag)}</button>`;
+      return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(var(--fg-rgb),0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${escHtml(tag)}</button>`;
     }).join('');
     const activeCount = _groceryRecipeActiveTags.size;
     const tagToggleLabel = _groceryTagsExpanded ? '🏷 Tags ▲' : `🏷 Tags${activeCount ? ' ('+activeCount+')' : ''} ▼`;
     tabContent = `<div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
-      <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;display:flex;flex-direction:column;gap:6px">
+      <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(var(--fg-rgb),0.07);flex-shrink:0;display:flex;flex-direction:column;gap:6px">
         <div style="display:flex;gap:6px;align-items:center">
-          <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
-          <button onclick="_groceryTagsExpanded=!_groceryTagsExpanded;renderGrocery()" style="flex-shrink:0;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid ${activeCount?'var(--accent)':'rgba(255,255,255,0.15)'};background:${activeCount?'rgba(59,130,246,0.15)':'var(--surface2)'};color:${activeCount?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:600">${tagToggleLabel}</button>
+          <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="flex:1;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
+          <button onclick="_groceryTagsExpanded=!_groceryTagsExpanded;renderGrocery()" style="flex-shrink:0;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid ${activeCount?'var(--accent)':'rgba(var(--fg-rgb),0.15)'};background:${activeCount?'rgba(59,130,246,0.15)':'var(--surface2)'};color:${activeCount?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:600">${tagToggleLabel}</button>
         </div>
         ${_groceryTagsExpanded ? `<div style="display:flex;flex-wrap:wrap;gap:5px">${tagChips}</div>` : ''}
       </div>
@@ -4021,15 +4068,15 @@ function renderGrocery() {
         '</div>' +
       '</div>' +
       '<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">' +
-        '<div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">' +
+        '<div style="padding:8px 8px 6px;border-bottom:1px solid rgba(var(--fg-rgb),0.07);flex-shrink:0">' +
           '<div style="display:flex;gap:6px;margin-bottom:8px">' +
-            '<input id="grocery-inline-input" type="text" placeholder="Add item…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addGroceryInline()">' +
+            '<input id="grocery-inline-input" type="text" placeholder="Add item…" style="flex:1;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addGroceryInline()">' +
             '<button onclick="addGroceryInline()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">Add</button>' +
             '<button class="list-mic-btn" onclick="openGroceryVoice()" title="Voice add" style="flex-shrink:0">🎤</button>' +
           '</div>' +
           '<div style="display:flex;gap:6px;align-items:center">' +
             '<button onclick="selectAllGrocery(true)" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:7px">All</button>' +
-            '<button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;font-size:11px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:7px">None</button>' +
+            '<button onclick="selectAllGrocery(false)" style="background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);color:#cbd5e1;font-size:11px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:7px">None</button>' +
             '<button onclick="clearSelectedGrocery()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:11px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:7px">Clear Done</button>' +
           '</div>' +
         '</div>' +
@@ -4113,9 +4160,9 @@ function buildPricesTab() {
       '</div>' +
     '</div>' +
     '<div class="card" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">' +
-      '<div style="padding:8px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">' +
+      '<div style="padding:8px 8px 6px;border-bottom:1px solid rgba(var(--fg-rgb),0.07);flex-shrink:0">' +
         '<div style="display:flex;gap:6px">' +
-          '<input id="price-watch-input" type="text" placeholder="Add product (searches Kroger)…" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addPriceWatchItem()">' +
+          '<input id="price-watch-input" type="text" placeholder="Add product (searches Kroger)…" style="flex:1;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" onkeydown="if(event.key===\'Enter\')addPriceWatchItem()">' +
           '<button onclick="addPriceWatchItem()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">Add</button>' +
         '</div>' +
         '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Last checked: ' + lastCheck + (_krogerStoreName ? ' · Kroger store: ' + escHtml(_krogerStoreName) : '') + ' · tap an item for price history</div>' +
@@ -4193,7 +4240,7 @@ function openPriceHistory(upc) {
     ? '<div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:4px;font-size:11px;color:var(--text-muted);padding:4px 2px;font-weight:700">' +
         '<span>Date</span><span>KR</span><span>WM</span><span>TG</span><span>HT</span></div>' +
       hist.slice(0, 30).map(h =>
-        '<div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:4px;font-size:12px;padding:5px 2px;border-top:1px solid rgba(255,255,255,0.05)">' +
+        '<div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:4px;font-size:12px;padding:5px 2px;border-top:1px solid rgba(var(--fg-rgb),0.05)">' +
           '<span style="color:var(--text-muted)">' + new Date(h.at).toLocaleDateString('en-US', { month:'short', day:'numeric' }) + '</span>' +
           ['kr','wm','tg','ht'].map(k => '<span style="color:var(--text)">' + (h[k] != null ? '$' + Number(h[k]).toFixed(2) : '—') + '</span>').join('') +
         '</div>').join('')
@@ -4445,7 +4492,7 @@ function renderGroceryRecipeList() {
     const items = groups[cat].map(name => {
       const r = recipesData[name] || {};
       const safeName = jsq(name);
-      return `<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05)">
+      return `<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid rgba(var(--fg-rgb),0.05)">
         <button onclick="toggleRecipeFavorite('${safeName}');renderGroceryRecipeList()" style="background:none;border:none;font-size:16px;cursor:pointer;padding:2px;flex-shrink:0">${r.favorited?'⭐':'☆'}</button>
         <span onclick="openFavRecipeView('${safeName}')" style="flex:1;font-size:13px;font-weight:600;cursor:pointer">${escHtml(name)}</span>
         ${r.favorited ? `<button onclick="addFavRecipeToGrocery('${safeName}')" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.4);background:rgba(16,185,129,0.15);color:#6ee7b7;cursor:pointer;font-weight:600;white-space:nowrap">+ List</button>` : ''}
@@ -4811,7 +4858,7 @@ function openDayView(dateStr) {
 
   const w = dayIdx >= 0 ? weatherDays[dayIdx] : null;
   const weatherHtml = w
-    ? `<div onclick="closeDayView();openWeatherModal('${dateStr}',${dayIdx})" style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;cursor:pointer;flex-shrink:0">
+    ? `<div onclick="closeDayView();openWeatherModal('${dateStr}',${dayIdx})" style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.07);border-radius:12px;padding:12px;cursor:pointer;flex-shrink:0">
         <span style="font-size:32px">${WMO_EMOJI[w.code]||'🌡️'}</span>
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text)">${w.high}° / ${w.low}°</div>
@@ -4833,7 +4880,7 @@ function openDayView(dateStr) {
       const link = ev.htmlLink || '#';
       const loc = ev.location ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">📍 ${escHtml(ev.location)}</div>` : '';
       const desc = ev.description ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">${escHtml(ev.description.replace(/<[^>]+>/g,'').trim())}</div>` : '';
-      return `<a href="${escHtml(link)}" target="_blank" style="display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;text-decoration:none;color:inherit">
+      return `<a href="${escHtml(link)}" target="_blank" style="display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.07);border-radius:12px;padding:12px;text-decoration:none;color:inherit">
         <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(160deg,${color}44,${color}22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${emoji}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(title)}</div>
@@ -5178,7 +5225,7 @@ function buildAssetDetail(a) {
     a.year ? ['Age', assetAgeLabel(a)] : null,
     a.notes ? ['Notes', a.notes] : null,
   ].filter(Boolean).map(r =>
-    '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+    '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.05)">' +
       '<span style="font-size:12px;color:var(--text-muted);width:100px;flex-shrink:0">' + r[0] + '</span>' +
       '<span style="font-size:13px;color:var(--text)">' + escHtml(r[1]) + '</span>' +
     '</div>'
@@ -5226,7 +5273,7 @@ function renderTasks() {
       return '<button onclick="setTaskPortraitTab(\'' + t.key + '\')" style="flex:1;padding:7px 8px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;background:' + (active ? 'var(--accent)' : 'transparent') + ';color:' + (active ? '#fff' : 'var(--text-muted)') + '">' + t.label + '</button>';
     }).join('') +
   '</div>';
-  const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
+  const lockBtn = '<button onclick="togglePinLock()" style="background:var(--surface);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0">' + (_pinUnlocked ? '🔓' : '🔒') + '</button>';
 
   let addBtn = '';
   if (_pinUnlocked && _taskPortraitTab === 'tasks') addBtn = '<div style="padding:0 12px 8px;flex-shrink:0"><button class="task-add-btn" onclick="openTaskAddModal()" style="width:100%;justify-content:center">+ Add Task</button></div>';
@@ -5507,7 +5554,7 @@ function openListingModal(idx) {
   if (specsEl) {
     const specs = item.specs && typeof item.specs === 'object' ? Object.entries(item.specs).filter(([,v]) => v) : [];
     specsEl.style.display = specs.length ? '' : 'none';
-    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${escHtml(v)}</span></div>`).join('');
+    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${escHtml(v)}</span></div>`).join('');
   }
   const prosEl = document.getElementById('listing-modal-pros');
   const consEl = document.getElementById('listing-modal-cons');
@@ -5708,6 +5755,9 @@ function applyScheme(idx, announce) {
   r.setProperty('--font', s.font
     ? "Georgia,'Palatino Linotype',Palatino,serif"
     : "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
+  r.setProperty('--fg-rgb', s.light ? '40,30,20' : '255,255,255');
+  r.setProperty('--bg-rgb', s.light ? '245,240,232' : '15,23,42');
+  r.setProperty('--input-bg', s.light ? '#fffdf9' : '#0a1220');
   document.body.style.background = s.bg;
   document.body.classList.toggle('light', !!s.light);
   // update theme-toggle button label
