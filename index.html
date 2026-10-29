@@ -179,8 +179,8 @@
     #strip-wrapper.expanded .day-more-indicator { display: none; }
     /* Dinner row — sits below weekly strip, always aligned */
     #dinner-row { flex-shrink: 0; display: flex; gap: 5px; background: linear-gradient(180deg, var(--header-bg-end, #111e35) 0%, var(--header-bg-start, #0d1a2e) 100%); padding: 4px 8px 6px; border-bottom: 1px solid rgba(var(--fg-rgb),0.07); }
-    #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery, #strip-wrapper.page-discover { display: none; }
-    #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery, #week-nav.page-discover { display: none; }
+    #strip-wrapper.page-home, #strip-wrapper.page-tasks, #strip-wrapper.page-grocery, #strip-wrapper.page-discover, #strip-wrapper.page-meals { display: none; }
+    #week-nav.page-home, #week-nav.page-tasks, #week-nav.page-grocery, #week-nav.page-discover, #week-nav.page-meals { display: none; }
     .dinner-row-cell { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; padding: 0 0; }
     #strip-toggle-btn { transition: transform 0.25s; }
     .day-ev-chip { font-size: 11px; padding: 4px 6px; border-radius: 5px; background: rgba(59,130,246,0.18); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; flex-shrink: 0; }
@@ -244,9 +244,12 @@
       .dinner-slot, .dinner-chip, .dinner-add-btn { min-height: 38px; }
       .dinner-chip { font-size: 11px; }
       .dinner-add-btn { height: 38px; font-size: 20px; }
-      /* Nav bar: icon only on very narrow */
-      .nav-btn span { display: none; }
-      .nav-btn { gap: 0; }
+      /* Nav bar: icon over a small label, no box borders (#bottom-nav beats the base .nav-btn rule) */
+      #bottom-nav { gap: 0; padding-left: 4px; padding-right: 4px; }
+      #bottom-nav .nav-btn { flex-direction: column; gap: 2px; border: none; border-radius: 12px; margin: 5px 1px; padding: 4px 0; font-size: 11px; font-weight: 700; min-width: 0; }
+      #bottom-nav .nav-btn span { display: block; }
+      #bottom-nav .nav-btn.active { background: rgba(59,130,246,0.12); }
+      #bottom-nav .nav-home-icon { font-size: 22px; }
     }
     /* Landscape: side-by-side, each column scrolls independently */
     @media (orientation: landscape) {
@@ -264,8 +267,8 @@
 
     /* ── CONTENT AREA ── */
     #content-area { flex: 1; overflow: hidden; position: relative; min-height: 0; }
-    #pages-rail { display: flex; flex-direction: row; width: 500%; height: 100%; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); will-change: transform; }
-    .page-panel { width: 20%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-shrink: 0; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); box-sizing: border-box; }
+    #pages-rail { display: flex; flex-direction: row; width: 600%; height: 100%; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); will-change: transform; }
+    .page-panel { width: calc(100% / 6); height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-shrink: 0; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); box-sizing: border-box; }
     .page-panel.panel-flex { overflow: hidden; padding: 0; display: flex; flex-direction: column; }
 
     /* ── BOTTOM NAV ── */
@@ -667,6 +670,34 @@
       .gv-chip { font-size: 16px; padding: 9px 16px; }
       .gv-confirm-btn, .gv-cancel-btn { font-size: 17px; padding: 16px; }
     }
+
+    /* ── PORTRAIT LAYOUT (phones held upright) ── */
+    @media (orientation: portrait) {
+      /* The Calendar uses the agenda list; the 7-column strip is landscape-only */
+      #strip-wrapper.page-schedule, #week-nav.page-schedule { display: none; }
+      /* Only Today shows the big date line; other pages start with their tabs */
+      #page-tasks .page-datetime-header, #page-grocery .page-datetime-header,
+      #page-schedule .page-datetime-header, #page-discover .page-datetime-header { display: none; }
+      #page-tasks, #page-grocery, #page-schedule, #page-discover, #page-meals { padding-top: calc(env(safe-area-inset-top) + 8px); }
+    }
+    /* Shared bits for the Today and Meals pages */
+    .sec-head { display: flex; align-items: center; justify-content: space-between; margin: 18px 2px 8px; }
+    .sec-head > span { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
+    .sec-link { background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 700; cursor: pointer; padding: 4px 2px; }
+    .chip-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(var(--fg-rgb),0.12); background: var(--surface); color: var(--text); border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .chip-btn:active { background: var(--surface2); }
+    .chip-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .meal-day { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid rgba(var(--fg-rgb),0.07); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .meal-day:active { background: var(--surface2); }
+    .meal-day.today { border-color: rgba(59,130,246,0.55); }
+    .meal-day-date { width: 44px; flex-shrink: 0; text-align: center; }
+    .meal-day-date b { display: block; font-size: 22px; line-height: 1.1; color: var(--text); }
+    .meal-day-date small { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+    .meal-day.today .meal-day-date b, .meal-day.today .meal-day-date small { color: var(--accent); }
+    .meal-day-name { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+    .meal-day-name.empty { color: var(--text-muted); font-weight: 600; }
+    .meal-day-sides { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .today-card { background: var(--surface); border: 1px solid rgba(var(--fg-rgb),0.07); border-radius: 16px; padding: 14px; }
   </style>
 </head>
 <body>
@@ -708,25 +739,25 @@
       <div class="page-panel" id="page-tasks"></div>
       <div class="page-panel" id="page-grocery"></div>
       <div class="page-panel" id="page-discover"></div>
+      <div class="page-panel" id="page-meals"></div>
     </div>
   </div>
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
-      <div class="nav-home-icon">☀️</div><span>Today</span>
+      <div class="nav-home-icon">🏠</div><span>Today</span>
+    </button>
+    <button class="nav-btn" id="nav-meals" onclick="showPage('meals')">
+      <div class="nav-home-icon">🍽️</div><span>Meals</span>
+    </button>
+    <button class="nav-btn" id="nav-grocery" onclick="showPage('grocery')">
+      <div class="nav-home-icon">🛒</div><span>Shop</span>
     </button>
     <button class="nav-btn" id="nav-schedule" onclick="showPage('schedule')">
-      <div class="nav-home-icon">📅</div><span>Week</span>
+      <div class="nav-home-icon">📅</div><span>Calendar</span>
     </button>
     <button class="nav-btn" id="nav-tasks" onclick="showPage('tasks')">
       <div class="nav-home-icon">✅</div><span>Tasks</span>
     </button>
-    <button class="nav-btn" id="nav-grocery" onclick="showPage('grocery')">
-      <div class="nav-home-icon">🛒</div><span>Grocery</span>
-    </button>
-    <button class="nav-btn" id="nav-discover" onclick="showPage('discover')">
-      <div class="nav-home-icon">🔍</div><span>Discover</span>
-    </button>
-    <button id="theme-toggle-btn" onclick="cycleTheme()" style="flex:0 0 auto;width:48px;background:none;border:1px solid rgba(128,128,128,0.2);border-radius:12px;margin:6px 0;font-size:22px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:background 0.15s">☀️</button>
   </div>
 </div>
 
@@ -2001,6 +2032,7 @@ async function fetchUpcomingFamilyEvents(token) {
 
 // ── WEEKLY STRIP ──────────────────────────────────────────────────────────────
 function renderStrip() {
+  if (currentPage === 'meals') renderMeals();
   const strip = document.getElementById('weekly-strip');
   const dinnerRow = document.getElementById('dinner-row');
   const todayIdx = weekDays.findIndex(d => isToday(d));
@@ -2544,7 +2576,7 @@ function toggleRecipeFavorite(name) {
   recipesData[name].favorited = !recipesData[name].favorited;
   saveFamilyData('recipes', recipesData);
   renderSwapList();
-  if (currentPage === 'grocery') renderGroceryRecipeList();
+  if (document.getElementById('grocery-recipe-list')) renderGroceryRecipeList();
 }
 
 // ── Recipe scale & vegetarian state ─────────────────────────────────────────
@@ -3267,31 +3299,117 @@ async function addDinnerIngredientsToGrocery() {
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
-const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3, discover: 4 };
-
+const PAGE_INDEX = { home: 0, schedule: 1, tasks: 2, grocery: 3, discover: 4, meals: 5 };
 function showPage(page) {
+  if (!(page in PAGE_INDEX)) page = 'home';
   currentPage = page;
   localStorage.setItem('lastPage', page);
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id==='nav-'+page));
-  const hideStrip = page === 'home' || page === 'tasks' || page === 'grocery' || page === 'discover';
+  // Discover lives under the Calendar tab
+  const navPage = page === 'discover' ? 'schedule' : page;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id === 'nav-' + navPage));
+  // CSS decides per page (and orientation) whether the week strip shows
   ['strip-wrapper', 'week-nav'].forEach(id => {
     const el = document.getElementById(id);
-    ['page-home','page-tasks','page-grocery','page-discover'].forEach(c => el.classList.remove(c));
-    if (hideStrip) el.classList.add('page-' + page);
+    Object.keys(PAGE_INDEX).forEach(p => el.classList.remove('page-' + p));
+    el.classList.add('page-' + page);
   });
   // Slide rail to the correct panel
-  const idx = PAGE_INDEX[page] ?? 0;
-  document.getElementById('pages-rail').style.transform = 'translateX(-' + (idx * 20) + '%)';
+  const idx = PAGE_INDEX[page];
+  document.getElementById('pages-rail').style.transform = 'translateX(-' + (idx * 100 / 6) + '%)';
   // panel-flex controls overflow:hidden needed for home/schedule/discover column layouts
   document.getElementById('page-home').classList.toggle('panel-flex', true);
   document.getElementById('page-schedule').classList.toggle('panel-flex', true);
   document.getElementById('page-discover').classList.toggle('panel-flex', true);
   // Re-render on navigation so async-loaded data (localEvents, etc.) is always fresh
-  if (page === 'schedule') renderSchedule();
-  else if (page === 'home') renderHome();
-  else if (page === 'grocery') renderGrocery();
-  else if (page === 'tasks') { renderTasks(); }
-  else if (page === 'discover') renderDiscover();
+  reRenderCurrentPage();
+}
+
+// ── SETTINGS SHEET ────────────────────────────────────────────────────────────
+function openSettings() {
+  let dim = document.getElementById('settings-dim');
+  if (!dim) {
+    dim = document.createElement('div');
+    dim.className = 'dim'; dim.id = 'settings-dim';
+    dim.onclick = e => { if (e.target === dim) dim.classList.remove('open'); };
+    document.body.appendChild(dim);
+  }
+  const themes = COLOR_SCHEMES.map((sc, i) =>
+    '<button class="chip-btn' + (i === currentSchemeIdx ? ' primary' : '') + '" style="justify-content:center" onclick="currentSchemeIdx=' + i + ';localStorage.setItem(\'colorScheme\',' + i + ');applyScheme(' + i + ');openSettings()">' + escHtml(sc.name) + '</button>').join('');
+  const cal = gcalToken
+    ? '<button class="chip-btn" onclick="reloadCalendar()">↺ Reload calendar</button><button class="chip-btn" onclick="signOutCalendar();openSettings()">Sign out of Google Calendar</button>'
+    : '<button class="chip-btn primary" onclick="signIn()">🔑 Connect Google Calendar</button>';
+  dim.innerHTML = '<div class="modal-box" style="max-width:380px">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="modal-box-title" style="margin:0">Settings</div>' +
+    '<button onclick="document.getElementById(\'settings-dim\').classList.remove(\'open\')" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;line-height:1">×</button></div>' +
+    '<div class="sec-head" style="margin-top:0"><span>Theme</span></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + themes + '</div>' +
+    '<div class="sec-head"><span>Calendar</span></div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' + cal + '</div>' +
+  '</div>';
+  dim.classList.add('open');
+}
+
+// ── MEALS PAGE ────────────────────────────────────────────────────────────────
+// Week of dinners (follows the same week as the Calendar), plan tools, and the
+// recipe browser.
+let _mealsTab = localStorage.getItem('mealsTab') || 'plan';
+function setMealsTab(tab) { _mealsTab = tab; localStorage.setItem('mealsTab', tab); renderMeals(); }
+
+// Plan entries can be long notes ("Eat Out — Place (details), address — https://…");
+// show the readable part: drop links and the parenthetical/address tail
+function mealDisplayName(main) {
+  let t = String(main || '').replace(/https?:\/\/\S+/g, '').replace(/\s+—\s*$/, '').trim();
+  if (t.includes(' — ')) t = t.replace(/\s*\([^)]*\).*$/, '').trim() || t; // only for 'Eat Out — …' style notes
+  return t;
+}
+
+function renderMeals() {
+  const el = document.getElementById('page-meals');
+  if (!el) return;
+  const pills = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;margin-bottom:12px">' +
+    [['plan', '📅 This week'], ['recipes', '📖 Recipes']].map(([k, label]) =>
+      '<button onclick="setMealsTab(\'' + k + '\')" style="flex:1;padding:8px 12px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (_mealsTab === k ? 'var(--accent)' : 'transparent') + ';color:' + (_mealsTab === k ? '#fff' : 'var(--text-muted)') + '">' + label + '</button>').join('') +
+  '</div>';
+
+  if (_mealsTab === 'recipes') {
+    el.innerHTML = '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' + pills +
+      buildRecipeBrowser() + '</div>';
+    renderGroceryRecipeList();
+    return;
+  }
+
+  const days = weekDays.map(d => {
+    const iso = isoDate(d);
+    const entry = getDinnerEntry(iso);
+    const sides = entry.sides && entry.sides.length ? '<div class="meal-day-sides">+ ' + entry.sides.map(escHtml).join(', ') + '</div>' : '';
+    const tap = entry.main
+      ? 'openRecipeModal(\'' + iso + '\',\'' + jsq(entry.main) + '\')'
+      : 'openChooseRecipeForDate(\'' + iso + '\')';
+    return '<div class="meal-day' + (isToday(d) ? ' today' : '') + '" onclick="' + tap + '">' +
+      '<div class="meal-day-date"><small>' + DAY_NAMES_SHORT[d.getDay()] + '</small><b>' + d.getDate() + '</b></div>' +
+      '<div style="flex:1;min-width:0">' +
+        (entry.main
+          ? '<div class="meal-day-name">' + escHtml(mealDisplayName(entry.main)) + '</div>' + sides
+          : '<div class="meal-day-name empty">+ Plan dinner</div>') +
+      '</div>' +
+      (entry.main ? '<span style="color:var(--text-muted);font-size:18px">›</span>' : '') +
+    '</div>';
+  }).join('');
+
+  const planned = weekDays.filter(d => getDinnerEntry(isoDate(d)).main).length;
+  el.innerHTML = pills +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
+      '<button class="week-nav-arrow" onclick="changeWeek(-1)" aria-label="Previous week">‹</button>' +
+      '<div style="flex:1;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--text)">' + weekLabel() + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted)">' + planned + ' of 7 dinners planned</div></div>' +
+      '<button class="week-nav-arrow" onclick="changeWeek(1)" aria-label="Next week">›</button>' +
+    '</div>' +
+    (weekOffset !== 0 ? '<div style="text-align:center;margin:-4px 0 8px"><button class="sec-link" onclick="jumpToToday()">Back to this week</button></div>' : '') +
+    '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
+      '<button class="chip-btn" onclick="fillWeekMeals()">✨ Fill empty days</button>' +
+      '<button class="chip-btn" onclick="openFillSettings()">⚙️ Fill settings</button>' +
+    '</div>' +
+    days;
 }
 
 // ── TODAY PAGE ────────────────────────────────────────────────────────────────
@@ -3342,9 +3460,9 @@ function renderHome() {
     : '<div style="font-size:12px;color:var(--text-muted);padding:6px 0 10px;font-style:italic">Nothing due today 🎉</div>';
 
   // Tonight's + Tomorrow's dinner (swipeable)
-  const todayMeal = dinners[todayStr] || '';
+  const todayMeal = getDinnerEntry(todayStr).main;
   const tomorrowStr = isoDate(new Date(Date.now() + 86400000));
-  const tomorrowMeal = dinners[tomorrowStr] || '';
+  const tomorrowMeal = getDinnerEntry(tomorrowStr).main;
   const isAfter8pm = new Date().getHours() >= 20;
 
   function buildDinnerSlide(meal, label, dateStr, allowCook) {
@@ -3364,7 +3482,7 @@ function renderHome() {
     return '<div class="home-dinner-bar" style="opacity:0.5;cursor:default">' +
       '<div style="display:flex;align-items:center;gap:20px">' +
         '<span style="font-size:64px">🍽️</span>' +
-        '<div style="font-size:22px;font-weight:700;color:var(--text-muted)">No ' + label.toLowerCase() + ' planned</div>' +
+        '<div style="font-size:22px;font-weight:700;color:var(--text-muted)">No dinner planned ' + (label.startsWith('Tonight') ? 'tonight' : 'tomorrow') + '</div>' +
       '</div>' +
     '</div>';
   }
@@ -3392,26 +3510,47 @@ function renderHome() {
 
   const isPortraitHome = window.matchMedia('(orientation: portrait)').matches;
 
+  const settingsBtn = '<button onclick="openSettings()" aria-label="Settings" style="background:none;border:none;font-size:20px;cursor:pointer;padding:6px;color:var(--text-muted)">⚙️</button>';
   if (isPortraitHome) {
-    const onEvents = _homePortraitTab === 'events';
-    const pillNav = '<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;flex:1">' +
-      '<button onclick="setHomePortraitTab(\'events\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (onEvents ? 'var(--accent)' : 'transparent') + ';color:' + (onEvents ? '#fff' : 'var(--text-muted)') + '">📅 Events</button>' +
-      '<button onclick="setHomePortraitTab(\'tasks\')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:' + (!onEvents ? 'var(--accent)' : 'transparent') + ';color:' + (!onEvents ? '#fff' : 'var(--text-muted)') + '">✅ Tasks</button>' +
-    '</div>';
-    const calBtnRow = onEvents ? '<div style="display:flex;gap:5px">' + homeCalBtns + '</div>' : '';
+    const todayIdx = weekDays.findIndex(d => isToday(d));
+    const w = todayIdx >= 0 ? weatherDays[todayIdx] : null;
+    const weatherChip = w
+      ? '<button class="chip-btn" style="padding:6px 10px" onclick="openWeatherModal(\'' + todayStr + '\',' + todayIdx + ')">' + (WMO_EMOJI[w.code] || '🌡️') + ' ' + w.high + '° / ' + w.low + '°</button>'
+      : '';
+    const dinnerCard = todayMeal
+      ? '<div class="today-card" style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openRecipeModal(\'' + todayStr + '\',\'' + jsq(todayMeal) + '\')">' +
+          '<span style="font-size:34px">🍽️</span>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Tonight</div>' +
+            '<div style="font-size:18px;font-weight:800;color:var(--text);line-height:1.25">' + escHtml(todayMeal) + '</div>' +
+            (tomorrowMeal ? '<div style="font-size:12px;color:var(--text-muted);margin-top:3px">Tomorrow: ' + escHtml(tomorrowMeal) + '</div>' : '') +
+          '</div>' +
+          '<button class="chip-btn primary" onclick="event.stopPropagation();openCookMode(\'' + todayStr + '\',\'' + jsq(todayMeal) + '\')">👨‍🍳 Cook</button>' +
+        '</div>'
+      : '<div class="today-card" style="display:flex;align-items:center;gap:12px">' +
+          '<span style="font-size:34px;opacity:0.6">🍽️</span>' +
+          '<div style="flex:1;font-size:15px;font-weight:600;color:var(--text-muted)">No dinner planned tonight' +
+            (tomorrowMeal ? '<div style="font-size:12px;margin-top:3px">Tomorrow: ' + escHtml(tomorrowMeal) + '</div>' : '') + '</div>' +
+          '<button class="chip-btn primary" onclick="openChooseRecipeForDate(\'' + todayStr + '\')">Plan it</button>' +
+        '</div>';
+    const dueCount = tasks.filter(isTaskDue).length;
     document.getElementById('page-home').innerHTML =
-      '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
-        '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
-        '<div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0">' + pillNav + calBtnRow + '</div>' +
-        '<div id="home-portrait-content" style="flex:1;overflow-y:auto;padding:0 12px 10px">' +
-          (onEvents ? eventsHtml : tasksHtml) +
+      '<div style="height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 10px) 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px)">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<div style="flex:1"><div style="font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.3px">' + now.toLocaleDateString('en-US', { weekday:'long' }) + '</div>' +
+            '<div style="font-size:14px;color:var(--text-muted)">' + now.toLocaleDateString('en-US', { month:'long', day:'numeric' }) + '</div></div>' +
+          weatherChip + settingsBtn +
         '</div>' +
-        dinnerSection +
+        '<div class="sec-head"><span>Dinner</span><button class="sec-link" onclick="showPage(\'meals\')">Meal plan ›</button></div>' +
+        dinnerCard +
+        '<div class="sec-head"><span>Today\'s events</span><button class="sec-link" onclick="showPage(\'schedule\')">Calendar ›</button></div>' +
+        eventsHtml +
+        '<div class="sec-head"><span>Tasks due' + (dueCount ? ' · ' + dueCount : '') + '</span><button class="sec-link" onclick="showPage(\'tasks\')">All tasks ›</button></div>' +
+        tasksHtml +
       '</div>';
   } else {
     document.getElementById('page-home').innerHTML =
       '<div style="display:flex;flex-direction:column;min-height:0;height:100%">' +
-        '<div class="page-datetime-header">' + dateTimeLabel + '</div>' +
+        '<div class="page-datetime-header" style="position:relative">' + dateTimeLabel + '<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%)">' + settingsBtn + '</span></div>' +
         '<div class="home-grid" style="grid-template-columns:1fr 1fr;flex:1;min-height:0;padding-bottom:12px">' +
           '<div class="home-col">' +
             '<div class="col-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>📅 Today\'s Events</span><div style="display:flex;gap:5px">' + homeCalBtns + '</div></div>' +
@@ -4023,8 +4162,7 @@ function renderGrocery() {
     ' · ' + grocNow.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
 
   const pillNav = `<div style="display:flex;gap:4px;background:var(--surface2);border-radius:22px;padding:3px;margin:10px 14px 0;flex-shrink:0">
-    <button onclick="setGroceryTab('recipes')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='recipes'?'var(--accent)':'transparent'};color:${_groceryTab==='recipes'?'#fff':'var(--text-muted)'}">⭐ Recipes</button>
-    <button onclick="setGroceryTab('grocery')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='grocery'?'var(--accent)':'transparent'};color:${_groceryTab==='grocery'?'#fff':'var(--text-muted)'}">🛒 Grocery List</button>
+    <button onclick="setGroceryTab('grocery')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='grocery'?'var(--accent)':'transparent'};color:${_groceryTab==='grocery'?'#fff':'var(--text-muted)'}">🛒 List</button>
     <button onclick="setGroceryTab('prices')" style="flex:1;padding:7px 16px;border-radius:18px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:${_groceryTab==='prices'?'var(--accent)':'transparent'};color:${_groceryTab==='prices'?'#fff':'var(--text-muted)'}">🏷 Prices</button>
   </div>`;
 
@@ -4032,25 +4170,6 @@ function renderGrocery() {
   if (_groceryTab === 'prices') {
     tabContent = buildPricesTab();
     if (!_krogerStoreName) krogerResolveLocation().then(() => { if (_krogerStoreName && _groceryTab === 'prices') renderGrocery(); });
-  } else if (_groceryTab === 'recipes') {
-    const allTagsForFilter = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
-    const tagChips = allTagsForFilter.map(tag => {
-      const active = _groceryRecipeActiveTags.has(tag);
-      const safeTag = jsq(tag);
-      return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(var(--fg-rgb),0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${escHtml(tag)}</button>`;
-    }).join('');
-    const activeCount = _groceryRecipeActiveTags.size;
-    const tagToggleLabel = _groceryTagsExpanded ? '🏷 Tags ▲' : `🏷 Tags${activeCount ? ' ('+activeCount+')' : ''} ▼`;
-    tabContent = `<div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
-      <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(var(--fg-rgb),0.07);flex-shrink:0;display:flex;flex-direction:column;gap:6px">
-        <div style="display:flex;gap:6px;align-items:center">
-          <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="flex:1;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
-          <button onclick="_groceryTagsExpanded=!_groceryTagsExpanded;renderGrocery()" style="flex-shrink:0;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid ${activeCount?'var(--accent)':'rgba(var(--fg-rgb),0.15)'};background:${activeCount?'rgba(59,130,246,0.15)':'var(--surface2)'};color:${activeCount?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:600">${tagToggleLabel}</button>
-        </div>
-        ${_groceryTagsExpanded ? `<div style="display:flex;flex-wrap:wrap;gap:5px">${tagChips}</div>` : ''}
-      </div>
-      <div id="grocery-recipe-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
-    </div>`;
   } else {
     const groceryRows = grocery.length
       ? grocery.map(g => '<div class="list-item">' +
@@ -4090,7 +4209,28 @@ function renderGrocery() {
     '<div style="padding:10px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;flex:1;min-height:0;box-sizing:border-box;">' +
       tabContent +
     '</div>';
-  if (_groceryTab === 'recipes') renderGroceryRecipeList();
+}
+
+// Recipe browser (search, tag filter, categories) — shown on the Meals page
+function buildRecipeBrowser() {
+    const allTagsForFilter = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
+    const tagChips = allTagsForFilter.map(tag => {
+      const active = _groceryRecipeActiveTags.has(tag);
+      const safeTag = jsq(tag);
+      return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(var(--fg-rgb),0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${escHtml(tag)}</button>`;
+    }).join('');
+    const activeCount = _groceryRecipeActiveTags.size;
+    const tagToggleLabel = _groceryTagsExpanded ? '🏷 Tags ▲' : `🏷 Tags${activeCount ? ' ('+activeCount+')' : ''} ▼`;
+    return `<div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div style="padding:8px 8px 6px;border-bottom:1px solid rgba(var(--fg-rgb),0.07);flex-shrink:0;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="grocery-recipe-search" type="text" placeholder="🔍 Search recipes…" style="flex:1;background:var(--surface2);border:1px solid rgba(var(--fg-rgb),0.12);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" oninput="renderGroceryRecipeList()">
+          <button onclick="_groceryTagsExpanded=!_groceryTagsExpanded;reRenderCurrentPage()" style="flex-shrink:0;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid ${activeCount?'var(--accent)':'rgba(var(--fg-rgb),0.15)'};background:${activeCount?'rgba(59,130,246,0.15)':'var(--surface2)'};color:${activeCount?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:600">${tagToggleLabel}</button>
+        </div>
+        ${_groceryTagsExpanded ? `<div style="display:flex;flex-wrap:wrap;gap:5px">${tagChips}</div>` : ''}
+      </div>
+      <div id="grocery-recipe-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+    </div>`;
 }
 
 function setGroceryTab(tab) { _groceryTab = tab; localStorage.setItem('groceryTab', tab); _groceryRecipeActiveTags = new Set(); _groceryTagsExpanded = false; renderGrocery(); }
@@ -4446,7 +4586,7 @@ async function priceWatchAddAllSale(btn) {
 function toggleGroceryRecipeTag(tag) {
   if (_groceryRecipeActiveTags.has(tag)) _groceryRecipeActiveTags.delete(tag);
   else _groceryRecipeActiveTags.add(tag);
-  renderGrocery();
+  reRenderCurrentPage();
 }
 
 function renderGroceryRecipeList() {
@@ -4544,6 +4684,8 @@ function reRenderCurrentPage() {
   else if (currentPage === 'home') renderHome();
   else if (currentPage === 'schedule') renderSchedule();
   else if (currentPage === 'discover') renderDiscover();
+  else if (currentPage === 'tasks') renderTasks();
+  else if (currentPage === 'meals') renderMeals();
 }
 
 // ── GROCERY CRUD ──────────────────────────────────────────────────────────────
@@ -5051,7 +5193,7 @@ function currentISOWeek() {
 // ── TASKS PAGE ────────────────────────────────────────────────────────────────
 let _taskPortraitTab = 'tasks'; // 'tasks' | 'completed' | 'assets'
 let _homePortraitTab = 'events';
-let _groceryTab = localStorage.getItem('groceryTab') || 'recipes';
+let _groceryTab = localStorage.getItem('groceryTab') === 'prices' ? 'prices' : 'grocery'; // recipes moved to the Meals page
 let _groceryRecipeActiveTags = new Set();
 let _groceryTagsExpanded = false;
 let _assetDetailId = null;   // asset id when viewing an asset's detail page
