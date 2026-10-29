@@ -1486,12 +1486,12 @@ async function reloadCalendar() {
 
 // ── SUPABASE FAMILY DATA ──────────────────────────────────────────────────────
 async function loadFamilyData() {
+  const groceryLoad = loadGrocery();
   try {
     const { data } = await sb.from('family_data').select('*');
     if (!data) return;
     for (const row of data) {
-      if (row.key === 'grocery') grocery = row.value || [];
-      else if (row.key === 'dinners') dinners = row.value || {};
+      if (row.key === 'dinners') dinners = row.value || {};
       else if (row.key === 'house_config') Object.assign(HOUSE, row.value || {});
       else if (row.key === 'recipes') recipesData = row.value || {};
       else if (row.key === 'people_config') {
@@ -1525,6 +1525,8 @@ async function loadFamilyData() {
     }
   } catch(e) { console.error('family_data error', e); }
   migrateTasksV2();
+  await groceryLoad;
+  subscribeGrocery();
   renderNavBadges();
 }
 
@@ -1560,6 +1562,92 @@ function migrateTasksV2() {
   }).filter(Boolean);
   saveFamilyData('tasks', tasks);
   saveFamilyData('completed_log', completedLog);
+}
+
+// ── GROCERY SYNC ──────────────────────────────────────────────────────────────
+// The grocery list lives in its own table (one row per item) so two people
+// editing at once don't overwrite each other, and Supabase Realtime pushes
+// every change to the other open copies. The rest of the app still works with
+// the in-memory `grocery` array; saveGrocery() writes only what changed.
+let _groceryServer = new Map(); // id -> serialized state last seen on the server
+let _groceryPosSeq = 0;
+let _groceryChannel = null;
+let _groceryRerenderTimer = null;
+
+function _gSer(g) { return JSON.stringify([g.text, !!g.done]); }
+
+async function loadGrocery() {
+  const { data, error } = await sb.from('grocery_items').select('id,text,done,pos').order('pos');
+  if (error) { console.error('grocery load failed', error); return; }
+  grocery = data.map(r => ({ id: r.id, text: r.text, done: r.done, pos: r.pos }));
+  _groceryServer = new Map(grocery.map(g => [g.id, _gSer(g)]));
+}
+
+async function saveGrocery() {
+  const local = new Map();
+  grocery.forEach(g => {
+    g.id = String(g.id);
+    if (g.pos == null) g.pos = Date.now() / 1000 + (_groceryPosSeq++) / 1e6;
+    local.set(g.id, g);
+  });
+  const now = new Date().toISOString();
+  const upserts = grocery
+    .filter(g => _groceryServer.get(g.id) !== _gSer(g))
+    .map(g => ({ id: g.id, text: g.text, done: !!g.done, pos: g.pos, updated_at: now }));
+  const deletes = [..._groceryServer.keys()].filter(id => !local.has(id));
+  upserts.forEach(u => _groceryServer.set(u.id, _gSer(u)));
+  deletes.forEach(id => _groceryServer.delete(id));
+  try {
+    if (upserts.length) { const { error } = await sb.from('grocery_items').upsert(upserts); if (error) throw error; }
+    if (deletes.length) { const { error } = await sb.from('grocery_items').delete().in('id', deletes); if (error) throw error; }
+  } catch (e) {
+    console.error('grocery save failed', e);
+    await loadGrocery(); // resync with the server so the screen shows the truth
+    _scheduleGroceryRerender();
+  }
+}
+
+function _scheduleGroceryRerender() {
+  clearTimeout(_groceryRerenderTimer);
+  _groceryRerenderTimer = setTimeout(() => {
+    // Keep whatever someone is typing in the add box across the re-render
+    const active = document.activeElement;
+    const keepId = active && active.id === 'grocery-inline-input' ? active.id : null;
+    const keepVal = keepId ? active.value : null;
+    reRenderCurrentPage();
+    if (keepId) {
+      const el = document.getElementById(keepId);
+      if (el) { el.value = keepVal; el.focus(); }
+    }
+  }, 150);
+}
+
+function subscribeGrocery() {
+  if (_groceryChannel) return;
+  _groceryChannel = sb.channel('grocery-items')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'grocery_items' }, payload => {
+      if (payload.eventType === 'DELETE') {
+        const id = payload.old && payload.old.id;
+        if (!id || !_groceryServer.has(id)) return; // our own delete, already applied
+        _groceryServer.delete(id);
+        grocery = grocery.filter(g => g.id !== id);
+      } else {
+        const r = payload.new;
+        const g = { id: r.id, text: r.text, done: r.done, pos: r.pos };
+        if (_groceryServer.get(r.id) === _gSer(g) && grocery.some(x => x.id === r.id)) return; // echo of our own write
+        _groceryServer.set(r.id, _gSer(g));
+        const i = grocery.findIndex(x => x.id === r.id);
+        if (i >= 0) grocery[i] = g;
+        else { grocery.push(g); grocery.sort((a, b) => (a.pos || 0) - (b.pos || 0)); }
+      }
+      _scheduleGroceryRerender();
+    })
+    .subscribe();
+
+  // Phones drop the live connection while asleep — catch up when the app comes back
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) loadGrocery().then(_scheduleGroceryRerender);
+  });
 }
 
 async function saveFamilyData(key, value) {
@@ -2043,7 +2131,7 @@ async function buildWeeklyGroceryList() {
       added++;
     }
   }
-  if (added) await saveFamilyData('grocery', grocery);
+  if (added) await saveGrocery();
   return added;
 }
 
@@ -2981,7 +3069,7 @@ async function addDinnerIngredientsToGrocery() {
     if (text && !grocery.some(g => g.text.toLowerCase() === text.toLowerCase()))
       grocery.push({ id: Date.now() + Math.random(), text, done: false });
   }
-  await saveFamilyData('grocery', grocery);
+  await saveGrocery();
   if (currentPage === 'home') renderHome(); else if (currentPage === 'schedule') renderSchedule(); else if (currentPage === 'grocery') renderGrocery();
   btn.textContent = '✓ Added!';
   const status = document.getElementById('recipe-status');
@@ -4221,7 +4309,7 @@ function addFavRecipeToGrocery(name) {
       added++;
     }
   });
-  saveFamilyData('grocery', grocery);
+  saveGrocery();
   renderGrocery();
   if (added === 0) alert('All ingredients already on the list!');
 }
@@ -4267,24 +4355,24 @@ function confirmAddGrocery() {
   const input = document.getElementById('grocery-add-input');
   const text = input.value.trim(); if (!text) return;
   grocery.push({ id: uid(), text, done: false });
-  saveFamilyData('grocery', grocery);
+  saveGrocery();
   closeGroceryAddModal();
   reRenderCurrentPage();
 }
 function selectAllGrocery(done) {
   grocery.forEach(g => g.done = done);
-  saveFamilyData('grocery', grocery); reRenderCurrentPage();
+  saveGrocery(); reRenderCurrentPage();
 }
 function clearSelectedGrocery() {
   grocery = grocery.filter(g => !g.done);
-  saveFamilyData('grocery', grocery); reRenderCurrentPage();
+  saveGrocery(); reRenderCurrentPage();
 }
 function toggleGrocery(id) {
   const item = grocery.find(g => String(g.id)===String(id)); if (!item) return;
-  item.done = !item.done; saveFamilyData('grocery', grocery); reRenderCurrentPage();
+  item.done = !item.done; saveGrocery(); reRenderCurrentPage();
 }
 function deleteGrocery(id) {
-  grocery = grocery.filter(g => String(g.id)!==String(id)); saveFamilyData('grocery', grocery); reRenderCurrentPage();
+  grocery = grocery.filter(g => String(g.id)!==String(id)); saveGrocery(); reRenderCurrentPage();
 }
 function addGroceryInline() {
   const input = document.getElementById('grocery-inline-input');
@@ -4292,7 +4380,7 @@ function addGroceryInline() {
   const text = input.value.trim();
   if (!text) return;
   grocery.push({ id: uid(), text, done: false });
-  saveFamilyData('grocery', grocery);
+  saveGrocery();
   input.value = '';
   reRenderCurrentPage();
   setTimeout(() => { const el = document.getElementById('grocery-inline-input'); if (el) el.focus(); }, 50);
@@ -4332,7 +4420,7 @@ async function consolidateGrocery(callback) {
       document.getElementById('consolidate-dim').classList.add('open');
     } else {
       grocery = certain.map(i => ({ id: uid(), text: i.text, done: false }));
-      saveFamilyData('grocery', grocery);
+      saveGrocery();
       reRenderCurrentPage();
       if (callback) callback();
     }
@@ -4352,7 +4440,7 @@ function applyConsolidation() {
     merged.push({ text: item.text, done: false });
   });
   grocery = merged.map(i => ({ id: uid(), text: i.text, done: false }));
-  saveFamilyData('grocery', grocery);
+  saveGrocery();
   _consolidatePending = null;
   const cb = _consolidateCb;
   _consolidateCb = null;
@@ -4426,7 +4514,7 @@ function processGroceryVoice(text) {
 }
 function confirmGroceryItems() {
   pendingGroceryItems.forEach(text => grocery.push({id:uid(),text,done:false}));
-  saveFamilyData('grocery',grocery); closeGroceryVoice(); reRenderCurrentPage();
+  saveGrocery(); closeGroceryVoice(); reRenderCurrentPage();
 }
 
 // ── PERSON / CHORES PAGE ──────────────────────────────────────────────────────
@@ -5791,7 +5879,7 @@ async function sendAllToKroger(items) {
   // Remove successfully added items from grocery list
   if (addedIds.length) {
     grocery = grocery.filter(g => !addedIds.includes(g.id));
-    await saveFamilyData('grocery', grocery);
+    await saveGrocery();
     reRenderCurrentPage();
   }
 }
