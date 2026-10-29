@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.consolidate-grocery]
 verify_jwt = false
+
+[functions.asset-maintenance]
+verify_jwt = false

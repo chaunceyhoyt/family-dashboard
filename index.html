@@ -1167,8 +1167,24 @@
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Make / Model</label>
     <input class="modal-field" id="asset-model" type="text" placeholder="e.g. Rheem XE50T06" style="margin-top:6px">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Serial #</label>
+        <input class="modal-field" id="asset-serial" type="text" placeholder="Optional" style="margin-top:6px">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Miles / hours</label>
+        <input class="modal-field" id="asset-mileage" type="text" placeholder="e.g. 116,000" style="margin-top:6px">
+      </div>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Warranty ends</label>
+    <input class="modal-field" id="asset-warranty" type="date" style="margin-top:6px">
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Manual link</label>
+    <input class="modal-field" id="asset-manual" type="url" placeholder="https://…" style="margin-top:6px">
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Receipt / docs link</label>
+    <input class="modal-field" id="asset-receipt" type="url" placeholder="https://… (Google Drive, photo, etc.)" style="margin-top:6px">
     <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Notes</label>
-    <textarea class="modal-field" id="asset-notes" rows="2" placeholder="Serial #, filter size, location…" style="margin-top:6px;resize:vertical"></textarea>
+    <textarea class="modal-field" id="asset-notes" rows="2" placeholder="Filter size, location, installer…" style="margin-top:6px;resize:vertical"></textarea>
     <div class="modal-btns">
       <button class="btn-secondary" onclick="closeAssetModal()">Cancel</button>
       <button class="btn-primary" onclick="confirmSaveAsset()">Save</button>
@@ -5478,6 +5494,15 @@ function buildCompletedTab() {
   return html;
 }
 
+// {text, color} for an asset's warranty, or null if no date entered
+function warrantyStatus(a) {
+  if (!a.warrantyUntil) return null;
+  const days = Math.round((new Date(a.warrantyUntil + 'T12:00:00') - new Date()) / 86400000);
+  if (days < 0) return { text: 'Out of warranty', color: 'var(--text-muted)' };
+  if (days <= 60) return { text: 'Warranty ends in ' + days + ' day' + (days === 1 ? '' : 's'), color: '#fbbf24' };
+  return { text: 'Under warranty until ' + new Date(a.warrantyUntil + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), color: '#4ade80' };
+}
+
 function assetAgeLabel(a) {
   if (!a.year) return '';
   const age = new Date().getFullYear() - parseInt(a.year);
@@ -5510,6 +5535,7 @@ function buildAssetsTab() {
       '<div style="flex:1;min-width:0">' +
         '<div class="task-card-title">' + escHtml(a.name) + '</div>' +
         '<div style="font-size:11px;color:var(--text-muted)">' + escHtml([a.model, assetAgeLabel(a)].filter(Boolean).join(' · ')) + '</div>' +
+        (warrantyStatus(a) && warrantyStatus(a).color !== 'var(--text-muted)' ? '<div style="font-size:11px;font-weight:700;color:' + warrantyStatus(a).color + '">🛡 ' + escHtml(warrantyStatus(a).text) + '</div>' : '') +
       '</div>' +
       taskChip +
       '<span style="color:var(--text-muted);font-size:16px">›</span>' +
@@ -5527,6 +5553,9 @@ function buildAssetDetail(a) {
   const infoRows = [
     a.model ? ['Make / Model', a.model] : null,
     a.year ? ['Age', assetAgeLabel(a)] : null,
+    a.mileage ? ['Miles / hours', a.mileage] : null,
+    a.serial ? ['Serial #', a.serial] : null,
+    warrantyStatus(a) ? ['Warranty', warrantyStatus(a).text] : null,
     a.notes ? ['Notes', a.notes] : null,
   ].filter(Boolean).map(r =>
     '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.05)">' +
@@ -5542,7 +5571,12 @@ function buildAssetDetail(a) {
       (_pinUnlocked ? '<button onclick="openAssetModal(\'' + a.id + '\')" style="background:var(--surface2);border:none;font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer">✏️</button>' : '') +
       (_pinUnlocked ? '<button onclick="deleteAsset(\'' + a.id + '\')" style="background:rgba(239,68,68,0.12);border:none;color:#fca5a5;font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer">🗑</button>' : '') +
     '</div>' +
-    (infoRows ? '<div style="background:var(--surface);border-radius:12px;padding:6px 14px;margin-bottom:14px">' + infoRows + '</div>' : '') +
+    (infoRows ? '<div style="background:var(--surface);border-radius:12px;padding:6px 14px;margin-bottom:10px">' + infoRows + '</div>' : '') +
+    ((a.manualUrl || a.receiptUrl) ? '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+      (a.manualUrl ? '<a class="chip-btn" style="text-decoration:none" href="' + escHtml(safeUrl(a.manualUrl)) + '" target="_blank">📘 Manual</a>' : '') +
+      (a.receiptUrl ? '<a class="chip-btn" style="text-decoration:none" href="' + escHtml(safeUrl(a.receiptUrl)) + '" target="_blank">🧾 Receipt / docs</a>' : '') +
+    '</div>' : '') +
+    (_pinUnlocked ? '<button class="chip-btn primary" style="width:100%;justify-content:center;margin-bottom:14px" onclick="suggestAssetMaintenance(\'' + a.id + '\')">✨ Suggest a maintenance schedule</button>' : '') +
     '<div style="display:flex;align-items:center;margin:4px 0 6px">' +
       '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;flex:1">🔧 Maintenance Tasks</div>' +
       (_pinUnlocked ? '<button class="task-add-btn" onclick="openTaskAddModal(\'' + a.id + '\')" style="padding:4px 10px;font-size:12px">+ Add</button>' : '') +
@@ -5557,6 +5591,101 @@ function buildAssetDetail(a) {
             '<span style="font-size:11px;color:var(--text-muted)">' + new Date(e.at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '</span>' +
           '</div>').join('')
       : '<div style="font-size:13px;color:var(--text-muted);font-style:italic;padding:6px 0">No history yet</div>');
+}
+
+// AI-drafted schedule for an asset → review checklist → tasks linked to it
+let _assetSuggest = { assetId: null, items: [] };
+async function suggestAssetMaintenance(assetId) {
+  const a = assets.find(x => x.id === assetId);
+  if (!a) return;
+  let dim = document.getElementById('assetsuggest-dim');
+  if (!dim) {
+    dim = document.createElement('div');
+    dim.className = 'dim'; dim.id = 'assetsuggest-dim';
+    dim.onclick = e => { if (e.target === dim) dim.classList.remove('open'); };
+    document.body.appendChild(dim);
+  }
+  dim.innerHTML = '<div class="modal-box" style="max-width:440px;text-align:center;padding:30px 20px"><div style="font-size:30px">✨</div>' +
+    '<div style="font-size:15px;font-weight:700;color:var(--text);margin-top:8px">Drafting a schedule for ' + escHtml(a.name) + '…</div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Usually 10–20 seconds</div></div>';
+  dim.classList.add('open');
+  try {
+    const existing = tasks.filter(t => t.assetId === a.id).map(t => t.title);
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/asset-maintenance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({ name: a.name, category: a.category, model: a.model, year: a.year, mileage: a.mileage, notes: a.notes, existing })
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Request failed');
+    if (!d.tasks || !d.tasks.length) throw new Error('No suggestions came back');
+    _assetSuggest = { assetId: a.id, items: d.tasks.map(t => {
+      // "every 12/24/36 months" reads better as years
+      if (t.recurUnit === 'month' && t.recurEvery % 12 === 0) { t.recurEvery /= 12; t.recurUnit = 'year'; }
+      // Leave near-duplicates of tasks this asset already has unchecked ("Oil & filter change" ≈ "Oil and Filter Change")
+      const words = x => new Set(x.toLowerCase().replace(/&/g, 'and').split(/[^a-z]+/).filter(w => w.length > 3));
+      const tw = words(t.title);
+      const dup = existing.some(e => { const ew = words(e); let n = 0; tw.forEach(w => { if (ew.has(w)) n++; }); return n >= Math.min(2, tw.size); });
+      return Object.assign({ checked: !dup, dup }, t);
+    }) };
+    renderAssetSuggest();
+  } catch (e) {
+    dim.innerHTML = '<div class="modal-box" style="max-width:380px;text-align:center;padding:24px"><div style="font-size:15px;font-weight:700;color:var(--text)">Couldn\'t draft a schedule</div>' +
+      '<div style="font-size:13px;color:var(--text-muted);margin:8px 0 16px">' + escHtml(e.message || String(e)) + '</div>' +
+      '<button class="btn-secondary" onclick="document.getElementById(\'assetsuggest-dim\').classList.remove(\'open\')">Close</button></div>';
+  }
+}
+
+function renderAssetSuggest() {
+  const a = assets.find(x => x.id === _assetSuggest.assetId);
+  const dim = document.getElementById('assetsuggest-dim');
+  if (!a || !dim) return;
+  const rows = _assetSuggest.items.map((t, i) =>
+    '<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px solid rgba(var(--fg-rgb),0.06);cursor:pointer">' +
+      '<input type="checkbox" ' + (t.checked ? 'checked ' : '') + 'onchange="_assetSuggest.items[' + i + '].checked=this.checked;updateAssetSuggestCount()" style="width:20px;height:20px;margin-top:2px;accent-color:var(--accent);flex-shrink:0">' +
+      '<span style="flex:1;min-width:0"><span style="font-size:14px;font-weight:700;color:var(--text)">' + escHtml(t.title) + '</span>' +
+        (t.dueNow ? ' <span style="font-size:10px;font-weight:800;color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:5px;padding:1px 6px">DUE NOW</span>' : '') +
+        (t.dup ? ' <span style="font-size:10px;font-weight:700;color:var(--text-muted)">· similar task exists</span>' : '') +
+        '<br><span style="font-size:12px;color:var(--accent);font-weight:700">' + recurLabel(t) + '</span>' +
+        (t.desc ? '<br><span style="font-size:12px;color:var(--text-muted);line-height:1.35">' + escHtml(t.desc) + '</span>' : '') +
+      '</span></label>').join('');
+  dim.innerHTML = '<div class="modal-box" style="max-width:440px;max-height:88vh;display:flex;flex-direction:column">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0"><div class="modal-box-title" style="margin:0">✨ ' + escHtml(a.name) + ' schedule</div>' +
+    '<button onclick="document.getElementById(\'assetsuggest-dim\').classList.remove(\'open\')" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;line-height:1">×</button></div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;flex-shrink:0">AI draft based on the model and age — uncheck anything that doesn\'t apply. “Due now” items land on your list today; the rest start their clock today.</div>' +
+    '<div style="flex:1;overflow-y:auto;min-height:0">' + rows + '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-shrink:0">' +
+      '<button class="btn-secondary" style="flex:1" onclick="document.getElementById(\'assetsuggest-dim\').classList.remove(\'open\')">Cancel</button>' +
+      '<button id="assetsuggest-add" class="btn-primary" style="flex:2" onclick="confirmAssetSuggest()"></button>' +
+    '</div></div>';
+  updateAssetSuggestCount();
+}
+
+function updateAssetSuggestCount() {
+  const n = _assetSuggest.items.filter(t => t.checked).length;
+  const b = document.getElementById('assetsuggest-add');
+  if (b) { b.textContent = n ? 'Add ' + n + ' task' + (n === 1 ? '' : 's') : 'Nothing selected'; b.disabled = !n; }
+}
+
+function confirmAssetSuggest() {
+  const a = assets.find(x => x.id === _assetSuggest.assetId);
+  if (!a) return;
+  const now = new Date().toISOString();
+  const added = _assetSuggest.items.filter(t => t.checked).map(t => {
+    const task = { id: uid(), title: t.title, desc: t.desc || '', category: a.category || 'other', assetId: a.id, recurEvery: t.recurEvery, recurUnit: t.recurUnit };
+    if (!t.dueNow) task.lastCompleted = now; // next due one interval from today
+    return task;
+  });
+  if (!added.length) return;
+  tasks = tasks.concat(added);
+  saveSharedList('tasks');
+  document.getElementById('assetsuggest-dim').classList.remove('open');
+  renderNavBadges();
+  renderTasks();
+  const ids = new Set(added.map(t => t.id));
+  showUndo('Added ' + added.length + ' task' + (added.length === 1 ? '' : 's') + ' for ' + a.name, () => {
+    tasks = tasks.filter(t => !ids.has(t.id)); saveSharedList('tasks'); renderNavBadges(); renderTasks();
+  });
 }
 
 function openAssetDetail(id) { _assetDetailId = id; renderTasks(); }
@@ -5731,6 +5860,11 @@ function openAssetModal(id) {
   document.getElementById('asset-year').value = a ? (a.year || '') : '';
   document.getElementById('asset-model').value = a ? (a.model || '') : '';
   document.getElementById('asset-notes').value = a ? (a.notes || '') : '';
+  document.getElementById('asset-serial').value = a ? (a.serial || '') : '';
+  document.getElementById('asset-mileage').value = a ? (a.mileage || '') : '';
+  document.getElementById('asset-warranty').value = a ? (a.warrantyUntil || '') : '';
+  document.getElementById('asset-manual').value = a ? (a.manualUrl || '') : '';
+  document.getElementById('asset-receipt').value = a ? (a.receiptUrl || '') : '';
   document.getElementById('asset-dim').classList.add('open');
   if (!a) setTimeout(() => document.getElementById('asset-name').focus(), 80);
 }
@@ -5749,6 +5883,11 @@ function confirmSaveAsset() {
     year: document.getElementById('asset-year').value.trim() || null,
     model: document.getElementById('asset-model').value.trim(),
     notes: document.getElementById('asset-notes').value.trim(),
+    serial: document.getElementById('asset-serial').value.trim(),
+    mileage: document.getElementById('asset-mileage').value.trim(),
+    warrantyUntil: document.getElementById('asset-warranty').value || null,
+    manualUrl: document.getElementById('asset-manual').value.trim(),
+    receiptUrl: document.getElementById('asset-receipt').value.trim(),
   };
   if (_editingAssetId) {
     const a = assets.find(x => x.id === _editingAssetId);
