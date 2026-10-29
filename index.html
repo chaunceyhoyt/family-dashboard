@@ -2296,45 +2296,119 @@ function pickMealForDate(dateStr, alreadyPicked, preferQuick) {
 }
 
 // Build a consolidated grocery list from all planned meals this week
-async function buildWeeklyGroceryList() {
-  const COMMON_PANTRY = [
-    'salt','pepper','garlic powder','onion powder','olive oil','vegetable oil','butter',
-    'flour','sugar','baking powder','baking soda','cumin','paprika','oregano','basil',
-    'thyme','cayenne','red pepper flakes','black pepper','white pepper','cinnamon',
-    'vanilla extract','soy sauce','worcestershire sauce','hot sauce','vinegar',
-    'chicken broth','beef broth','water','eggs','milk','cream','vegetable broth'
-  ];
+// ── WEEK → GROCERY LIST ───────────────────────────────────────────────────────
+// Review sheet: every ingredient from this week's planned recipes, grouped by
+// day, with pantry staples and items already on the list pre-unchecked and
+// sale hints from Price Watch. Adds only what's checked.
+const COMMON_PANTRY = [
+  'salt','pepper','garlic powder','onion powder','olive oil','vegetable oil','canola oil','butter',
+  'flour','sugar','brown sugar','baking powder','baking soda','cumin','paprika','oregano','basil',
+  'thyme','cayenne','red pepper flakes','chili powder','cinnamon','vanilla extract','soy sauce',
+  'worcestershire sauce','hot sauce','vinegar','water','chicken broth','beef broth','vegetable broth',
+  'cooking spray','italian seasoning','bay leaf','bay leaves','nutmeg'
+];
+const UNIT_WORDS = new Set(['cup','cups','tbsp','tsp','tablespoon','tablespoons','teaspoon','teaspoons','oz','ounce','ounces','lb','lbs','pound','pounds','can','cans','clove','cloves','pinch','dash','package','packages','pkg','jar','bunch','large','small','medium','whole','fresh','chopped','diced','sliced','minced','divided','to','taste','of','and','or','for','the','about','plus','more','optional','g','kg','ml','l','pint','quart','stick','sticks','head','heads','piece','pieces']);
 
-  const allIngredients = [];
-  for (const d of weekDays) {
+// "2 1/2 cups shredded mozzarella cheese, divided" → "shredded mozzarella cheese"
+function ingredientCore(text) {
+  return String(text).toLowerCase().split(',')[0].replace(/\([^)]*\)/g, ' ')
+    .replace(/[\d¼½¾⅓⅔⅛\/.\-]+/g, ' ').split(/\s+/).filter(w => w && !UNIT_WORDS.has(w)).join(' ').trim();
+}
+function isPantryStaple(text) {
+  const core = ingredientCore(text);
+  return COMMON_PANTRY.some(p => core === p || core.endsWith(' ' + p) || core === p + 's');
+}
+// A tracked product that's on sale now and plausibly the same thing
+function saleMatchFor(text) {
+  const words = ingredientCore(text).split(' ').filter(w => w.length >= 4);
+  if (!words.length) return null;
+  for (const it of (priceWatch.items || [])) {
+    if (!isOnSale(it.upc)) continue;
+    const name = it.name.toLowerCase();
+    const hits = words.filter(w => name.includes(w)).length;
+    if (hits >= Math.min(2, words.length)) return { name: it.name, price: priceWatch.results[it.upc].promo };
+  }
+  return null;
+}
+
+let _weekShop = [];
+function openWeekShopSheet() {
+  const onList = new Set(grocery.filter(g => !g.done).map(g => g.text.trim().toLowerCase()));
+  const groups = [], missing = [];
+  _weekShop = [];
+  weekDays.forEach(d => {
     const entry = getDinnerEntry(isoDate(d));
-    const allMeals = [entry.main, ...(entry.sides || [])].filter(Boolean);
-    for (const mealName of allMeals) {
+    [entry.main, ...(entry.sides || [])].filter(Boolean).forEach(mealName => {
       const recipe = recipesData[mealName];
-      if (!recipe?.ingredients) continue;
-      for (const ing of recipe.ingredients) {
-        const text = ing.trim().toLowerCase();
-        if (!text) continue;
-        const isPantry = COMMON_PANTRY.some(p => text.includes(p));
-        if (!isPantry) allIngredients.push(ing.trim());
-      }
-    }
-  }
+      if (!recipe) return; // Eat Out notes and free-text plans
+      if (!recipe.ingredients || !recipe.ingredients.length) { missing.push(mealName); return; }
+      const rows = recipe.ingredients.map(ing => ing.trim()).filter(Boolean).map(text => {
+        const already = onList.has(text.toLowerCase());
+        const pantry = isPantryStaple(text);
+        const row = { i: _weekShop.length, text, checked: !already && !pantry, already, pantry, sale: saleMatchFor(text) };
+        _weekShop.push(row);
+        return row;
+      });
+      groups.push({ label: DAY_NAMES_SHORT[d.getDay()] + ' · ' + mealName, rows });
+    });
+  });
 
-  if (!allIngredients.length) return 0;
-
-  // Deduplicate (case-insensitive)
-  const seen = new Set(grocery.map(g => g.text.toLowerCase()));
-  let added = 0;
-  for (const ing of allIngredients) {
-    if (!seen.has(ing.toLowerCase())) {
-      seen.add(ing.toLowerCase());
-      grocery.push({ id: uid(), text: ing, done: false });
-      added++;
-    }
+  let dim = document.getElementById('weekshop-dim');
+  if (!dim) {
+    dim = document.createElement('div');
+    dim.className = 'dim'; dim.id = 'weekshop-dim';
+    dim.onclick = e => { if (e.target === dim) dim.classList.remove('open'); };
+    document.body.appendChild(dim);
   }
-  if (added) await saveGrocery();
-  return added;
+  const rowHtml = r => '<label style="display:flex;align-items:flex-start;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(var(--fg-rgb),0.06);cursor:pointer">' +
+    '<input type="checkbox" ' + (r.checked ? 'checked ' : '') + 'onchange="_weekShop[' + r.i + '].checked=this.checked;updateWeekShopCount()" style="width:20px;height:20px;margin-top:1px;accent-color:var(--accent);flex-shrink:0">' +
+    '<span style="flex:1;font-size:14px;color:var(--text);line-height:1.35">' + escHtml(r.text) +
+      (r.already ? ' <span style="font-size:11px;color:var(--text-muted)">· on list</span>' : '') +
+      (r.pantry ? ' <span style="font-size:11px;color:var(--text-muted)">· pantry</span>' : '') +
+      (r.sale ? '<br><span style="font-size:11px;font-weight:700;color:#4ade80">🏷 On sale ' + fmtPrice(r.sale.price) + ' — ' + escHtml(r.sale.name) + '</span>' : '') +
+    '</span></label>';
+  const body = groups.length
+    ? groups.map(g => '<div class="sec-head"><span>' + escHtml(g.label) + '</span></div>' + g.rows.map(rowHtml).join('')).join('')
+    : '<div class="empty-state" style="padding:24px 0">No recipes with ingredients are planned this week.</div>';
+  const note = missing.length
+    ? '<div style="font-size:12px;color:var(--text-muted);margin-top:12px">No ingredients saved for: ' + missing.map(escHtml).join(', ') + '</div>' : '';
+  dim.innerHTML = '<div class="modal-box" style="max-width:440px;max-height:88vh;display:flex;flex-direction:column">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+      '<div class="modal-box-title" style="margin:0">🛒 Shop for ' + weekLabel() + '</div>' +
+      '<button onclick="document.getElementById(\'weekshop-dim\').classList.remove(\'open\')" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;line-height:1">×</button>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin:4px 0 2px;flex-shrink:0">Pantry staples and things already on your list start unchecked.</div>' +
+    '<div style="flex:1;overflow-y:auto;min-height:0">' + body + note + '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-shrink:0">' +
+      '<button class="btn-secondary" style="flex:1" onclick="document.getElementById(\'weekshop-dim\').classList.remove(\'open\')">Cancel</button>' +
+      '<button id="weekshop-add" class="btn-primary" style="flex:2" onclick="confirmWeekShop()"></button>' +
+    '</div>' +
+  '</div>';
+  updateWeekShopCount();
+  dim.classList.add('open');
+}
+
+function updateWeekShopCount() {
+  const n = _weekShop.filter(r => r.checked).length;
+  const b = document.getElementById('weekshop-add');
+  if (b) { b.textContent = n ? 'Add ' + n + ' item' + (n === 1 ? '' : 's') : 'Nothing selected'; b.disabled = !n; }
+}
+
+async function confirmWeekShop() {
+  const picked = _weekShop.filter(r => r.checked);
+  if (!picked.length) return;
+  const addedIds = new Set();
+  picked.forEach(r => { const id = uid(); addedIds.add(id); grocery.push({ id, text: r.text, done: false }); });
+  await saveGrocery();
+  document.getElementById('weekshop-dim').classList.remove('open');
+  reRenderCurrentPage();
+  showUndo('Added ' + picked.length + ' item' + (picked.length === 1 ? '' : 's') + ' to the grocery list', () => {
+    grocery = grocery.filter(g => !addedIds.has(g.id)); saveGrocery(); reRenderCurrentPage();
+  });
+  if (picked.length > 1 && confirm('Added ' + picked.length + ' items. Combine duplicates on the list now (e.g. "1 onion" + "2 onions" → "3 onions")?')) {
+    showPage('grocery');
+    consolidateGrocery();
+  }
 }
 
 let _fillWeekPlan = [];
@@ -2350,10 +2424,7 @@ async function fillWeekMeals() {
 
   const emptyDays = weekDays.filter(d => !getDinnerEntry(isoDate(d)).main);
   if (!emptyDays.length) {
-    if (confirm('All days this week already have meals planned! ✅\n\nWould you like to build a grocery list from this week\'s meals?')) {
-      const n = await buildWeeklyGroceryList();
-      alert(n ? `Added ${n} item${n > 1 ? 's' : ''} to your grocery list! 🛒` : 'All ingredients already in your grocery list.');
-    }
+    if (confirm('All days this week already have meals planned! ✅\n\nReview this week\'s ingredients for the grocery list?')) openWeekShopSheet();
     return;
   }
 
@@ -2494,11 +2565,7 @@ async function confirmFillWeek() {
   saveFamilyData('dinners', dinners);
   renderStrip();
   closeFillWeekModal();
-  const added = await buildWeeklyGroceryList();
-  if (added) {
-    const go = confirm(`Meals planned! ✅\n\nAdded ${added} ingredient${added > 1 ? 's' : ''} to your grocery list.\n\nGo to grocery list now?`);
-    if (go) showPage('grocery');
-  }
+  openWeekShopSheet();
 }
 
 function openDinnerModal(dateStr) {
@@ -3408,6 +3475,7 @@ function renderMeals() {
     '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
       '<button class="chip-btn" onclick="fillWeekMeals()">✨ Fill empty days</button>' +
       '<button class="chip-btn" onclick="openFillSettings()">⚙️ Fill settings</button>' +
+      '<button class="chip-btn primary" onclick="openWeekShopSheet()">🛒 Shop for this week</button>' +
     '</div>' +
     days;
 }
