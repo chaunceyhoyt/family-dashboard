@@ -1487,6 +1487,7 @@ async function reloadCalendar() {
 // ── SUPABASE FAMILY DATA ──────────────────────────────────────────────────────
 async function loadFamilyData() {
   const groceryLoad = loadGrocery();
+  const sharedLoad = loadSharedLists();
   try {
     const { data } = await sb.from('family_data').select('*');
     if (!data) return;
@@ -1501,9 +1502,6 @@ async function loadFamilyData() {
           else if (k.startsWith('user_')) PEOPLE[k] = cfg[k];
         });
       }
-      else if (row.key === 'tasks') tasks = row.value || [];
-      else if (row.key === 'assets') assets = row.value || [];
-      else if (row.key === 'completed_log') completedLog = row.value || [];
       else if (row.key === 'price_watch') priceWatch = Object.assign({ items: [], results: {}, lowest: {}, lastCheck: null }, row.value || {});
       else if (row.key === 'rewards') rewards = row.value || [];
       else if (row.key === 'purchases') purchases = row.value || [];
@@ -1524,9 +1522,11 @@ async function loadFamilyData() {
       else if (row.key.startsWith('chores_')) chores[row.key.replace('chores_','')] = row.value || [];
     }
   } catch(e) { console.error('family_data error', e); }
+  await sharedLoad;
   migrateTasksV2();
   await groceryLoad;
   subscribeGrocery();
+  subscribeSharedLists();
   renderNavBadges();
 }
 
@@ -1560,8 +1560,91 @@ function migrateTasksV2() {
     }
     return nt;
   }).filter(Boolean);
-  saveFamilyData('tasks', tasks);
-  saveFamilyData('completed_log', completedLog);
+  saveSharedList('tasks');
+  saveSharedList('completed_log');
+}
+
+// ── SHARED LIST SYNC ──────────────────────────────────────────────────────────
+// Tasks, assets and the completed log each live as one row per item in the
+// family_items table (tagged with a collection name), so edits from different
+// devices don't overwrite each other and Realtime keeps every copy current.
+// Each list stays a plain in-memory array; saveSharedList() writes only what
+// changed since the last sync.
+const SHARED_LISTS = {
+  tasks:         { get: () => tasks,        set: v => { tasks = v; } },
+  assets:        { get: () => assets,       set: v => { assets = v; } },
+  completed_log: { get: () => completedLog, set: v => { completedLog = v; } },
+};
+Object.values(SHARED_LISTS).forEach(c => { c.server = new Map(); c.pos = new Map(); });
+let _sharedChannel = null;
+let _sharedPosSeq = 0;
+
+function _sSer(item) { return JSON.stringify(item); }
+
+async function loadSharedLists() {
+  const { data, error } = await sb.from('family_items').select('collection,id,data,pos').order('pos');
+  if (error) { console.error('shared lists load failed', error); return; }
+  const byName = {};
+  data.forEach(r => { (byName[r.collection] = byName[r.collection] || []).push(r); });
+  for (const [name, c] of Object.entries(SHARED_LISTS)) {
+    const rows = byName[name] || [];
+    c.set(rows.map(r => r.data));
+    c.server = new Map(rows.map(r => [r.id, _sSer(r.data)]));
+    c.pos = new Map(rows.map(r => [r.id, r.pos]));
+  }
+}
+
+async function saveSharedList(name) {
+  const c = SHARED_LISTS[name];
+  const items = c.get().filter(it => it && it.id != null);
+  items.forEach(it => { it.id = String(it.id); });
+  const ids = new Set(items.map(it => it.id));
+  const now = new Date().toISOString();
+  const upserts = items.filter(it => c.server.get(it.id) !== _sSer(it)).map(it => {
+    if (!c.pos.has(it.id)) c.pos.set(it.id, Date.now() / 1000 + (_sharedPosSeq++) / 1e6);
+    return { collection: name, id: it.id, data: it, pos: c.pos.get(it.id), updated_at: now };
+  });
+  const deletes = [...c.server.keys()].filter(id => !ids.has(id));
+  upserts.forEach(u => c.server.set(u.id, _sSer(u.data)));
+  deletes.forEach(id => { c.server.delete(id); c.pos.delete(id); });
+  try {
+    if (upserts.length) { const { error } = await sb.from('family_items').upsert(upserts); if (error) throw error; }
+    if (deletes.length) { const { error } = await sb.from('family_items').delete().eq('collection', name).in('id', deletes); if (error) throw error; }
+  } catch (e) {
+    console.error('save failed for ' + name, e);
+    await loadSharedLists(); // resync so the screen shows what's really stored
+    renderNavBadges();
+    _scheduleRerender();
+  }
+}
+
+function subscribeSharedLists() {
+  if (_sharedChannel) return;
+  _sharedChannel = sb.channel('family-items')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'family_items' }, payload => {
+      const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
+      const c = row && SHARED_LISTS[row.collection];
+      if (!c) return;
+      if (payload.eventType === 'DELETE') {
+        if (!c.server.has(row.id)) return; // our own delete, already applied
+        c.server.delete(row.id); c.pos.delete(row.id);
+        c.set(c.get().filter(it => String(it.id) !== row.id));
+      } else {
+        const list = c.get();
+        const i = list.findIndex(it => String(it.id) === row.id);
+        if (c.server.get(row.id) === _sSer(row.data) && i >= 0) return; // echo of our own write
+        c.server.set(row.id, _sSer(row.data)); c.pos.set(row.id, row.pos);
+        if (i >= 0) list[i] = row.data;
+        else { list.push(row.data); list.sort((a, b) => (c.pos.get(String(a.id)) || 0) - (c.pos.get(String(b.id)) || 0)); }
+      }
+      renderNavBadges();
+      _scheduleRerender();
+    })
+    .subscribe();
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) loadSharedLists().then(() => { renderNavBadges(); _scheduleRerender(); });
+  });
 }
 
 // ── GROCERY SYNC ──────────────────────────────────────────────────────────────
@@ -1603,11 +1686,11 @@ async function saveGrocery() {
   } catch (e) {
     console.error('grocery save failed', e);
     await loadGrocery(); // resync with the server so the screen shows the truth
-    _scheduleGroceryRerender();
+    _scheduleRerender();
   }
 }
 
-function _scheduleGroceryRerender() {
+function _scheduleRerender() {
   clearTimeout(_groceryRerenderTimer);
   _groceryRerenderTimer = setTimeout(() => {
     // Keep whatever someone is typing in the add box across the re-render
@@ -1640,13 +1723,13 @@ function subscribeGrocery() {
         if (i >= 0) grocery[i] = g;
         else { grocery.push(g); grocery.sort((a, b) => (a.pos || 0) - (b.pos || 0)); }
       }
-      _scheduleGroceryRerender();
+      _scheduleRerender();
     })
     .subscribe();
 
   // Phones drop the live connection while asleep — catch up when the app comes back
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) loadGrocery().then(_scheduleGroceryRerender);
+    if (!document.hidden) loadGrocery().then(_scheduleRerender);
   });
 }
 
@@ -5083,8 +5166,8 @@ function completeTask(id) {
   } else {
     tasks = tasks.filter(t => t.id !== id);
   }
-  saveFamilyData('tasks', tasks);
-  saveFamilyData('completed_log', completedLog);
+  saveSharedList('tasks');
+  saveSharedList('completed_log');
   renderNavBadges();
   if (currentPage === 'tasks') renderTasks();
 }
@@ -5092,14 +5175,14 @@ function completeTask(id) {
 function deleteTask(id) {
   if (!confirm('Delete this task?')) return;
   tasks = tasks.filter(t => t.id !== id);
-  saveFamilyData('tasks', tasks);
+  saveSharedList('tasks');
   renderNavBadges();
   if (currentPage === 'tasks') renderTasks();
 }
 
 function deleteLogEntry(id) {
   completedLog = completedLog.filter(e => e.id !== id);
-  saveFamilyData('completed_log', completedLog);
+  saveSharedList('completed_log');
   renderTasks();
 }
 
@@ -5111,8 +5194,8 @@ function deleteAsset(id) {
   assets = assets.filter(x => x.id !== id);
   tasks = tasks.filter(t => t.assetId !== id);
   _assetDetailId = null;
-  saveFamilyData('assets', assets);
-  saveFamilyData('tasks', tasks);
+  saveSharedList('assets');
+  saveSharedList('tasks');
   renderNavBadges();
   renderTasks();
 }
@@ -5184,7 +5267,7 @@ function confirmAddTask() {
     if (startDate) nt.startDate = startDate;
     tasks.push(nt);
   }
-  saveFamilyData('tasks', tasks);
+  saveSharedList('tasks');
   closeTaskAddModal();
   renderNavBadges();
   renderTasks();
@@ -5225,7 +5308,7 @@ function confirmSaveAsset() {
   } else {
     assets.push(Object.assign({ id: uid() }, data));
   }
-  saveFamilyData('assets', assets);
+  saveSharedList('assets');
   closeAssetModal();
   renderTasks();
 }
@@ -5463,7 +5546,7 @@ async function confirmEditUser() {
 async function removeUser(key) {
   if (!confirm('Remove ' + (PEOPLE[key]?.label || key) + '? Their tasks will be moved to House.')) return;
   tasks.forEach(function(t) { if (t.assignee === key) t.assignee = null; });
-  saveFamilyData('tasks', tasks);
+  saveSharedList('tasks');
   delete PEOPLE[key];
   var cfg = {};
   Object.entries(PEOPLE).forEach(function(e) { cfg[e[0]] = e[1]; });
