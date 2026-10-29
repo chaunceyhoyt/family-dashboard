@@ -1968,7 +1968,7 @@ function renderStrip() {
       const t = ev.start?.dateTime ? formatTime(ev.start.dateTime) : '';
       const name = ev.summary || 'Event';
       const link = ev.htmlLink || '#';
-      return `<a class="day-ev-chip" href="${link}" target="_blank" title="${name}${t?' · '+t:''}">${t ? `<span style="color:var(--accent);margin-right:3px">${t}</span>` : ''}${name}</a>`;
+      return `<a class="day-ev-chip" href="${escHtml(link)}" target="_blank" title="${escHtml(name)}${t?' · '+escHtml(t):''}">${t ? `<span style="color:var(--accent);margin-right:3px">${escHtml(t)}</span>` : ''}${escHtml(name)}</a>`;
     }).join('');
     const moreIndicator = evs.length > 1 ? `<div class="day-more-indicator">▾</div>` : '';
     return `<div class="day-col${todayCls}">
@@ -1987,7 +1987,7 @@ function renderStrip() {
     const todayMealCls = (meal && isToday(d)) ? ' today-meal' : '';
     const sidesIndicator = hasSides ? `<span style="font-size:9px;opacity:0.6;margin-left:2px">+${entry.sides.length}</span>` : '';
     const dinnerHtml = meal
-      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${meal.replace(/"/g,'&quot;')}"><span class="dinner-chip-label">${meal}${sidesIndicator}</span><span class="dinner-drag-handle">⠿</span></div>`
+      ? `<div class="dinner-chip${todayMealCls}" data-date="${isoDate(d)}" data-meal="${escHtml(meal)}"><span class="dinner-chip-label">${escHtml(meal)}${sidesIndicator}</span><span class="dinner-drag-handle">⠿</span></div>`
       : `<button class="dinner-add-btn" onclick="openChooseRecipeForDate('${isoDate(d)}')">+</button>`;
     return `<div class="dinner-row-cell"><div class="dinner-slot" data-date="${isoDate(d)}">${dinnerHtml}</div></div>`;
   }).join('');
@@ -2355,7 +2355,7 @@ function renderFillSettingsChips() {
     const list = type === 'include' ? _fillTagSettings.includeTags : _fillTagSettings.excludeTags;
     const color = type === 'include' ? 'rgba(59,130,246,0.6)' : 'rgba(248,113,113,0.6)';
     document.getElementById(`fill-${type}-chips`).innerHTML = list.map(tag =>
-      `<span style="${chipStyle(color)}">${tag}<button onclick="removeFillTag('${tag.replace(/'/g,"\\'")}','${type}')" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:14px;line-height:1;opacity:0.7">×</button></span>`
+      `<span style="${chipStyle(color)}">${escHtml(tag)}<button onclick="removeFillTag('${jsq(tag)}','${type}')" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:14px;line-height:1;opacity:0.7">×</button></span>`
     ).join('');
   });
 }
@@ -2371,8 +2371,8 @@ function renderFillTagDropdown(type) {
   if (!matches.length) { dropdown.style.display = 'none'; return; }
   dropdown.style.display = '';
   dropdown.innerHTML = matches.map(tag => {
-    const safe = tag.replace(/'/g,"\\'");
-    return `<div onmousedown="addFillTag('${safe}','${type}')" style="padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${tag}</div>`;
+    const safe = jsq(tag);
+    return `<div onmousedown="addFillTag('${safe}','${type}')" style="padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${escHtml(tag)}</div>`;
   }).join('');
 }
 
@@ -2464,9 +2464,9 @@ function renderSides() {
   if (!el) return;
   el.innerHTML = entry.sides.length
     ? entry.sides.map((s, i) => {
-        const safeName = s.replace(/'/g, "\\'");
+        const safeName = jsq(s);
         return `<span style="display:inline-flex;align-items:center;gap:0;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:20px;overflow:hidden">
-          <span onclick="openSideRecipeView('${safeName}',${i})" style="padding:3px 10px 3px 12px;font-size:12px;font-weight:600;color:#6ee7b7;cursor:pointer">${s}</span>
+          <span onclick="openSideRecipeView('${safeName}',${i})" style="padding:3px 10px 3px 12px;font-size:12px;font-weight:600;color:#6ee7b7;cursor:pointer">${escHtml(s)}</span>
           <button onclick="removeSide(${i})" style="background:none;border:none;border-left:1px solid rgba(16,185,129,0.3);color:rgba(110,231,183,0.6);cursor:pointer;font-size:13px;padding:3px 8px 3px 7px;line-height:1">×</button>
         </span>`;
       }).join('')
@@ -2544,7 +2544,7 @@ function renderIngredientList() {
   const ings = isVeg ? (recipe.vegetarianVersion.ingredients || []) : (recipe.ingredients || []);
   const scaled = ings.map(ing => scaleIngredient(ing, _recipeScale));
   document.getElementById('recipe-view-ingredients').innerHTML = scaled.length
-    ? scaled.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${ing}</span></label>`).join('')
+    ? scaled.map((ing, idx) => `<label class="recipe-ingredient" style="cursor:pointer;gap:6px"><input type="checkbox" class="recipe-ing-check" data-idx="${idx}" checked style="accent-color:var(--accent);flex-shrink:0;width:14px;height:14px"><span>${escHtml(ing)}</span></label>`).join('')
     : '<div style="color:var(--text-muted);font-size:12px">No ingredients listed.</div>';
   recipeCurrentIngredients = ings;
 }
@@ -2561,7 +2561,7 @@ async function toggleVegetarianView() {
     renderIngredientList();
     const steps = (_recipeVegMode ? (recipe.vegetarianVersion.steps || recipe.steps || []) : (recipe.steps || []));
     document.getElementById('recipe-view-steps').innerHTML = steps.length
-      ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+      ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${escHtml(s)}</div></div>`).join('')
       : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
     return;
   }
@@ -2576,7 +2576,7 @@ function applyVegSteps(recipe) {
     ? (recipe.vegetarianVersion.steps || recipe.steps || [])
     : (recipe.steps || []);
   document.getElementById('recipe-view-steps').innerHTML = steps.length
-    ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+    ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${escHtml(s)}</div></div>`).join('')
     : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
 }
 
@@ -2622,7 +2622,7 @@ async function generateVegetarianVersion(name) {
     renderIngredientList();
     const steps = data.steps || recipe.steps || [];
     document.getElementById('recipe-view-steps').innerHTML = steps.length
-      ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+      ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${escHtml(s)}</div></div>`).join('')
       : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
   } catch (err) {
     if (vegBtn) { vegBtn.textContent = '🥦 Generate Vegetarian'; vegBtn.disabled = false; vegBtn.style.opacity = ''; }
@@ -2640,7 +2640,7 @@ function renderRecipeView(recipe) {
   const catBadge = document.getElementById('recipe-category-badge');
   if (catBadge) { catBadge.textContent = category || ''; catBadge.style.display = category ? '' : 'none'; }
   const tagsEl = document.getElementById('recipe-view-tags');
-  if (tagsEl) tagsEl.innerHTML = (recipe.tags||[]).map(t => `<span class="recipe-tag">${t}</span>`).join('');
+  if (tagsEl) tagsEl.innerHTML = (recipe.tags||[]).map(t => `<span class="recipe-tag">${escHtml(t)}</span>`).join('');
   const timesEl = document.getElementById('recipe-view-times');
   const timeParts = [];
   if (prepTime) timeParts.push(`<span style="font-size:12px;color:var(--text-muted)">⏱ <strong style="color:var(--text2)">Prep</strong> ${prepTime}</span>`);
@@ -2650,7 +2650,7 @@ function renderRecipeView(recipe) {
   document.getElementById('recipe-view-desc').textContent = description || 'No description yet.';
   renderIngredientList();
   document.getElementById('recipe-view-steps').innerHTML = steps?.length
-    ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${s}</div></div>`).join('')
+    ? steps.map((s, i) => `<div class="recipe-step"><div class="recipe-step-num">${i+1}</div><div>${escHtml(s)}</div></div>`).join('')
     : '<div style="color:var(--text-muted);font-size:12px">No steps listed.</div>';
   document.getElementById('recipe-status').style.display = 'none';
   // Reset scale buttons
@@ -2691,7 +2691,7 @@ function openMealMode() {
 
   // Entree chip
   const main = entry.main;
-  const safeMain = main.replace(/'/g, "\\'");
+  const safeMain = jsq(main);
   document.getElementById('meal-entree-area').innerHTML = main
     ? `<div style="display:inline-flex;align-items:center;gap:0;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:12px;overflow:hidden;max-width:100%">
         <span onclick="openRecipeFromMeal('${safeMain}',false,-1)" style="padding:8px 14px;font-size:14px;font-weight:700;color:#6ee7b7;cursor:pointer;flex:1">${main}</span>
@@ -2703,9 +2703,9 @@ function openMealMode() {
   const sidesEl = document.getElementById('meal-sides-area');
   sidesEl.innerHTML = entry.sides.length
     ? entry.sides.map((s, i) => {
-        const safeSide = s.replace(/'/g, "\\'");
+        const safeSide = jsq(s);
         return `<span style="display:inline-flex;align-items:center;gap:0;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);border-radius:20px;overflow:hidden">
-          <span onclick="openRecipeFromMeal('${safeSide}',true,${i})" style="padding:5px 12px 5px 14px;font-size:13px;font-weight:600;color:#6ee7b7;cursor:pointer">${s}</span>
+          <span onclick="openRecipeFromMeal('${safeSide}',true,${i})" style="padding:5px 12px 5px 14px;font-size:13px;font-weight:600;color:#6ee7b7;cursor:pointer">${escHtml(s)}</span>
           <button onclick="removeSide(${i})" style="background:none;border:none;border-left:1px solid rgba(16,185,129,0.3);color:rgba(110,231,183,0.6);cursor:pointer;font-size:13px;padding:5px 10px;line-height:1">×</button>
         </span>`;
       }).join('')
@@ -2854,7 +2854,7 @@ function openSwapRecipeMode(mode) {
   if (tagsEl) {
     const allTags = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
     tagsEl.innerHTML = allTags.map(tag =>
-      '<button class="filter-tag-chip" onclick="toggleFilterTag(\'' + tag.replace(/'/g,"\\'") + '\',this)">' + tag + '</button>'
+      '<button class="filter-tag-chip" onclick="toggleFilterTag(\'' + jsq(tag) + '\',this)">' + escHtml(tag) + '</button>'
     ).join('');
   }
   // Set which categories are expanded: in side mode, expand Sides; in main mode, expand Top Recipes
@@ -2935,7 +2935,7 @@ function renderSwapList() {
 
   document.getElementById('recipe-swap-list').innerHTML = catOrder.map(cat => {
     const isOpen = !!_categoryExpanded[cat];
-    const safeCat = cat.replace(/'/g, "\\'");
+    const safeCat = jsq(cat);
     const header = `<div onclick="toggleCategory('${safeCat}')" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);padding:8px 4px 4px;margin-top:4px;cursor:pointer;user-select:none">
       <span style="font-size:10px;transition:transform 0.15s;display:inline-block;transform:${isOpen ? 'rotate(90deg)' : ''}">▶</span>
       ${cat} <span style="font-weight:400;opacity:0.6">(${groups[cat].length})</span>
@@ -2945,16 +2945,16 @@ function renderSwapList() {
       const r = recipesData[name] || {};
       const times = [r.prepTime ? `⏱ ${r.prepTime}` : '', r.cookTime ? `🍳 ${r.cookTime}` : ''].filter(Boolean).join(' · ');
       const desc = (r.description || '').length > 72 ? r.description.slice(0, 72) + '…' : (r.description || '');
-      const tagChips = (r.tags || []).map(t => `<span class="recipe-tag">${t}</span>`).join('');
-      const safeName = name.replace(/'/g, "\\'");
+      const tagChips = (r.tags || []).map(t => `<span class="recipe-tag">${escHtml(t)}</span>`).join('');
+      const safeName = jsq(name);
       const action = _chooserMode === 'side' ? `previewSwapRecipe('${safeName}')` : `previewSwapRecipe('${safeName}')`;
       return `<div class="recipe-swap-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px">
         <div style="flex:1;cursor:pointer" onclick="previewSwapRecipe('${safeName}')">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-            <span>${name}${r.hidden ? ' <span title="Hidden" style="font-size:11px;opacity:0.5">👁</span>' : ''}</span>
+            <span>${escHtml(name)}${r.hidden ? ' <span title="Hidden" style="font-size:11px;opacity:0.5">👁</span>' : ''}</span>
             ${times ? `<span style="font-size:11px;color:var(--text-muted);font-weight:400;white-space:nowrap">${times}</span>` : ''}
           </div>
-          ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${desc}</div>` : ''}
+          ${desc ? `<div style="font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;line-height:1.4">${escHtml(desc)}</div>` : ''}
           ${tagChips ? `<div style="margin-top:4px">${tagChips}</div>` : ''}
         </div>
         <button onclick="toggleRecipeFavorite('${safeName}')" style="flex-shrink:0;background:none;border:none;font-size:16px;cursor:pointer;padding:4px;line-height:1;-webkit-tap-highlight-color:transparent" title="Favorite">${r.favorited ? '⭐' : '☆'}</button>
@@ -3153,7 +3153,7 @@ function renderCookPage(recipe, ingredients) {
         ings.map((ing, i) =>
           '<div class="cook-ing-item" id="cook-ing-' + i + '" onclick="toggleCookIng(' + i + ')">' +
             '<div class="cook-ing-check"></div>' +
-            '<div class="cook-ing-text">' + ing + '</div>' +
+            '<div class="cook-ing-text">' + escHtml(ing) + '</div>' +
           '</div>'
         ).join('') +
         '</div>';
@@ -3265,12 +3265,12 @@ function renderHome() {
       const color = eventColor(title);
       const emoji = eventEmoji(title);
       const link = ev.htmlLink || '#';
-      return '<a class="ev-card" href="' + link + '" target="_blank">' +
+      return '<a class="ev-card" href="' + escHtml(link) + '" target="_blank">' +
         '<div class="ev-card-icon" style="background:linear-gradient(160deg,' + color + '44,' + color + '22)">' + emoji + '</div>' +
         '<div class="ev-card-body">' +
-          '<div class="ev-card-title">' + title + '</div>' +
+          '<div class="ev-card-title">' + escHtml(title) + '</div>' +
           '<div class="ev-card-when"><span class="ev-card-time">' + time + '</span></div>' +
-          (ev.location ? '<div class="ev-card-loc">📍 ' + ev.location + '</div>' : '') +
+          (ev.location ? '<div class="ev-card-loc">📍 ' + escHtml(ev.location) + '</div>' : '') +
         '</div>' +
       '</a>';
     }).join('');
@@ -3302,13 +3302,13 @@ function renderHome() {
 
   function buildDinnerSlide(meal, label, dateStr, allowCook) {
     if (meal) {
-      const ck = allowCook ? 'onclick="openCookMode(\'' + dateStr + '\',\'' + meal.replace(/'/g,"\\'") + '\')" style="cursor:pointer"' : 'style="cursor:default"';
+      const ck = allowCook ? 'onclick="openCookMode(\'' + dateStr + '\',\'' + jsq(meal) + '\')" style="cursor:pointer"' : 'style="cursor:default"';
       return '<div class="home-dinner-bar" ' + ck + '>' +
         '<div style="display:flex;align-items:center;gap:20px">' +
           '<span style="font-size:64px">🍽️</span>' +
           '<div>' +
             '<div style="font-size:16px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">' + label + '</div>' +
-            '<div class="home-dinner-meal-name" style="font-size:36px;font-weight:800;color:#6ee7b7;line-height:1.2">' + meal + '</div>' +
+            '<div class="home-dinner-meal-name" style="font-size:36px;font-weight:800;color:#6ee7b7;line-height:1.2">' + escHtml(meal) + '</div>' +
           '</div>' +
         '</div>' +
         (allowCook ? '<span class="home-dinner-cook-arrow" style="font-size:20px;font-weight:700;color:rgba(110,231,183,0.7)">👨‍🍳 Cook →</span>' : '<span style="font-size:13px;color:var(--text-muted)">Tomorrow →</span>') +
@@ -3459,15 +3459,15 @@ function renderSchedule() {
           <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
         </div>`;
       }
-      return header + `<a class="ev-card" href="${link}" target="_blank">
+      return header + `<a class="ev-card" href="${escHtml(link)}" target="_blank">
         <div class="ev-card-icon" style="background:linear-gradient(160deg,${color}44,${color}22)">${emoji}</div>
         <div class="ev-card-body">
-          <div class="ev-card-title">${title}</div>
+          <div class="ev-card-title">${escHtml(title)}</div>
           <div class="ev-card-when">
             <span class="ev-card-time">${time}</span>
           </div>
-          ${ev.location ? `<div class="ev-card-loc">📍 ${ev.location}</div>` : ''}
-          ${desc ? `<div class="ev-card-desc">${desc}</div>` : ''}
+          ${ev.location ? `<div class="ev-card-loc">📍 ${escHtml(ev.location)}</div>` : ''}
+          ${desc ? `<div class="ev-card-desc">${escHtml(desc)}</div>` : ''}
         </div>
       </a>`;
     }).join('');
@@ -3490,10 +3490,10 @@ function renderSchedule() {
             <div class="local-ev-icon">${icon}</div>
             <div class="local-ev-body">
               <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-                <span class="local-ev-title">${ev.title}</span>
+                <span class="local-ev-title">${escHtml(ev.title)}</span>
                 <span class="local-ev-datetime" style="flex-shrink:0">${dateLabel}${ev.time ? '  ·  ' + ev.time : ''}</span>
               </div>
-              ${ev.description ? `<div class="local-ev-meta" style="white-space:normal;margin-top:3px">${ev.description}</div>` : ''}
+              ${ev.description ? `<div class="local-ev-meta" style="white-space:normal;margin-top:3px">${escHtml(ev.description)}</div>` : ''}
             </div>
             <div class="local-ev-arrow">›</div>
           </div>`;
@@ -3599,10 +3599,10 @@ function renderDiscover() {
             <div class="local-ev-icon">${icon}</div>
             <div class="local-ev-body">
               <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-                <span class="local-ev-title">${ev.title}</span>
+                <span class="local-ev-title">${escHtml(ev.title)}</span>
                 <span class="local-ev-datetime" style="flex-shrink:0">${dateLabel}${ev.time ? '  ·  ' + ev.time : ''}</span>
               </div>
-              ${ev.description ? `<div class="local-ev-meta" style="white-space:normal;margin-top:3px">${ev.description}</div>` : ''}
+              ${ev.description ? `<div class="local-ev-meta" style="white-space:normal;margin-top:3px">${escHtml(ev.description)}</div>` : ''}
             </div>
             <div class="local-ev-arrow">›</div>
           </div>`;
@@ -3621,8 +3621,8 @@ function renderDiscover() {
       return `<div class="listing-card" onclick="openListingModal(${i})">
         <div class="listing-icon">${icon}</div>
         <div class="listing-body">
-          <div class="listing-title">${item.title}</div>
-          ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
+          <div class="listing-title">${escHtml(item.title)}</div>
+          ${item.price ? `<div class="listing-price">${escHtml(item.price)}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
           <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
         </div>
         <div class="listing-arrow">›</div>
@@ -3802,8 +3802,8 @@ function renderSavedListings() {
     return `<div class="listing-card" onclick="openListingModal(${i})">
       <div class="listing-icon">${icon}</div>
       <div class="listing-body">
-        <div class="listing-title">${item.title}</div>
-        ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
+        <div class="listing-title">${escHtml(item.title)}</div>
+        ${item.price ? `<div class="listing-price">${escHtml(item.price)}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
         <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
       </div>
       <div class="listing-arrow">›</div>
@@ -3841,8 +3841,8 @@ function renderSearchResults(results) {
       <div onclick="openSearchResultModal(${i})" style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer">
         <div class="listing-icon">${icon}</div>
         <div class="listing-body">
-          <div class="listing-title">${item.title}</div>
-          ${item.price ? `<div class="listing-price">${item.price}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
+          <div class="listing-title">${escHtml(item.title)}</div>
+          ${item.price ? `<div class="listing-price">${escHtml(item.price)}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${milesLabel}</span></div>` : ''}
           <div class="listing-meta">${[item.location, item.source].filter(Boolean).join(' · ')}</div>
         </div>
       </div>
@@ -3959,11 +3959,11 @@ function openListingModalFromItem(item) {
   if (specsEl) {
     const specs = item.specs && typeof item.specs === 'object' ? Object.entries(item.specs).filter(([,v]) => v) : [];
     specsEl.style.display = specs.length ? '' : 'none';
-    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${v}</span></div>`).join('');
+    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${escHtml(v)}</span></div>`).join('');
   }
-  document.getElementById('listing-modal-pros').innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${p}</div>`).join('');
-  document.getElementById('listing-modal-cons').innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${c}</div>`).join('');
-  const link = item.url || item.link || '#';
+  document.getElementById('listing-modal-pros').innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${escHtml(p)}</div>`).join('');
+  document.getElementById('listing-modal-cons').innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${escHtml(c)}</div>`).join('');
+  const link = safeUrl(item.url || item.link);
   document.getElementById('listing-modal-link').href = link;
   document.getElementById('listing-modal-link').style.display = link !== '#' ? '' : 'none';
   document.getElementById('listing-dim').classList.add('open');
@@ -3989,8 +3989,8 @@ function renderGrocery() {
     const allTagsForFilter = [...new Set(Object.values(recipesData).flatMap(r => r.tags || []))].sort();
     const tagChips = allTagsForFilter.map(tag => {
       const active = _groceryRecipeActiveTags.has(tag);
-      const safeTag = tag.replace(/'/g, "\\'");
-      return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(255,255,255,0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${tag}</button>`;
+      const safeTag = jsq(tag);
+      return `<button onclick="toggleGroceryRecipeTag('${safeTag}',this)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${active?'var(--accent)':'rgba(255,255,255,0.15)'};background:${active?'rgba(59,130,246,0.25)':'transparent'};color:${active?'var(--accent)':'var(--text-muted)'};cursor:pointer;white-space:nowrap;font-weight:${active?700:400}">${escHtml(tag)}</button>`;
     }).join('');
     const activeCount = _groceryRecipeActiveTags.size;
     const tagToggleLabel = _groceryTagsExpanded ? '🏷 Tags ▲' : `🏷 Tags${activeCount ? ' ('+activeCount+')' : ''} ▼`;
@@ -4008,7 +4008,7 @@ function renderGrocery() {
     const groceryRows = grocery.length
       ? grocery.map(g => '<div class="list-item">' +
           '<button class="check-btn ' + (g.done?'done':'') + '" onclick="toggleGrocery(\'' + g.id + '\')">' + (g.done?'✓':'') + '</button>' +
-          '<span class="list-label ' + (g.done?'done':'') + '">' + g.text + '</span>' +
+          '<span class="list-label ' + (g.done?'done':'') + '">' + escHtml(g.text) + '</span>' +
           '<button class="del-btn" onclick="deleteGrocery(\'' + g.id + '\')">×</button>' +
         '</div>').join('')
       : '<div class="empty-state" style="padding:16px 14px;font-size:13px">Nothing on the list yet</div>';
@@ -4436,7 +4436,7 @@ function renderGroceryRecipeList() {
 
   el.innerHTML = catOrder.map(cat => {
     const isOpen = !!_categoryExpanded[cat];
-    const safeCat = cat.replace(/'/g, "\\'");
+    const safeCat = jsq(cat);
     const header = `<div onclick="toggleCategory('${safeCat}');renderGroceryRecipeList()" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);padding:8px 12px 4px;cursor:pointer;user-select:none">
       <span style="font-size:10px;transition:transform 0.15s;display:inline-block;transform:${isOpen?'rotate(90deg)':''}">▶</span>
       ${cat} <span style="font-weight:400;opacity:0.6">(${groups[cat].length})</span>
@@ -4444,10 +4444,10 @@ function renderGroceryRecipeList() {
     if (!isOpen) return header;
     const items = groups[cat].map(name => {
       const r = recipesData[name] || {};
-      const safeName = name.replace(/'/g, "\\'");
+      const safeName = jsq(name);
       return `<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05)">
         <button onclick="toggleRecipeFavorite('${safeName}');renderGroceryRecipeList()" style="background:none;border:none;font-size:16px;cursor:pointer;padding:2px;flex-shrink:0">${r.favorited?'⭐':'☆'}</button>
-        <span onclick="openFavRecipeView('${safeName}')" style="flex:1;font-size:13px;font-weight:600;cursor:pointer">${name}</span>
+        <span onclick="openFavRecipeView('${safeName}')" style="flex:1;font-size:13px;font-weight:600;cursor:pointer">${escHtml(name)}</span>
         ${r.favorited ? `<button onclick="addFavRecipeToGrocery('${safeName}')" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.4);background:rgba(16,185,129,0.15);color:#6ee7b7;cursor:pointer;font-weight:600;white-space:nowrap">+ List</button>` : ''}
       </div>`;
     }).join('');
@@ -4579,7 +4579,7 @@ async function consolidateGrocery(callback) {
         list.innerHTML = uncertain.map((item, i) =>
           '<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">' +
             '<input type="checkbox" id="cmerge-' + i + '" checked style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">' +
-            '<label for="cmerge-' + i + '" style="font-size:14px;color:var(--text);cursor:pointer;flex:1">' + item.text + '</label>' +
+            '<label for="cmerge-' + i + '" style="font-size:14px;color:var(--text);cursor:pointer;flex:1">' + escHtml(item.text) + '</label>' +
           '</div>'
         ).join('');
       }
@@ -4698,7 +4698,7 @@ function renderPerson(person) {
     <div class="person-header">
       <div class="person-avatar-lg" style="background:${p.color}">${p.emoji}</div>
       <div>
-        <div class="person-name">${p.label}'s Chores</div>
+        <div class="person-name">${escHtml(p.label)}'s Chores</div>
         <div class="person-progress">${done} of ${list.length} done</div>
         <button class="person-edit-btn" onclick="openPersonEdit('${person}')">✏️ Edit</button>
       </div>
@@ -4831,12 +4831,12 @@ function openDayView(dateStr) {
       const color = eventColor(title);
       const emoji = eventEmoji(title);
       const link = ev.htmlLink || '#';
-      const loc = ev.location ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">📍 ${ev.location}</div>` : '';
-      const desc = ev.description ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">${ev.description.replace(/<[^>]+>/g,'').trim()}</div>` : '';
-      return `<a href="${link}" target="_blank" style="display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;text-decoration:none;color:inherit">
+      const loc = ev.location ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">📍 ${escHtml(ev.location)}</div>` : '';
+      const desc = ev.description ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">${escHtml(ev.description.replace(/<[^>]+>/g,'').trim())}</div>` : '';
+      return `<a href="${escHtml(link)}" target="_blank" style="display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;text-decoration:none;color:inherit">
         <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(160deg,${color}44,${color}22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${emoji}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;color:var(--text)">${title}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(title)}</div>
           <div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:2px">${time}</div>
           ${loc}${desc}
         </div>
@@ -5013,6 +5013,12 @@ let _editingAssetId = null;  // asset id when the asset modal is editing
 
 function setTaskPortraitTab(tab) { _taskPortraitTab = tab; _assetDetailId = null; renderTasks(); }
 function setHomePortraitTab(tab) { _homePortraitTab = tab; renderHome(); }
+
+// For a string argument inside an inline handler: onclick="fn('${jsq(x)}')"
+function jsq(s) { return escHtml(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")); }
+
+// Only allow http(s) links from outside data (blocks javascript: URLs)
+function safeUrl(u) { return /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '#'; }
 
 function escHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -5469,7 +5475,7 @@ function openLocalEventModal(idx) {
   const dateLabel = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
   let metaHtml = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">📆 <span>${dateLabel}</span></div>`;
   if (ev.time) metaHtml += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">🕐 <span>${ev.time}</span></div>`;
-  if (ev.location) metaHtml += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">📍 <span>${ev.location}</span></div>`;
+  if (ev.location) metaHtml += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">📍 <span>${escHtml(ev.location)}</span></div>`;
   document.getElementById('le-meta').innerHTML = metaHtml;
   document.getElementById('le-desc').textContent = ev.description || '';
   document.getElementById('le-desc').style.display = ev.description ? '' : 'none';
@@ -5501,13 +5507,13 @@ function openListingModal(idx) {
   if (specsEl) {
     const specs = item.specs && typeof item.specs === 'object' ? Object.entries(item.specs).filter(([,v]) => v) : [];
     specsEl.style.display = specs.length ? '' : 'none';
-    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${v}</span></div>`).join('');
+    specsEl.innerHTML = specs.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:var(--text-muted);text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="color:var(--text);font-weight:600">${escHtml(v)}</span></div>`).join('');
   }
   const prosEl = document.getElementById('listing-modal-pros');
   const consEl = document.getElementById('listing-modal-cons');
-  prosEl.innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${p}</div>`).join('');
-  consEl.innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${c}</div>`).join('');
-  const link = item.url || item.link || '#';
+  prosEl.innerHTML = (item.pros || []).map(p => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #4ade80">${escHtml(p)}</div>`).join('');
+  consEl.innerHTML = (item.cons || []).map(c => `<div style="font-size:12px;color:var(--text);line-height:1.4;padding-left:10px;border-left:2px solid #f87171">${escHtml(c)}</div>`).join('');
+  const link = safeUrl(item.url || item.link);
   document.getElementById('listing-modal-link').href = link;
   document.getElementById('listing-modal-link').style.display = link !== '#' ? '' : 'none';
   document.getElementById('listing-dim').classList.add('open');
@@ -5901,7 +5907,7 @@ function showKrogerSendUI() {
   document.getElementById('kroger-item-list').innerHTML = pending.map(g =>
     `<div class="kroger-item-row" id="krow-${g.id}">
       <span class="kroger-item-icon">⏳</span>
-      <span class="kroger-item-name">${g.text}</span>
+      <span class="kroger-item-name">${escHtml(g.text)}</span>
       <span class="kroger-item-status" id="kstat-${g.id}">Pending</span>
     </div>`
   ).join('');
