@@ -1564,6 +1564,46 @@ function migrateTasksV2() {
   saveSharedList('completed_log');
 }
 
+// ── UNDO TOAST + UPDATE BANNER ────────────────────────────────────────────────
+// showUndo('Deleted "Milk"', () => {...}) shows a toast for 6s with an Undo button.
+let _undoTimer = null;
+function showUndo(message, onUndo) {
+  let el = document.getElementById('undo-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'undo-toast';
+    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);z-index:2000;display:none;align-items:center;gap:14px;background:#1e293b;color:#f1f5f9;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:10px 12px 10px 16px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:calc(100vw - 32px)';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button style="background:none;border:none;color:#60a5fa;font-weight:800;font-size:14px;cursor:pointer;padding:4px 6px">Undo</button>';
+  el.firstChild.textContent = message;
+  el.lastChild.onclick = () => { clearTimeout(_undoTimer); el.style.display = 'none'; onUndo(); };
+  el.style.display = 'flex';
+  clearTimeout(_undoTimer);
+  _undoTimer = setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+// Compares the server's Last-Modified for index.html with the copy that's
+// running; if there's a newer one, offers a one-tap refresh that skips caches.
+async function checkForNewVersion() {
+  try {
+    const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+    const serverTime = Date.parse(r.headers.get('last-modified') || '');
+    const loadedTime = Date.parse(document.lastModified);
+    if (!serverTime || !loadedTime || serverTime <= loadedTime + 60000) return;
+    if (document.getElementById('update-banner')) return;
+    const b = document.createElement('button');
+    b.id = 'update-banner';
+    b.textContent = '✨ New version available — tap to update';
+    b.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top) + 8px);left:50%;transform:translateX(-50%);z-index:2001;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,0.35);cursor:pointer';
+    b.onclick = () => location.replace(location.pathname + '?v=' + Date.now());
+    document.body.appendChild(b);
+  } catch (e) { /* offline — try again later */ }
+}
+setTimeout(checkForNewVersion, 5000);
+setInterval(checkForNewVersion, 30 * 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForNewVersion(); });
+
 // ── SHARED LIST SYNC ──────────────────────────────────────────────────────────
 // Tasks, assets and the completed log each live as one row per item in the
 // family_items table (tagged with a collection name), so edits from different
@@ -2732,18 +2772,22 @@ async function deleteCurrentOrVegFromEdit() {
   if (_editingVegVersion) {
     // Deleting only the vegetarian version
     if (!confirm(`Delete the vegetarian version of "${name}"? The original recipe will remain.`)) return;
+    const vegCopy = recipe.vegetarianVersion;
     delete recipe.vegetarianVersion;
     await saveFamilyData('recipes', recipesData);
     _recipeVegMode = false;
     closeRecipeEditMode();
     renderRecipeView(recipe);
+    showUndo('Deleted the vegetarian version', async () => {
+      recipe.vegetarianVersion = vegCopy;
+      await saveFamilyData('recipes', recipesData);
+      if (recipeCurrentMeal === name) renderRecipeView(recipe);
+    });
   } else {
     // Deleting the original recipe (and veg version if any)
-    if (!confirm(`Permanently delete "${name}"? This cannot be undone.`)) return;
-    delete recipesData[name];
-    await saveFamilyData('recipes', recipesData);
+    if (!confirm(`Delete "${name}"?`)) return;
     closeRecipeModalDirect();
-    renderSchedule();
+    await removeRecipeWithUndo(name, () => renderSchedule());
   }
 }
 
@@ -3028,15 +3072,30 @@ function clearDinnerFromRecipeModal() {
   closeRecipeModalDirect();
 }
 
-async function deleteRecipeFromDB(name) {
-  if (!confirm('Delete "' + name + '" from the recipe database? This cannot be undone.')) return;
+// Deletes a recipe (and clears any day it was planned for), with an Undo toast
+async function removeRecipeWithUndo(name, afterChange) {
+  const recipe = recipesData[name];
+  if (!recipe) return;
+  const plannedDays = Object.keys(dinners).filter(d => dinners[d] === name);
   delete recipesData[name];
+  plannedDays.forEach(d => { delete dinners[d]; });
   await saveFamilyData('recipes', recipesData);
-  // If this recipe is set as a dinner, clear those days
-  Object.keys(dinners).forEach(d => { if (dinners[d] === name) delete dinners[d]; });
-  saveFamilyData('dinners', dinners);
+  if (plannedDays.length) saveFamilyData('dinners', dinners);
   renderStrip();
-  openSwapRecipeMode(); // refresh the swap list
+  if (afterChange) afterChange();
+  showUndo('Deleted "' + name + '"', async () => {
+    recipesData[name] = recipe;
+    plannedDays.forEach(d => { dinners[d] = name; });
+    await saveFamilyData('recipes', recipesData);
+    if (plannedDays.length) saveFamilyData('dinners', dinners);
+    renderStrip();
+    reRenderCurrentPage();
+  });
+}
+
+async function deleteRecipeFromDB(name) {
+  if (!confirm('Delete "' + name + '" from the recipe database?')) return;
+  await removeRecipeWithUndo(name, () => openSwapRecipeMode()); // refresh the swap list
 }
 
 function deleteCurrentRecipe() {
@@ -4221,9 +4280,11 @@ async function addPriceWatchItem() {
 }
 
 async function removePriceWatchItem(id) {
+  const item = priceWatch.items.find(i => i.id === id);
   priceWatch.items = priceWatch.items.filter(i => i.id !== id);
   await savePriceWatch();
   renderGrocery();
+  if (item) showUndo('Stopped tracking ' + item.name, async () => { priceWatch.items.push(item); await savePriceWatch(); renderGrocery(); });
 }
 
 // Full check: Kroger exact prices, then all-store comparison, then a history snapshot
@@ -4460,15 +4521,24 @@ function selectAllGrocery(done) {
   saveGrocery(); reRenderCurrentPage();
 }
 function clearSelectedGrocery() {
+  const removed = grocery.filter(g => g.done);
+  if (!removed.length) return;
   grocery = grocery.filter(g => !g.done);
   saveGrocery(); reRenderCurrentPage();
+  showUndo('Cleared ' + removed.length + ' checked item' + (removed.length === 1 ? '' : 's'), () => {
+    grocery = grocery.concat(removed).sort((a, b) => (a.pos || 0) - (b.pos || 0)); saveGrocery(); reRenderCurrentPage();
+  });
 }
 function toggleGrocery(id) {
   const item = grocery.find(g => String(g.id)===String(id)); if (!item) return;
   item.done = !item.done; saveGrocery(); reRenderCurrentPage();
 }
 function deleteGrocery(id) {
-  grocery = grocery.filter(g => String(g.id)!==String(id)); saveGrocery(); reRenderCurrentPage();
+  const idx = grocery.findIndex(g => String(g.id) === String(id));
+  if (idx < 0) return;
+  const [item] = grocery.splice(idx, 1);
+  saveGrocery(); reRenderCurrentPage();
+  showUndo('Removed "' + item.text + '"', () => { grocery.splice(Math.min(idx, grocery.length), 0, item); saveGrocery(); reRenderCurrentPage(); });
 }
 function addGroceryInline() {
   const input = document.getElementById('grocery-inline-input');
@@ -5186,17 +5256,21 @@ function completeTask(id) {
 }
 
 function deleteTask(id) {
-  if (!confirm('Delete this task?')) return;
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
   tasks = tasks.filter(t => t.id !== id);
   saveSharedList('tasks');
   renderNavBadges();
   if (currentPage === 'tasks') renderTasks();
+  showUndo('Deleted "' + task.title + '"', () => { tasks.push(task); saveSharedList('tasks'); renderNavBadges(); reRenderCurrentPage(); });
 }
 
 function deleteLogEntry(id) {
+  const entry = completedLog.find(e => e.id === id);
   completedLog = completedLog.filter(e => e.id !== id);
   saveSharedList('completed_log');
   renderTasks();
+  if (entry) showUndo('Removed from history', () => { completedLog.push(entry); saveSharedList('completed_log'); renderTasks(); });
 }
 
 function deleteAsset(id) {
@@ -5211,6 +5285,10 @@ function deleteAsset(id) {
   saveSharedList('tasks');
   renderNavBadges();
   renderTasks();
+  showUndo('Deleted "' + a.name + '"', () => {
+    assets.push(a); tasks = tasks.concat(aTasks);
+    saveSharedList('assets'); saveSharedList('tasks'); renderNavBadges(); renderTasks();
+  });
 }
 
 // ── TASK ADD/EDIT MODAL ───────────────────────────────────────────────────────
